@@ -1,29 +1,68 @@
-// import { accountService } from "./account.services";
+import { User } from "@prisma/client";
+import { Request, Response, NextFunction } from "express";
+import { accountService } from "./account.services";
 
-// class accountController {
-//   private service: accountService;
+export class accountController {
+  private service: accountService;
 
-//   constructor(service: accountService) {
-//     this.service = service;
-//   }
-//   updateProfile = async (req: Request, res: Response) => {
-//     try {
-//       const { username } = req.body;
-//       const picture = req.file as Express.Multer.File;
+  constructor(service: accountService) {
+    this.service = service;
+  }
 
-//       const result = await this.service.updateProfile(picture, username);
-//     } catch (error: unknown) {
-//       if (error instanceof Error) {
-//         console.log("Error during update profile ERROR:", error.message);
-//       } else {
-//         console.log("Error during update profile ERROR:", error);
-//       }
+  //   updateProfile = async (req: Request, res: Response) => {
+  //     try {
+  //       const { username } = req.body;
+  //       const picture = req.file as Express.Multer.File;
 
-//       res.status(500).json({
-//         message: "Error during update profile",
-//       });
-//     }
-//   };
-// }
+  //       const result = await this.service.updateProfile(picture, username);
+  //     } catch (error: unknown) {
+  //       if (error instanceof Error) {
+  //         console.log("Error during update profile ERROR:", error.message);
+  //       } else {
+  //         console.log("Error during update profile ERROR:", error);
+  //       }
 
-// export default accountController;
+  //       res.status(500).json({
+  //         message: "Error during update profile",
+  //       });
+  //     }
+  //   };
+
+  async updateProfile(req: Request, res: Response) {
+    const user = req.user as User;
+    const newUsername = req.body.newUsername as string;
+    const profilePicture = req.file;
+
+    console.log(req.user);
+
+    res.sendStatus(200);
+    if (!user || !(newUsername || profilePicture)) {
+      return res.status(400).json({
+        message: "missing data",
+      });
+    }
+    try {
+      if (newUsername) {
+        await this.service.updateUsername(user.id, newUsername);
+      }
+
+      if (profilePicture) {
+        await this.service.updateProfile(user.id, profilePicture);
+      }
+
+      res.status(200).json({
+        message: "update success",
+      });
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.log("Error during update user profile ERROR:", error.message);
+      } else {
+        console.log("Error during update user profile ERROR:", error);
+      }
+
+      res.status(500).json({
+        message: "Error during update user profile",
+      });
+    }
+  }
+}

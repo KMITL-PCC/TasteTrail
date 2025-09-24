@@ -14,6 +14,7 @@ import redisConfig from "./src/config/redis.config";
 import authen from "./src/features/auth/auth.routes";
 import { invalidCsrf } from "./src/middleware/auth.middleware";
 import restaurant from "./src/features/restaurant/restaurant.routes";
+import account from "./src/features/account/account.routes";
 
 dotenv.config();
 
@@ -23,7 +24,7 @@ const PORT = process.env.PORT || 3001;
 app.use(express.json());
 app.use(cookieParser());
 app.use(helmet());
-app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 100 }));
+// app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 100 }));
 app.use(morgan("dev"));
 
 console.log("Frontend :", process.env.FRONTEND_URL);
@@ -70,6 +71,7 @@ app.use(passport.session());
 app.use(invalidCsrf);
 app.use("/auth", authen);
 app.use("/restaurant", restaurant);
+app.use("/account", account);
 
 app.get("/api/csrf-token", (req, res) => {
   res.json({ csrfToken: req.csrfToken() });
@@ -80,5 +82,5 @@ app.get("/", (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log("app runnig on port :", PORT);
+  console.log("app running on port :", PORT);
 });
