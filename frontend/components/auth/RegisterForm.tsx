@@ -77,8 +77,24 @@ const otpFormSchema = z.object({
     .regex(/^\d{5}$/, { message: "OTP must contain only digits." }),
 });
 
+/* ---------------- Utils ---------------- */
+async function parseErr(res: Response) {
+  const txt = await res.text();
+  try {
+    return JSON.parse(txt);
+  } catch {
+    return { message: txt || res.statusText };
+  }
+}
+
+function abortableTimeout(ms = 15000) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), ms);
+  return { ctrl, clear: () => clearTimeout(timer) };
+}
+
 /* ---------------- Reusable Pieces ---------------- */
-// นับถอยหลัง + ปุ่ม resend แยกออกมา เพื่อลด re-render ที่ฟอร์ม OTP
+// นับถอยหลัง + ปุ่ม resend
 const ResendSection = memo(function ResendSection({
   countdown,
   isResending,
@@ -109,7 +125,7 @@ const ResendSection = memo(function ResendSection({
   );
 });
 
-// ช่อง OTP แยก/เมโมไว้ เพื่อลด re-render ตอน countdown เดิน
+// ช่อง OTP แยก/เมโมไว้
 const OtpCodeField = memo(function OtpCodeField({
   autoFocus = true,
 }: {
@@ -138,12 +154,10 @@ const OtpCodeField = memo(function OtpCodeField({
               autoComplete="one-time-code"
               maxLength={5}
               value={field.value ?? ""}
-              // กัน non-digit ทั้งหมด + บังคับความยาว 5
               onChange={(e) => {
                 const val = e.target.value.replace(/\D/g, "").slice(0, 5);
                 field.onChange(val);
               }}
-              // กัน spacebar และคีย์ non-digit
               onKeyDown={(e) => {
                 if (e.key === " " || (e.key.length === 1 && /\D/.test(e.key))) {
                   e.preventDefault();
@@ -172,21 +186,23 @@ export default function RegisterForm() {
   const [registrationData, setRegistrationData] =
     useState<RegisterFormValues | null>(null);
 
+  const backendURL = process.env.NEXT_PUBLIC_BACKEND_URL as string;
+
   // ดึง CSRF
   useEffect(() => {
     (async () => {
       try {
-        const backendURL = process.env.NEXT_PUBLIC_BACKEND_URL;
-        const res = await fetch(`${backendURL}/api/csrf-token`, {
+        const r = await fetch(`${backendURL}/api/csrf-token`, {
           credentials: "include",
         });
-        if (!res.ok) {
+        if (!r.ok) {
+          const e = await parseErr(r);
           toast.error("Security Error", {
-            description: "Could not initialize a secure session.",
+            description: e.message || "Could not initialize a secure session.",
           });
           return;
         }
-        const data = await res.json();
+        const data = await r.json();
         setCsrfToken(data.csrfToken);
       } catch (err) {
         toast.error("Connection Error", {
@@ -194,6 +210,7 @@ export default function RegisterForm() {
         });
       }
     })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // ตัวจับเวลา (countdown)
@@ -220,12 +237,16 @@ export default function RegisterForm() {
   const otpForm = useForm<z.infer<typeof otpFormSchema>>({
     resolver: zodResolver(otpFormSchema),
     defaultValues: { otp: "" },
-    shouldUnregister: false, // กันค่าเด้งหายเวลา re-render
+    shouldUnregister: false,
     mode: "onChange",
   });
 
   // ส่งข้อมูลสมัคร + ขอ OTP
   async function onRegisterSubmit(values: RegisterFormValues) {
+    if (!values.username || !values.email || !values.password) {
+      toast.error("Missing data", { description: "Please fill all fields." });
+      return;
+    }
     if (!csrfToken) {
       toast.error("Security Error", {
         description: "Cannot submit form. Secure token is missing.",
@@ -239,7 +260,7 @@ export default function RegisterForm() {
     });
 
     try {
-      const backendURL = process.env.NEXT_PUBLIC_BACKEND_URL;
+      const { ctrl, clear } = abortableTimeout(15000);
       const response = await fetch(`${backendURL}/auth/register/send-otp`, {
         method: "POST",
         headers: {
@@ -247,15 +268,17 @@ export default function RegisterForm() {
           "X-CSRF-Token": csrfToken,
         },
         body: JSON.stringify({
-          username: values.username,
-          email: values.email,
+          username: values.username.trim(),
+          email: values.email.trim(),
           password: values.password,
         }),
         credentials: "include",
+        signal: ctrl.signal,
       });
+      clear();
 
       if (response.ok) {
-        setRegistrationEmail(values.email);
+        setRegistrationEmail(values.email.trim());
         setRegistrationData(values);
         setShowOtpForm(true);
         setCountdown(50);
@@ -263,15 +286,18 @@ export default function RegisterForm() {
           description: "Please check your email for the OTP code.",
         });
       } else {
-        const errorData = await response.json().catch(() => ({}));
+        const errorData = await parseErr(response);
         toast.error("Registration Failed", {
-          description:
-            errorData.message || "Something went wrong. Please try again.",
+          description: errorData.message || `HTTP ${response.status}`,
         });
+        console.log("[send-otp error]", response.status, errorData);
       }
-    } catch (error) {
+    } catch (error: any) {
       toast.error("Connection Error", {
-        description: "Unable to connect to the server. Please try again.",
+        description:
+          error?.name === "AbortError"
+            ? "Request timed out."
+            : "Unable to connect to the server.",
       });
     }
   }
@@ -288,7 +314,7 @@ export default function RegisterForm() {
     toast.info("Verifying OTP...", { duration: 1500 });
 
     try {
-      const backendURL = process.env.NEXT_PUBLIC_BACKEND_URL;
+      const { ctrl, clear } = abortableTimeout(15000);
       const response = await fetch(`${backendURL}/auth/register/verify`, {
         method: "POST",
         headers: {
@@ -300,7 +326,9 @@ export default function RegisterForm() {
           otp: values.otp,
         }),
         credentials: "include",
+        signal: ctrl.signal,
       });
+      clear();
 
       if (response.ok) {
         toast.success("Account Verified!", {
@@ -308,20 +336,23 @@ export default function RegisterForm() {
         });
         router.push("/");
       } else {
-        const errorData = await response.json().catch(() => ({}));
+        const errorData = await parseErr(response);
         toast.error("Verification Failed", {
           description:
             errorData.message || "Invalid OTP code. Please try again.",
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       toast.error("Connection Error", {
-        description: "Unable to connect to the server. Please try again.",
+        description:
+          error?.name === "AbortError"
+            ? "Request timed out."
+            : "Unable to connect to the server.",
       });
     }
   }
 
-  // ส่ง OTP ใหม่
+  // ส่ง OTP ใหม่ (ต้องส่งครบ 3 ฟิลด์ตามฝั่งแบ็กเอนด์)
   async function handleResendOtp() {
     if (!csrfToken || !registrationData) {
       toast.error("Error", {
@@ -333,7 +364,7 @@ export default function RegisterForm() {
     toast.info("Resending OTP...");
 
     try {
-      const backendURL = process.env.NEXT_PUBLIC_BACKEND_URL;
+      const { ctrl, clear } = abortableTimeout(15000);
       const response = await fetch(`${backendURL}/auth/register/send-otp`, {
         method: "POST",
         headers: {
@@ -341,12 +372,14 @@ export default function RegisterForm() {
           "X-CSRF-Token": csrfToken,
         },
         body: JSON.stringify({
-          username: registrationData.username,
-          email: registrationData.email,
+          username: registrationData.username.trim(),
+          email: registrationData.email.trim(),
           password: registrationData.password,
         }),
         credentials: "include",
+        signal: ctrl.signal,
       });
+      clear();
 
       if (response.ok) {
         toast.success("OTP Resent!", {
@@ -354,15 +387,17 @@ export default function RegisterForm() {
         });
         setCountdown(50);
       } else {
-        const errorData = await response.json().catch(() => ({}));
+        const errorData = await parseErr(response);
         toast.error("Failed to Resend OTP", {
-          description:
-            errorData.message || "Something went wrong. Please try again.",
+          description: errorData.message || `HTTP ${response.status}`,
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       toast.error("Connection Error", {
-        description: "Unable to connect to the server. Please try again.",
+        description:
+          error?.name === "AbortError"
+            ? "Request timed out."
+            : "Unable to connect to the server.",
       });
     } finally {
       setIsResending(false);
@@ -380,7 +415,6 @@ export default function RegisterForm() {
 
   // Google
   const handleGoogleLogin = () => {
-    const backendURL = process.env.NEXT_PUBLIC_BACKEND_URL;
     window.location.href = `${backendURL}/auth/google`;
   };
 
@@ -457,11 +491,9 @@ export default function RegisterForm() {
                         placeholder="Choose a username"
                         {...field}
                         className="h-11 rounded-md border-gray-300 text-base focus:border-green-500 focus:ring-green-500 sm:h-12"
-                        // กัน spacebar
                         onKeyDown={(e) => {
                           if (e.key === " ") e.preventDefault();
                         }}
-                        // กรองเฉพาะ A-Z a-z 0-9
                         onChange={(e) => {
                           const sanitized = e.target.value.replace(
                             /[^A-Za-z0-9]/g,
@@ -581,7 +613,10 @@ export default function RegisterForm() {
 
               <Button
                 type="submit"
-                disabled={!registerForm.formState.isValid}
+                disabled={
+                  !registerForm.formState.isValid ||
+                  !csrfToken /* กันตอน token ยังไม่พร้อม */
+                }
                 className="h-12 w-full rounded-md bg-green-500 text-lg font-semibold text-white shadow-md transition-colors duration-200 hover:bg-green-600 disabled:cursor-not-allowed disabled:bg-gray-400 sm:h-14"
               >
                 Register
@@ -599,6 +634,7 @@ export default function RegisterForm() {
             variant="outline"
             className="h-11 w-full rounded-md border-gray-300 text-base font-medium transition-colors duration-200 hover:bg-gray-50 sm:h-12 sm:text-lg"
             onClick={handleGoogleLogin}
+            disabled={!backendURL}
           >
             <GoogleIcon />
             Register with Google
