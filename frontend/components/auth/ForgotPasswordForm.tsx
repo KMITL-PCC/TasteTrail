@@ -8,7 +8,7 @@ const backendURL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
 
 // ปรับ endpoint ให้ตรงกับ back ของคุณ
-const CSRF_ENDPOINT = `${backendURL}/csrf-token`;
+const CSRF_ENDPOINT = `${backendURL}/api/csrf-token`;
 const SEND_OTP_ENDPOINT = `${backendURL}/auth/forgotPass`;
 const VERIFY_OTP_ENDPOINT = `${backendURL}/auth/verify-otp`;
 const RESEND_OTP_ENDPOINT = `${backendURL}/auth/resend-otp`;

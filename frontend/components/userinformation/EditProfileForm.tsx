@@ -21,7 +21,7 @@ import { toast } from "sonner";
 
 const backendURL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
-const PROFILE_ENDPOINT = `${backendURL}/profile`;
+const PROFILE_ENDPOINT = `${backendURL}/account/updateProfile`;
 const PASSWORD_ENDPOINT = `${backendURL}/password`;
 const CSRF_ENDPOINT = `${backendURL}/csrf-token`;
 
@@ -78,7 +78,7 @@ export default function EditProfilePage() {
     (async () => {
       try {
         const res = await fetch(PROFILE_ENDPOINT, {
-          method: "GET",
+          method: "PUT",
           credentials: "include",
         });
         if (!res.ok) {
