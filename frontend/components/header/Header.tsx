@@ -13,6 +13,7 @@ import {
 import { useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Utensils } from "lucide-react";
+<<<<<<< Updated upstream
 
 import Logo from "../Logo";
 import Link from "next/link";
@@ -24,6 +25,13 @@ interface User {
 interface UserInfo {
   user: User;
 }
+=======
+import { useUserStore } from "@/store/user-store";
+import { Skeleton } from "../ui/skeleton";
+
+import Logo from "../Logo";
+import Link from "next/link";
+>>>>>>> Stashed changes
 
 const getUserInfo = async () => {
   try {
@@ -90,7 +98,11 @@ const Header = () => {
         <Logo width={50} height={50} />
 
         {/* Search */}
+<<<<<<< Updated upstream
         <form className="relative flex-1" onSubmit={handleSearch}>
+=======
+        <form className="relative flex-1 max-w-xl" onSubmit={handleSearch}>
+>>>>>>> Stashed changes
           <Search className="absolute -translate-y-1/2 top-1/2 left-2" />
           <Input
             type="text"
@@ -104,8 +116,17 @@ const Header = () => {
 
         {/* Auth action */}
         {/* desktop */}
+<<<<<<< Updated upstream
         <div className="items-center hidden gap-2 md:flex">
           {userInfo ? (
+=======
+        <div className="hidden w-[250px] items-center justify-end gap-2 md:flex">
+          {loading ? (
+            <div className="flex items-center gap-2">
+              <Skeleton className="w-8 h-8 rounded-full" />
+            </div>
+          ) : user ? (
+>>>>>>> Stashed changes
             // Show user info when authenticated
             <div className="flex items-center gap-2">
               <DropdownMenu>

@@ -8,8 +8,6 @@ import {
   Carousel,
   CarouselContent,
   CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
 } from "@/components/ui/carousel";
 import { RestaurantInfoProps } from "@/app/restaurants/[id]/page";
 import Image from "next/image";
@@ -32,7 +30,7 @@ export default function RestaurantImagesCarousel({
     >
       <CarouselContent>
         {restaurantInfo.image.map((image) => (
-          <CarouselItem key={image} className="pl-1 md:basis-1/2 lg:basis-1/3">
+          <CarouselItem key={image} className="pl-1 basis-1/2 md:basis-1/3">
             <Card className="py-0">
               <CardContent className="relative flex items-center justify-center aspect-square">
                 <Image
@@ -47,8 +45,6 @@ export default function RestaurantImagesCarousel({
           </CarouselItem>
         ))}
       </CarouselContent>
-      <CarouselPrevious />
-      <CarouselNext />
     </Carousel>
   );
 }

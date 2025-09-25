@@ -109,6 +109,14 @@ const RestaurantDetailPage = async ({
           />
         </div>
       </div> */}
+<<<<<<< Updated upstream
+=======
+
+      {/* <div className="relative">
+        <GoBackButton className="absolute left-0 z-10 top-1" />
+
+      </div> */}
+>>>>>>> Stashed changes
       <RestaurantImagesCarousel restaurantInfo={restaurantInfo} />
 
       <div className="grid grid-cols-2 grid-rows-2 gap-2 px-4 md:px-8">
@@ -149,7 +157,21 @@ const RestaurantDetailPage = async ({
                 href={`https://www.google.com/maps?q=${restaurantInfo.latitude},${restaurantInfo.longitude}`}
                 target="_blank"
               >
+<<<<<<< Updated upstream
                 <div className="relative mx-auto border border-border h-30 w-30 rounded-xl">
+=======
+                <div className="relative mx-auto h-30 w-30 rounded-xl xl:h-40 xl:w-40">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="red"
+                    width="24"
+                    height="24"
+                  >
+                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
+                    <circle cx="12" cy="9" r="2.5" fill="white" />
+                  </svg>
+>>>>>>> Stashed changes
                   <Image
                     src="/google-map.webp"
                     alt="map"
