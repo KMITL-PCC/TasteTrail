@@ -20,6 +20,11 @@ import { Vector as VectorSource } from "ol/source";
 import { Point } from "ol/geom";
 import { Feature } from "ol";
 
+const backendURL =
+  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
+const CSRF_ENDPOINT = `${backendURL}/csrf-token`;
+const SELLER_ENDPOINT = `${backendURL}/seller`;
+
 // วันในสัปดาห์
 const daysOfWeek = [
   "อาทิตย์",
@@ -55,6 +60,35 @@ export default function SellerInfoWeb() {
   ]);
 
   const mapRef = useRef<HTMLDivElement | null>(null);
+
+  const [csrfToken, setCsrfToken] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchCsrfToken = async () => {
+      try {
+        const res = await fetch(CSRF_ENDPOINT, {
+          method: "GET",
+          credentials: "include",
+        });
+
+        if (!res.ok) {
+          toast.error("Security token error", {
+            description: "ไม่สามารถโหลด CSRF token",
+          });
+          return;
+        }
+
+        const data = await res.json();
+        setCsrfToken(data.csrfToken || null);
+      } catch (err) {
+        toast.error("Connection Error", {
+          description: "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้",
+        });
+      }
+    };
+
+    fetchCsrfToken();
+  }, []);
 
   useEffect(() => {
     if (mapRef.current) {
@@ -138,15 +172,45 @@ export default function SellerInfoWeb() {
       images: uploadedImages,
     };
 
+    // ตรวจสอบว่า CSRF Token ถูกดึงมาแล้ว
+    if (!csrfToken) {
+      toast.error("Session not ready", {
+        description: "กรุณารอสักครู่เพื่อเตรียมข้อมูล",
+      });
+      return;
+    }
+
     try {
       toast.info("กำลังบันทึกข้อมูล...");
-      const res = await fetch("/api/saveSeller", {
+
+      const form = new FormData();
+      form.append("firstName", firstName);
+      form.append("lastName", lastName);
+      form.append("shopName", shopName);
+      form.append("hasPhysicalStore", String(hasPhysicalStore));
+      if (hasPhysicalStore) {
+        form.append("pickupAddress", pickupAddress);
+      }
+
+      // เพิ่มเวลาทำการร้าน
+      openingTimes.forEach((time: OpeningTime, index: number) => {
+        form.append(`openingTimes[${index}].weekday`, time.weekday.toString());
+        form.append(`openingTimes[${index}].openTime`, time.openTime);
+        form.append(`openingTimes[${index}].closeTime`, time.closeTime);
+      });
+
+      // เพิ่มรูปภาพ
+      uploadedImages.forEach((img, idx) => {
+        form.append(`images[${idx}]`, img); // appending images one by one
+      });
+
+      const res = await fetch(SELLER_ENDPOINT, {
         method: "POST",
-        credentials: "include",
+        body: form,
         headers: {
-          "Content-Type": "application/json",
+          "X-CSRF-Token": csrfToken, // ส่ง CSRF Token ไปใน header
         },
-        body: JSON.stringify(payload),
+        credentials: "include",
       });
 
       if (!res.ok) {
@@ -159,7 +223,7 @@ export default function SellerInfoWeb() {
 
       const data = await res.json();
       toast.success("บันทึกสำเร็จ", {
-        description: data?.message || "อัปเดตข้อมูลร้านค้าเรียบร้อย",
+        description: data?.message || "ข้อมูลร้านค้าถูกบันทึกเรียบร้อยแล้ว",
       });
     } catch (err) {
       toast.error("Connection Error", {
