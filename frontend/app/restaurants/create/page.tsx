@@ -1,4 +1,7 @@
-const CreateRestaurantPage = () => {
-  return <div>CreateRestaurantPage</div>;
+import StoreEditForm from "@/components/store/StoreEditForm";
+
+const storeeditpage = () => {
+  return <StoreEditForm />;
 };
-export default CreateRestaurantPage;
+
+export default storeeditpage;
