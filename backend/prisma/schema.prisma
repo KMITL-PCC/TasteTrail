@@ -22,6 +22,8 @@ model User {
   role                      Role     @default(User)
   profilePictureUrl         String?  @map("profile_picture_url") @db.VarChar(2048)
   profilePictureUrlPublicId String?  @map("public_id") @db.VarChar(100)
+  firstName                 String?  @map("first_name") @db.VarChar(50)
+  lastName                  String?  @map("last_name") @db.VarChar(50)
   createdAt                 DateTime @default(now()) @map("created_at") @db.Timestamptz(6) // ใช้ Timestamptz สำหรับ UTC+0
   updatedAt                 DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 

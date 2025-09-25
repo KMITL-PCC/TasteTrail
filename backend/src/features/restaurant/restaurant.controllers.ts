@@ -81,10 +81,6 @@ export default {
     }
   },
 
-  updateToRestaurantOwner: async (req: Request, res: Response) => {
-    const user = req.user as User;
-  },
-
   getRestaurants: async (req: Request, res: Response, next: NextFunction) => {
     const queryRating = Number(req.query.rating);
     const pricerateQuery = req.query.priceRate as string;

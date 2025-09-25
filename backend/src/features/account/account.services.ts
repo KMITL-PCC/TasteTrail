@@ -1,8 +1,12 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Role, User } from "@prisma/client";
 import { Express } from "express";
 import cloudinary from "../../config/cloudinary.config";
+import { Restaurant } from "../../types/restaurant";
+import RestaurantService from "../restaurant/restaurant.services";
 import { resolve } from "path";
 import { rejects } from "assert";
+
+import { fullname } from "./account.controllers";
 
 export class accountService {
   private prisma: PrismaClient;
@@ -83,5 +87,40 @@ export class accountService {
 
       throw new Error("Failed to update profile picture Error");
     }
+  }
+
+  async updateToRestaurantOwner(
+    userId: string,
+    fullname: fullname,
+    information: Restaurant.information,
+    price: Restaurant.price,
+    time: any,
+    images: Express.Multer.File[],
+    service: string[]
+  ) {
+    const restaurant = await RestaurantService.createRestaurant(
+      information,
+      price,
+      time,
+      images,
+      service
+    );
+
+    if (!restaurant) {
+      throw Error("Create restaurant fail");
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.user.update({
+        where: {
+          id: userId,
+        },
+        data: {
+          firstName: fullname.firstName,
+          lastName: fullname.lastName,
+          role: Role.RestaurantOwner,
+        },
+      });
+    });
   }
 }

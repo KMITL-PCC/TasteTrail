@@ -20,4 +20,6 @@ router.put(
   controllers.updateProfile
 );
 
+router.patch("/openRestaurant", upload.array("images"), isAuthenticated);
+
 export default router;
