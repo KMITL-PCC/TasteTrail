@@ -4,7 +4,7 @@ import multer from "multer";
 import { accountController } from "./account.controllers";
 import { accountService } from "./account.services";
 import prisma from "../../config/db.config";
-import { isAuthenticated, hasRole } from "../../middleware/auth.middleware";
+import { isAuthenticated } from "../../middleware/auth.middleware";
 
 const router = Router();
 const storage = multer.memoryStorage();
@@ -16,7 +16,7 @@ const controllers = new accountController(services);
 router.put(
   "/updateProfile",
   isAuthenticated,
-  upload.single("image"),
+  upload.single("avatar"),
   controllers.updateProfile
 );
 

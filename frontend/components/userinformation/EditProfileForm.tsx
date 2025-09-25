@@ -21,9 +21,10 @@ import { toast } from "sonner";
 
 const backendURL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
-const PROFILE_ENDPOINT = `${backendURL}/account/updateProfile`;
+const PROFILE_ENDPOINT = `${backendURL}/auth/me`;
 const PASSWORD_ENDPOINT = `${backendURL}/auth/updatepass-curent`;
-const CSRF_ENDPOINT = `${backendURL}/csrf-token`;
+const UPDATE_PROFILE_ENDPOINT = `${backendURL}/account/updateProfile`;
+const CSRF_ENDPOINT = `${backendURL}/api/csrf-token`;
 
 export default function EditProfilePage() {
   const searchParams = useSearchParams();
@@ -58,7 +59,7 @@ export default function EditProfilePage() {
         });
         if (!res.ok) {
           toast.error("Security token error", {
-            description: "Could not establish a secure session.",
+            description: "  .",
           });
           return;
         }
@@ -144,8 +145,8 @@ export default function EditProfilePage() {
       form.set("username", username);
       if (avatarFile) form.set("avatar", avatarFile);
 
-      const res = await fetch(PROFILE_ENDPOINT, {
-        method: "PATCH", // ใช้ PATCH สำหรับการอัปเดตข้อมูล
+      const res = await fetch(UPDATE_PROFILE_ENDPOINT, {
+        method: "PUT", // ใช้ PATCH สำหรับการอัปเดตข้อมูล
         body: form,
         headers: { "X-CSRF-Token": csrfToken },
         credentials: "include",

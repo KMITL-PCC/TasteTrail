@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 
 import { Restaurant } from "../../types/restaurant";
 import restaurantServices from "./restaurant.services";
+import { User } from "@prisma/client";
 
 function validateNestedFields(obj: any, requiredFields: string[]): string[] {
   return requiredFields.filter((field) => !obj?.[field]);
@@ -28,7 +29,8 @@ export default {
     //       "closeTime"
     // }
     // }
-    const { information, price, time, services } = JSON.parse(req.body.info);
+    // const { information, price, time, services } = JSON.parse(req.body.info);
+    const { information, price, time, services } = req.body.info;
     const pictures = req.files as Express.Multer.File[];
 
     const missingInfo = validateNestedFields(information, [
@@ -77,6 +79,10 @@ export default {
         message: "Error during create restaurant",
       });
     }
+  },
+
+  updateToRestaurantOwner: async (req: Request, res: Response) => {
+    const user = req.user as User;
   },
 
   getRestaurants: async (req: Request, res: Response, next: NextFunction) => {

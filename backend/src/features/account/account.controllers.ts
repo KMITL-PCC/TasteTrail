@@ -9,33 +9,13 @@ export class accountController {
     this.service = service;
   }
 
-  //   updateProfile = async (req: Request, res: Response) => {
-  //     try {
-  //       const { username } = req.body;
-  //       const picture = req.file as Express.Multer.File;
-
-  //       const result = await this.service.updateProfile(picture, username);
-  //     } catch (error: unknown) {
-  //       if (error instanceof Error) {
-  //         console.log("Error during update profile ERROR:", error.message);
-  //       } else {
-  //         console.log("Error during update profile ERROR:", error);
-  //       }
-
-  //       res.status(500).json({
-  //         message: "Error during update profile",
-  //       });
-  //     }
-  //   };
-
-  async updateProfile(req: Request, res: Response) {
+  updateProfile = async (req: Request, res: Response) => {
     const user = req.user as User;
-    const newUsername = req.body.newUsername as string;
+    const newUsername = req.body.username as string;
     const profilePicture = req.file;
 
-    console.log(req.user);
+    console.log(profilePicture);
 
-    res.sendStatus(200);
     if (!user || !(newUsername || profilePicture)) {
       return res.status(400).json({
         message: "missing data",
@@ -64,5 +44,5 @@ export class accountController {
         message: "Error during update user profile",
       });
     }
-  }
+  };
 }
