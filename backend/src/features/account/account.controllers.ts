@@ -14,8 +14,6 @@ export class accountController {
     const newUsername = req.body.username as string;
     const profilePicture = req.file;
 
-    console.log(profilePicture);
-
     if (!user || !(newUsername || profilePicture)) {
       return res.status(400).json({
         message: "missing data",

@@ -23,7 +23,7 @@ const backendURL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
 const PROFILE_ENDPOINT = `${backendURL}/auth/me`;
 const UPDATEPROFILE_ENDPOINT = `${backendURL}/account/updateprofile`;
-const PASSWORD_ENDPOINT = `${backendURL}/auth/updatepass-curent`;
+const PASSWORD_ENDPOINT = `${backendURL}/auth/updatepass-current`;
 const CSRF_ENDPOINT = `${backendURL}/api/csrf-token`;
 
 export default function EditProfilePage() {

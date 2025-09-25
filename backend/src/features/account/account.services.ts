@@ -42,7 +42,8 @@ export class accountService {
         const stream = cloudinary.uploader.upload_stream(
           {
             folder: "user_profiles",
-            public_id: oldUser?.profilePictureUrlPublicId || undefined,
+            public_id:
+              oldUser?.profilePictureUrlPublicId?.split("/")[1] || undefined,
             overwrite: true,
           },
           (error, result) => {
@@ -54,6 +55,7 @@ export class accountService {
         stream.end(picture.buffer);
       });
 
+      console.log(uploadResult);
       const imageUrl = uploadResult.secure_url;
       const publicId = uploadResult.public_id;
       console.log("public id is " + publicId);
