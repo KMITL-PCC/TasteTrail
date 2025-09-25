@@ -9,13 +9,14 @@ function validateNestedFields(obj: any, requiredFields: string[]): string[] {
 
 export default {
   createRestaurant: async (req: Request, res: Response, next: NextFunction) => {
-    //     {
+    //info :     {
     // information: {
     //        "name",
     //       "description",
     //       "address",
     //       "latitude",
     //       "longitude",
+    //       "services": [1,2,3,4]
     // },
     // price: {
     //       "minPrice",
@@ -23,11 +24,12 @@ export default {
     // },
     // time : {
     //       "weekday",
-    //       "opentime",
-    //       "closetime"
+    //       "openTime",
+    //       "closeTime"
     // }
     // }
-    const { information, price, time } = req.body;
+    const { information, price, time, services } = JSON.parse(req.body.info);
+    const pictures = req.files as Express.Multer.File[];
 
     const missingInfo = validateNestedFields(information, [
       "name",
@@ -43,11 +45,7 @@ export default {
       "closeTime",
     ]);
 
-    if (
-      missingInfo.length > 0 ||
-      missingPrice.length > 0 ||
-      missingTime.length > 0
-    ) {
+    if (!missingInfo || !missingPrice || !missingTime || !pictures) {
       return res.status(400).json({ message: "Missing data" });
     }
 
@@ -55,9 +53,16 @@ export default {
       const result = await restaurantServices.createRestaurant(
         information,
         price,
-        time
+        time,
+        pictures,
+        services
       );
 
+      if (!result) {
+        return res.status(500).json({
+          message: "Error during create restaurant",
+        });
+      }
       res.status(201).json({
         message: "create success",
       });

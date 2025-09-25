@@ -13,65 +13,48 @@ import {
 import { useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Utensils } from "lucide-react";
-<<<<<<< Updated upstream
+import { useUserStore } from "@/store/user-store";
 
 import Logo from "../Logo";
 import Link from "next/link";
-
-interface User {
-  role: string;
-}
-
-interface UserInfo {
-  user: User;
-}
-=======
-import { useUserStore } from "@/store/user-store";
 import { Skeleton } from "../ui/skeleton";
 
-import Logo from "../Logo";
-import Link from "next/link";
->>>>>>> Stashed changes
-
 const getUserInfo = async () => {
-  try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/me`, {
-      credentials: "include",
-    });
+  const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/me`, {
+    credentials: "include",
+  });
 
-    if (!res.ok) {
-      return null;
-    }
-
-    const data = await res.json();
-    return data;
-  } catch (error) {
-    console.error("Error fetching user info:", error);
+  if (!res.ok) {
+    console.error("Error fetching user info:", res.statusText);
     return null;
   }
+
+  const { user } = await res.json();
+  return user;
 };
 
 const userLogout = async () => {
-  try {
-    await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/logout`, {
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/logout`,
+    {
       credentials: "include",
-    });
-  } catch (error) {
-    console.error("Error fetching user info:", error);
-    return null;
+    },
+  );
+  if (!res.ok) {
+    console.error("Error logging out:", res.statusText);
   }
+  return await res.json();
 };
 
 const Header = () => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-
   const initialSearch = searchParams.get("search") || "";
 
-  const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
-
   const [search, setSearch] = useState<string>(initialSearch);
+  const [loading, setLoading] = useState<boolean>(true);
+  const { user, setUser, clearUser } = useUserStore();
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -84,13 +67,32 @@ const Header = () => {
     router.push(`${pathname}?${params.toString()}`);
   };
 
+  const handleLogout = async () => {
+    try {
+      await userLogout();
+      clearUser();
+      router.push("/");
+    } catch (error) {
+      console.error("Error logging out:", error);
+    }
+  };
+
   useEffect(() => {
     const fetchUserInfo = async () => {
-      const userInfo = await getUserInfo();
-      setUserInfo(userInfo);
+      try {
+        const user = await getUserInfo();
+        console.log(user);
+        setUser(user);
+        return user;
+      } catch (error) {
+        console.error("Error fetching user info:", error);
+        return null;
+      } finally {
+        setLoading(false);
+      }
     };
     fetchUserInfo();
-  }, [pathname]);
+  }, []);
 
   return (
     <header className="sticky top-0 z-50 w-full border bg-background">
@@ -98,11 +100,7 @@ const Header = () => {
         <Logo width={50} height={50} />
 
         {/* Search */}
-<<<<<<< Updated upstream
-        <form className="relative flex-1" onSubmit={handleSearch}>
-=======
         <form className="relative flex-1 max-w-xl" onSubmit={handleSearch}>
->>>>>>> Stashed changes
           <Search className="absolute -translate-y-1/2 top-1/2 left-2" />
           <Input
             type="text"
@@ -116,17 +114,12 @@ const Header = () => {
 
         {/* Auth action */}
         {/* desktop */}
-<<<<<<< Updated upstream
-        <div className="items-center hidden gap-2 md:flex">
-          {userInfo ? (
-=======
         <div className="hidden w-[250px] items-center justify-end gap-2 md:flex">
           {loading ? (
             <div className="flex items-center gap-2">
               <Skeleton className="w-8 h-8 rounded-full" />
             </div>
           ) : user ? (
->>>>>>> Stashed changes
             // Show user info when authenticated
             <div className="flex items-center gap-2">
               <DropdownMenu>
@@ -144,7 +137,7 @@ const Header = () => {
                     </Link>
                   </DropdownMenuItem>
 
-                  {userInfo?.user.role === "RestaurantOwner" ? (
+                  {user?.role === "RestaurantOwner" ? (
                     <DropdownMenuItem>
                       <Link href="/profile" className="flex items-center gap-2">
                         <Utensils size={20} />
@@ -164,12 +157,7 @@ const Header = () => {
                   )}
                   <DropdownMenuItem
                     className="flex items-center gap-2"
-                    onClick={() => {
-                      userLogout().then(() => {
-                        setUserInfo(null);
-                        router.push("/");
-                      });
-                    }}
+                    onClick={handleLogout}
                   >
                     <LogIn size={20} />
                     <span>ออกจากระบบ</span>
@@ -197,12 +185,13 @@ const Header = () => {
           )}
         </div>
 
+        {/* mobile */}
         <DropdownMenu>
           <DropdownMenuTrigger className="md:hidden">
             <Menu size={20} />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="mt-5">
-            {userInfo ? (
+            {user ? (
               // Show user options when authenticated
               <>
                 <DropdownMenuItem>
@@ -216,7 +205,7 @@ const Header = () => {
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
 
-                {userInfo?.user.role === "RestaurantOwner" ? (
+                {user?.role === "RestaurantOwner" ? (
                   <DropdownMenuItem>
                     <Link href="/profile" className="flex items-center gap-2">
                       <Utensils size={20} />
@@ -238,12 +227,7 @@ const Header = () => {
 
                 <DropdownMenuItem
                   className="flex items-center gap-2"
-                  onClick={() => {
-                    userLogout().then(() => {
-                      setUserInfo(null);
-                      router.push("/");
-                    });
-                  }}
+                  onClick={handleLogout}
                 >
                   <LogIn size={20} />
                   <span>ออกจากระบบ</span>

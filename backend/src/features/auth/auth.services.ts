@@ -20,7 +20,7 @@ export default {
         return {
           success: false,
           status: 409,
-          messeage: "Username already taken.",
+          message: "Username already taken.",
           isLocal: existingUser?.passwordHash !== null,
         };
         // return res.status(409).json({ message: 'Username already taken.' });
@@ -29,7 +29,7 @@ export default {
         return {
           success: false,
           status: 409,
-          messeage: "Email already registered.",
+          message: "Email already registered.",
           isLocal: existingUser?.passwordHash !== null,
         };
         // return res.status(409).json({ message: 'Email already registered.' });
@@ -98,5 +98,75 @@ export default {
       },
     });
     return updatePassword;
+  },
+
+  updatePasswordByCurrent: async (
+    email: string,
+    currentPassword: string,
+    newPassword: string
+  ) => {
+    const update = await prisma.$transaction(async (tx) => {
+      const password = await tx.user.findUnique({
+        where: {
+          email,
+        },
+        select: {
+          passwordHash: true,
+        },
+      });
+
+      if (!password || !password.passwordHash) {
+        return {
+          success: false,
+          status: 400,
+          message: "You don't have password in this web",
+        };
+      }
+
+      const isMatch = await bcrypt.compare(
+        currentPassword,
+        password.passwordHash
+      );
+
+      console.log(isMatch);
+
+      if (!isMatch) {
+        return {
+          success: false,
+          status: 400,
+          message: "Wrong password",
+        };
+      }
+
+      const saltRounds = 10;
+      const passwordHash = await bcrypt.hash(newPassword, saltRounds);
+      await prisma.user.update({
+        where: {
+          email,
+        },
+        data: {
+          passwordHash,
+        },
+      });
+
+      return {
+        success: true,
+        status: 200,
+        message: "Update password success",
+      };
+    });
+
+    if (!update?.success) {
+      return {
+        success: update.success,
+        status: update.status,
+        message: update.message,
+      };
+    }
+    return {
+      success: true,
+      status: 200,
+      message: "Update password success",
+    };
   },
 };

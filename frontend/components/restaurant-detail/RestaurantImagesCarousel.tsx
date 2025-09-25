@@ -9,8 +9,8 @@ import {
   CarouselContent,
   CarouselItem,
 } from "@/components/ui/carousel";
-import { RestaurantInfoProps } from "@/app/restaurants/[id]/page";
 import Image from "next/image";
+import { RestaurantInfoProps } from "@/types";
 
 export default function RestaurantImagesCarousel({
   restaurantInfo,

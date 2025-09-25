@@ -17,7 +17,7 @@ datasource db {
 model User {
   id            String    @id @default(cuid()) @map("user_id") // ใช้ CUID ของ Prisma เพื่อสร้าง ID ที่ไม่ซ้ำกัน
   username      String    @unique @db.VarChar(100)
-  email         String?   @unique @db.VarChar(255) // เปลี่ยนเป็น optional ถ้าบางผู้ใช้อาจจะ login ด้วย Google และไม่มี email ในระบบคุณ
+  email         String   @unique @db.VarChar(255) // เปลี่ยนเป็น optional ถ้าบางผู้ใช้อาจจะ login ด้วย Google และไม่มี email ในระบบคุณ
   passwordHash  String?   @map("password_hash") @db.VarChar(255) // เป็น optional เพราะ Google Login ไม่ใช้ Password Hash
   role          Role      @default(User)
   profilePictureUrl String? @map("profile_picture_url") @db.VarChar(2048)
@@ -113,6 +113,7 @@ model RestaurantImage {
   id            Int      @id @default(autoincrement()) @map("image_id")
   restaurantId  String   @map("restaurant_id") @db.VarChar(50)
   imageUrl      String   @map("image_url") @db.VarChar(2048)
+  publicId      String?   @map("public_id") @db.VarChar(50)
   description   String?  @db.VarChar(500)
   uploadedAt    DateTime @default(now()) @map("uploaded_at") @db.Timestamptz(6)
 

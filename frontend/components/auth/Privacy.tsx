@@ -1,10 +1,13 @@
 "use client";
 
+import GoBackButton from "../GoBackButton";
+
 export default function PrivacyPolicyPage() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-4 sm:p-6 md:p-10">
-      <div className="w-full max-w-4xl rounded-lg bg-white p-8 shadow-lg">
-        <header className="mb-6 border-b border-gray-200 pb-4">
+    <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-gray-50 sm:p-6 md:p-10">
+      <div className="relative w-full max-w-4xl p-16 py-12 bg-white rounded-lg shadow-lg">
+        <GoBackButton className="absolute top-5 left-3" />
+        <header className="pb-4 mb-6 border-b border-gray-200">
           <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">
             Privacy Policy
           </h1>
@@ -13,7 +16,7 @@ export default function PrivacyPolicyPage() {
           </p>
         </header>
 
-        <div className="prose max-w-none space-y-4 text-gray-700">
+        <div className="space-y-4 prose text-gray-700 max-w-none">
           <p>
             Welcome to our Privacy Policy. Your privacy is critically important
             to us. This policy outlines how we collect, use, protect, and handle
@@ -27,7 +30,7 @@ export default function PrivacyPolicyPage() {
             We collect information to provide and improve our Service. The types
             of information we may collect include:
           </p>
-          <ul className="list-disc space-y-2 pl-6">
+          <ul className="pl-6 space-y-2 list-disc">
             <li>
               <strong>Personal Identification Information:</strong> Name, email
               address, username, and password when you register for an account.
@@ -50,7 +53,7 @@ export default function PrivacyPolicyPage() {
             2. How We Use Your Information
           </h2>
           <p>We use the collected data for various purposes:</p>
-          <ul className="list-disc space-y-2 pl-6">
+          <ul className="pl-6 space-y-2 list-disc">
             <li>To provide and maintain our Service.</li>
             <li>To notify you about changes to our Service.</li>
             <li>

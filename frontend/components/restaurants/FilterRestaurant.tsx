@@ -21,10 +21,10 @@ const filters: FilterProps = {
     { id: "ร้านอาหารตามสั่ง", name: "ร้านอาหารตามสั่ง" },
     { id: "ร้านก๋วยเตี๋ยว", name: "ร้านก๋วยเตี๋ยว" },
     { id: "คาเฟ่", name: "คาเฟ่" },
-    { id: "รา้นเครื่องดื่ม", name: "ร้านเครื่องดื่ม" },
+    { id: "ร้านเครื่องดื่ม", name: "ร้านเครื่องดื่ม" },
     { id: "ร้านอาหารอีสาน", name: "ร้านอาหารอีสาน" },
-    { id: "ของหวาน", name: "ของหวาน" },
-    { id: "ของกินเล่น", name: "ของกินเล่น" },
+    { id: "ร้านของหวาน", name: "ร้านของหวาน" },
+    { id: "ร้านของกินเล่น", name: "ร้านของกินเล่น" },
     { id: "อาหารฮาลาล", name: "อาหารฮาลาล" },
   ],
 
@@ -58,6 +58,8 @@ const FilterRestaurant = () => {
     useState<string>(initialRatings);
 
   const [selectedPrices, setSelectedPrices] = useState<string>(initialPrices);
+
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
 
   const handleCategoryChange = (category: string) => {
     setSelectedCategories((prev) =>
@@ -102,6 +104,17 @@ const FilterRestaurant = () => {
     pathname,
     searchParams,
   ]);
+
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) {
+        setIsSheetOpen(false);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   return (
     <>
@@ -161,7 +174,7 @@ const FilterRestaurant = () => {
       </Card>
 
       {/* Mobile */}
-      <Sheet>
+      <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
         <SheetTrigger asChild>
           <Button variant="outline" className="md:hidden">
             ร้านอาหาร <ChevronDown />
@@ -171,14 +184,16 @@ const FilterRestaurant = () => {
           {/* Category */}
           <div className="flex flex-col gap-3 px-3">
             <h1 className="text-md font-semibold">Category</h1>
-            <div className="flex items-center gap-2">
-              <Checkbox id="category1" />
-              <Label htmlFor="category1">Category 1</Label>
-            </div>
-            <div className="flex items-center gap-2">
-              <Checkbox id="category2" />
-              <Label htmlFor="category2">Category 2</Label>
-            </div>
+            {categoriesData.map((category) => (
+              <div className="flex items-center gap-2" key={category.id}>
+                <Checkbox
+                  id={`mobile-${category.id}`}
+                  checked={selectedCategories.includes(category.id)}
+                  onCheckedChange={() => handleCategoryChange(category.id)}
+                />
+                <Label htmlFor={`mobile-${category.id}`}>{category.name}</Label>
+              </div>
+            ))}
           </div>
 
           <Separator />
@@ -186,15 +201,16 @@ const FilterRestaurant = () => {
           {/* Rating */}
           <div className="flex flex-col gap-3 px-3">
             <h1 className="text-md font-semibold">Rating</h1>
-            <div className="flex items-center gap-2">
-              <Checkbox id="rating2" />
-              <Label htmlFor="rating2">2.0+</Label>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Checkbox id="rating5" />
-              <Label htmlFor="rating5">5.0+</Label>
-            </div>
+            {ratingsData.map((rating) => (
+              <div className="flex items-center gap-2" key={rating.id}>
+                <Checkbox
+                  id={`mobile-${rating.id}`}
+                  checked={selectedRatings === rating.id}
+                  onCheckedChange={() => handleRatingChange(rating.id)}
+                />
+                <Label htmlFor={`mobile-${rating.id}`}>{rating.name}</Label>
+              </div>
+            ))}
           </div>
 
           <Separator />
@@ -202,14 +218,16 @@ const FilterRestaurant = () => {
           {/* Price */}
           <div className="flex flex-col gap-3 px-3">
             <h1 className="text-md font-semibold">Price</h1>
-            <div className="flex items-center gap-2">
-              <Checkbox id="price1" />
-              <Label htmlFor="price1">Price 1</Label>
-            </div>
-            <div className="flex items-center gap-2">
-              <Checkbox id="price2" />
-              <Label htmlFor="price2">Price 2</Label>
-            </div>
+            {pricesData.map((price) => (
+              <div className="flex items-center gap-2" key={price.id}>
+                <Checkbox
+                  id={`mobile-${price.id}`}
+                  checked={selectedPrices === price.id}
+                  onCheckedChange={() => handlePriceChange(price.id)}
+                />
+                <Label htmlFor={`mobile-${price.id}`}>{price.name}</Label>
+              </div>
+            ))}
           </div>
         </SheetContent>
       </Sheet>
