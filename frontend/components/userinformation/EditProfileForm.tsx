@@ -22,8 +22,8 @@ import { toast } from "sonner";
 const backendURL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
 const PROFILE_ENDPOINT = `${backendURL}/auth/me`;
+const UPDATEPROFILE_ENDPOINT = `${backendURL}/account/updateprofile`;
 const PASSWORD_ENDPOINT = `${backendURL}/auth/updatepass-curent`;
-const UPDATE_PROFILE_ENDPOINT = `${backendURL}/account/updateProfile`;
 const CSRF_ENDPOINT = `${backendURL}/api/csrf-token`;
 
 export default function EditProfilePage() {
@@ -64,10 +64,8 @@ export default function EditProfilePage() {
           return;
         }
         const data = await res.json();
-        console.log("CSRF Token:", data.csrfToken); // เพิ่มการ log ข้อมูล
         setCsrfToken(data?.csrfToken || null);
       } catch (err) {
-        console.error("CSRF error:", err);
         toast.error("Connection Error", {
           description: "Could not connect to the server for security setup.",
         });
@@ -83,18 +81,15 @@ export default function EditProfilePage() {
           method: "GET", // ใช้ GET แทน PUT ในการดึงข้อมูล
           credentials: "include",
         });
-        console.log("Profile Response Status:", res.status); // เพิ่มการ log ข้อมูลการตอบกลับ
         if (!res.ok) {
           const msg = await pickError(res, "Failed to load profile");
           toast.error("Connection Error", { description: msg });
           return;
         }
         const data = await res.json();
-        console.log("Profile Data:", data); // เพิ่มการ log ข้อมูลที่ดึงมา
         setUsername(data?.username ?? "");
         if (data?.avatarUrl) setAvatarPreview(data.avatarUrl);
       } catch (err) {
-        console.error("Fetch profile error:", err);
         toast.error("Connection Error", {
           description: "Unable to fetch your profile. Please try again.",
         });
@@ -128,8 +123,6 @@ export default function EditProfilePage() {
   async function onSaveProfile(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
-    console.log("Sending profile save request..."); // เพิ่มการ log ที่นี่
-
     if (!csrfToken) {
       toast.error("Session not ready", {
         description: "Please wait a moment and try again.",
@@ -145,14 +138,12 @@ export default function EditProfilePage() {
       form.set("username", username);
       if (avatarFile) form.set("avatar", avatarFile);
 
-      const res = await fetch(UPDATE_PROFILE_ENDPOINT, {
+      const res = await fetch(UPDATEPROFILE_ENDPOINT, {
         method: "PUT", // ใช้ PATCH สำหรับการอัปเดตข้อมูล
         body: form,
         headers: { "X-CSRF-Token": csrfToken },
         credentials: "include",
       });
-
-      console.log("Profile Save Response Status:", res.status); // เพิ่มการ log ข้อมูลการตอบกลับ
 
       if (!res.ok) {
         const msg = await pickError(res, "Failed to save profile");
@@ -161,8 +152,6 @@ export default function EditProfilePage() {
       }
 
       const data = await res.json();
-      console.log("Profile Save Data:", data); // เพิ่มการ log ข้อมูลการตอบกลับ
-
       toast.success("Profile saved", {
         description: data.message || "Your changes have been updated.",
       });
@@ -179,7 +168,6 @@ export default function EditProfilePage() {
       }
       router.push("/profile?updated=1");
     } catch (e: any) {
-      console.error("Save profile error:", e);
       toast.error("Connection Error", {
         description: "Unable to save profile. Please try again.",
       });
@@ -191,6 +179,7 @@ export default function EditProfilePage() {
   // ===== Change password (with current) =====
   async function onSavePassword(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+
     if (!csrfToken) {
       toast.error("Session not ready", {
         description: "Please wait a moment and try again.",
@@ -218,23 +207,21 @@ export default function EditProfilePage() {
         body: JSON.stringify({ currentPassword, newPassword }),
       });
 
-      console.log("Password Save Response Status:", res.status); // เพิ่มการ log ข้อมูลการตอบกลับ
-
       if (!res.ok) {
         const msg = await pickError(res, "Failed to update password");
         toast.error("Update failed", { description: msg });
         return;
       }
+
       const data = await res.json();
-      console.log("Password Save Data:", data); // เพิ่มการ log ข้อมูลการตอบกลับ
       toast.success("Password updated", {
         description: data.message || "Your password has been changed.",
       });
+
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
     } catch (e: any) {
-      console.error("Update password error:", e);
       toast.error("Connection Error", {
         description: "Unable to update password. Please try again.",
       });
@@ -245,7 +232,6 @@ export default function EditProfilePage() {
 
   return (
     <div className="to-muted/50 min-h-screen bg-gradient-to-b from-white">
-      {/* Top bar */}
       <div className="bg-background/80 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10 w-full border-b backdrop-blur">
         <div className="container mx-auto flex items-center justify-between px-4 py-3">
           <div className="text-muted-foreground flex items-center gap-2 text-sm">
@@ -261,7 +247,6 @@ export default function EditProfilePage() {
         </div>
       </div>
 
-      {/* Content */}
       <div className="container mx-auto px-4 py-8">
         <Tabs defaultValue={defaultTab} className="space-y-6">
           <TabsList>
@@ -275,11 +260,10 @@ export default function EditProfilePage() {
             </TabsTrigger>
           </TabsList>
 
-          {/* PROFILE */}
           <TabsContent value="profile">
             <form
               id="profile-form"
-              onSubmit={onSaveProfile} // ฟอร์มสำหรับ Save profile
+              onSubmit={onSaveProfile}
               className="grid grid-cols-1 gap-6 lg:grid-cols-12"
             >
               <div className="space-y-6 lg:col-span-5">
@@ -366,7 +350,6 @@ export default function EditProfilePage() {
             </form>
           </TabsContent>
 
-          {/* PASSWORD */}
           <TabsContent value="password">
             <form onSubmit={onSavePassword}>
               <Card>

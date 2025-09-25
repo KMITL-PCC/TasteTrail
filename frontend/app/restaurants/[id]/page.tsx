@@ -13,7 +13,7 @@ import RestaurantImagesCarousel from "@/components/restaurant-detail/RestaurantI
 import { RestaurantInfoProps } from "@/types";
 import GoBackButton from "@/components/GoBackButton";
 
-const restaurantInwza: RestaurantInfoProps = {
+const restaurantInfo: RestaurantInfoProps = {
   name: "Dib lamun cafe",
   description: "คาเฟ่อร่อยโดนใจ กลางคืนมีเครื่องดื่ม บรรยากาศดี",
   address: "เลขที่ 13 ตำบล ชุมโค อำเภอปะทิว ชุมพร 86160",
@@ -63,7 +63,7 @@ const RestaurantDetailPage = async ({
 }) => {
   const { id } = await params;
 
-  const { restaurantInfo } = await getRestaurantById(id);
+  // const { restaurantInfo } = await getRestaurantById(id);
   // const restaurant = restaurantInfo;
 
   // console.log(restaurant);
@@ -91,7 +91,7 @@ const RestaurantDetailPage = async ({
         </div>
       </div> */}
 
-      <GoBackButton className="absolute top-1 left-0 z-50" />
+      <GoBackButton className="absolute left-0 z-50 top-1" />
 
       <RestaurantImagesCarousel restaurantInfo={restaurantInfo} />
 
@@ -127,7 +127,7 @@ const RestaurantDetailPage = async ({
         </Card>
 
         {restaurantInfo.address && (
-          <Card className="col-span-2 flex items-center justify-center md:col-span-1">
+          <Card className="flex items-center justify-center col-span-2 md:col-span-1">
             <CardContent className="flex flex-row items-center gap-4 lg:gap-10 xl:gap-20">
               <a
                 href={`https://www.google.com/maps?q=${restaurantInfo.latitude},${restaurantInfo.longitude}`}
@@ -138,11 +138,11 @@ const RestaurantDetailPage = async ({
                     src="/map-pic.jpg"
                     alt="map"
                     fill
-                    className="rounded-xl object-cover"
+                    className="object-cover rounded-xl"
                   />
                 </div>
               </a>
-              <div className="flex w-full flex-col gap-2">
+              <div className="flex flex-col w-full gap-2">
                 <p>{restaurantInfo.address}</p>
                 <Separator />
                 <p>{restaurantInfo.contact.contactDetail}</p>
