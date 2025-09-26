@@ -12,17 +12,18 @@ import { Textarea } from "../ui/textarea";
 import { toast } from "sonner";
 import { Map, View } from "ol";
 import "ol/ol.css";
-import { OSM } from "ol/source";
-import { Tile } from "ol/layer";
+import OSM from "ol/source/OSM";
+import TileLayer from "ol/layer/Tile";
 import { fromLonLat, toLonLat } from "ol/proj";
-import { Vector as VectorLayer } from "ol/layer";
-import { Vector as VectorSource } from "ol/source";
+import VectorLayer from "ol/layer/Vector";
+import VectorSource from "ol/source/Vector";
 import { Point } from "ol/geom";
-import { Feature } from "ol";
+import Feature from "ol/Feature";
 
+// ✅ Backend URL
 const backendURL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
-const CSRF_ENDPOINT = `${backendURL}/csrf-token`;
+const CSRF_ENDPOINT = `${backendURL}/api/csrf-token`;
 const SELLER_ENDPOINT = `${backendURL}/seller`;
 
 // วันในสัปดาห์
@@ -48,21 +49,36 @@ export default function SellerInfoWeb() {
     openTime: string;
     closeTime: string;
   };
-  const [uploadedImages, setUploadedImages] = useState<any[]>([]);
-  const [openingTimes, setOpeningTimes] = useState<any>([
-    { weekday: 0, openTime: "", closeTime: "" }, // Sunday
-    { weekday: 1, openTime: "", closeTime: "" }, // Monday
-    { weekday: 2, openTime: "", closeTime: "" }, // Tuesday
-    { weekday: 3, openTime: "", closeTime: "" }, // Wednesday
-    { weekday: 4, openTime: "", closeTime: "" }, // Thursday
-    { weekday: 5, openTime: "", closeTime: "" }, // Friday
-    { weekday: 6, openTime: "", closeTime: "" }, // Saturday
+
+  const [uploadedImages, setUploadedImages] = useState<File[]>([]);
+  const [previewImages, setPreviewImages] = useState<string[]>([]);
+  const [openingTimes, setOpeningTimes] = useState<OpeningTime[]>([
+    { weekday: 0, openTime: "", closeTime: "" },
+    { weekday: 1, openTime: "", closeTime: "" },
+    { weekday: 2, openTime: "", closeTime: "" },
+    { weekday: 3, openTime: "", closeTime: "" },
+    { weekday: 4, openTime: "", closeTime: "" },
+    { weekday: 5, openTime: "", closeTime: "" },
+    { weekday: 6, openTime: "", closeTime: "" },
   ]);
 
-  const mapRef = useRef<HTMLDivElement | null>(null);
+  const [minPrice, setMinPrice] = useState<number | "">("");
+  const [maxPrice, setMaxPrice] = useState<number | "">("");
 
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
+
+  const mapRef = useRef<HTMLDivElement | null>(null);
   const [csrfToken, setCsrfToken] = useState<string | null>(null);
 
+  const [services, setServices] = useState<number[]>([]);
+  const toggleService = (id: number) => {
+    setServices((prev) =>
+      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id],
+    );
+  };
+
+  // โหลด CSRF token
   useEffect(() => {
     const fetchCsrfToken = async () => {
       try {
@@ -90,17 +106,18 @@ export default function SellerInfoWeb() {
     fetchCsrfToken();
   }, []);
 
+  // สร้างแผนที่
   useEffect(() => {
     if (mapRef.current) {
       const map = new Map({
         target: mapRef.current,
         layers: [
-          new Tile({
+          new TileLayer({
             source: new OSM(),
           }),
         ],
         view: new View({
-          center: fromLonLat([100.5018, 13.7563]),
+          center: fromLonLat([100.5018, 13.7563]), // Bangkok
           zoom: 12,
         }),
       });
@@ -109,7 +126,6 @@ export default function SellerInfoWeb() {
       const markerLayer = new VectorLayer({
         source: markerSource,
       });
-
       map.addLayer(markerLayer);
 
       map.on("click", (event) => {
@@ -122,6 +138,9 @@ export default function SellerInfoWeb() {
 
         markerSource.clear();
         markerSource.addFeature(marker);
+
+        setLongitude(lonLat[0]);
+        setLatitude(lonLat[1]);
       });
 
       return () => {
@@ -130,6 +149,7 @@ export default function SellerInfoWeb() {
     }
   }, []);
 
+  // ฟังก์ชันแก้ไขเวลา
   const handleTimeChange = (
     weekday: number,
     timeType: "openTime" | "closeTime",
@@ -142,6 +162,7 @@ export default function SellerInfoWeb() {
     });
   };
 
+  // ฟังก์ชันอัปโหลดไฟล์
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
@@ -154,25 +175,14 @@ export default function SellerInfoWeb() {
         toast.error("ขนาดไฟล์ไม่ควรเกิน 8MB");
       }
 
-      const newImages = validFiles.map((file) => URL.createObjectURL(file));
-      setUploadedImages((prevImages) => [...prevImages, ...newImages]);
+      setUploadedImages(validFiles);
+      const previews = validFiles.map((file) => URL.createObjectURL(file));
+      setPreviewImages(previews);
     }
   };
 
+  // ฟังก์ชันบันทึก
   const handleSave = async () => {
-    const payload = {
-      fullName: {
-        firstName,
-        lastName,
-      },
-      shopName,
-      hasPhysicalStore,
-      pickupAddress: hasPhysicalStore ? pickupAddress : null,
-      openingTimes,
-      images: uploadedImages,
-    };
-
-    // ตรวจสอบว่า CSRF Token ถูกดึงมาแล้ว
     if (!csrfToken) {
       toast.error("Session not ready", {
         description: "กรุณารอสักครู่เพื่อเตรียมข้อมูล",
@@ -192,23 +202,41 @@ export default function SellerInfoWeb() {
         form.append("pickupAddress", pickupAddress);
       }
 
-      // เพิ่มเวลาทำการร้าน
+      // เวลาเปิด-ปิด
       openingTimes.forEach((time: OpeningTime, index: number) => {
         form.append(`openingTimes[${index}].weekday`, time.weekday.toString());
         form.append(`openingTimes[${index}].openTime`, time.openTime);
         form.append(`openingTimes[${index}].closeTime`, time.closeTime);
       });
 
-      // เพิ่มรูปภาพ
-      uploadedImages.forEach((img, idx) => {
-        form.append(`images[${idx}]`, img); // appending images one by one
+      // ราคา
+      form.append(
+        "price",
+        JSON.stringify({
+          minPrice: minPrice || 0,
+          maxPrice: maxPrice || 0,
+        }),
+      );
+
+      // พิกัด
+      if (latitude !== null && longitude !== null) {
+        form.append("latitude", String(latitude));
+        form.append("longitude", String(longitude));
+      }
+
+      // services
+      form.append("services", JSON.stringify(services));
+
+      // รูปภาพ
+      uploadedImages.forEach((file, idx) => {
+        form.append("images", file);
       });
 
       const res = await fetch(SELLER_ENDPOINT, {
         method: "POST",
         body: form,
         headers: {
-          "X-CSRF-Token": csrfToken, // ส่ง CSRF Token ไปใน header
+          "X-CSRF-Token": csrfToken,
         },
         credentials: "include",
       });
@@ -247,6 +275,7 @@ export default function SellerInfoWeb() {
 
               <div className="md:col-span-8">
                 <div className="grid gap-6">
+                  {/* ชื่อจริง */}
                   <FieldBlock label="ชื่อจริงและนามสกุล" required>
                     <Input
                       value={firstName}
@@ -264,6 +293,7 @@ export default function SellerInfoWeb() {
 
                   <Separator />
 
+                  {/* ชื่อร้าน */}
                   <FieldBlock label="ชื่อร้านค้า" required>
                     <Input
                       value={shopName}
@@ -275,6 +305,7 @@ export default function SellerInfoWeb() {
 
                   <Separator />
 
+                  {/* หน้าร้าน */}
                   <FieldBlock label="หน้าร้าน">
                     <div className="flex items-center gap-2">
                       <Checkbox
@@ -307,7 +338,7 @@ export default function SellerInfoWeb() {
 
                       <Separator />
 
-                      {/* เลือกเวลาเปิดร้าน */}
+                      {/* เวลาเปิดปิด */}
                       <div>
                         {openingTimes.map(
                           (time: OpeningTime, index: number) => (
@@ -354,9 +385,37 @@ export default function SellerInfoWeb() {
                     </>
                   )}
 
-                  <Separator />
+                  {/* ราคา */}
+                  <FieldBlock label="ช่วงราคา (บาท)">
+                    <div className="flex gap-4">
+                      <div className="flex flex-col">
+                        <Label className="text-sm">ราคาต่ำสุด</Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          value={minPrice}
+                          onChange={(e) =>
+                            setMinPrice(Number(e.target.value) || "")
+                          }
+                          placeholder="0"
+                        />
+                      </div>
+                      <div className="flex flex-col">
+                        <Label className="text-sm">ราคาสูงสุด</Label>
+                        <Input
+                          type="number"
+                          min={0}
+                          value={maxPrice}
+                          onChange={(e) =>
+                            setMaxPrice(Number(e.target.value) || "")
+                          }
+                          placeholder="0"
+                        />
+                      </div>
+                    </div>
+                  </FieldBlock>
 
-                  {/* ฟอร์มอัปโหลดรูปภาพ */}
+                  {/* รูปภาพ */}
                   <div>
                     <Label className="text-sm">
                       อัปโหลดรูปภาพ (สูงสุด 4 รูป, ขนาดไม่เกิน 8MB)
@@ -368,19 +427,56 @@ export default function SellerInfoWeb() {
                       multiple
                       className="mt-2"
                     />
-                    <div className="mt-4">
-                      {uploadedImages.map((img, index) => (
+                    <div className="mt-4 flex gap-2">
+                      {previewImages.map((img, index) => (
                         <img
                           key={index}
                           src={img}
                           alt={`uploaded-img-${index}`}
-                          className="mb-2 h-32 w-32 rounded-md object-cover"
+                          className="h-32 w-32 rounded-md object-cover"
                         />
                       ))}
                     </div>
                   </div>
 
                   <Separator />
+                  {/* บริการที่มี */}
+                  <FieldBlock label="บริการที่มี">
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="delivery"
+                          checked={services.includes(1)}
+                          onCheckedChange={() => toggleService(1)}
+                        />
+                        <Label htmlFor="delivery">บริการส่ง (Delivery)</Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="qr"
+                          checked={services.includes(2)}
+                          onCheckedChange={() => toggleService(2)}
+                        />
+                        <Label htmlFor="qr">จ่ายด้วย QR</Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="wifi"
+                          checked={services.includes(3)}
+                          onCheckedChange={() => toggleService(3)}
+                        />
+                        <Label htmlFor="wifi">มี Wi-Fi</Label>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Checkbox
+                          id="alcohol"
+                          checked={services.includes(4)}
+                          onCheckedChange={() => toggleService(4)}
+                        />
+                        <Label htmlFor="alcohol">มีเครื่องดื่มแอลกอฮอล์</Label>
+                      </div>
+                    </div>
+                  </FieldBlock>
                 </div>
               </div>
             </div>
