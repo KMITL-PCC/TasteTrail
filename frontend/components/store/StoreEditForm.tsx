@@ -24,7 +24,7 @@ import Feature from "ol/Feature";
 const backendURL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
 const CSRF_ENDPOINT = `${backendURL}/api/csrf-token`;
-const SELLER_ENDPOINT = `${backendURL}/seller`;
+const SELLER_ENDPOINT = `${backendURL}/openRestaurant`;
 
 // วันในสัปดาห์
 const daysOfWeek = [
@@ -52,6 +52,14 @@ export default function SellerInfoWeb() {
 
   const [uploadedImages, setUploadedImages] = useState<File[]>([]);
   const [previewImages, setPreviewImages] = useState<string[]>([]);
+  // เก็บไฟล์
+  const [profileImages, setProfileUploadImages] = useState<File[]>([]);
+
+  // เก็บ preview (string URL ไม่ใช่ File)
+  const [previewProfileImages, setPreviewProfileUploadImages] = useState<
+    string[]
+  >([]);
+
   const [openingTimes, setOpeningTimes] = useState<OpeningTime[]>([
     { weekday: 0, openTime: "", closeTime: "" },
     { weekday: 1, openTime: "", closeTime: "" },
@@ -77,6 +85,7 @@ export default function SellerInfoWeb() {
       prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id],
     );
   };
+  const [contactDetail, setContactDetail] = useState("");
 
   // โหลด CSRF token
   useEffect(() => {
@@ -162,11 +171,10 @@ export default function SellerInfoWeb() {
     });
   };
 
-  // ฟังก์ชันอัปโหลดไฟล์
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleStoreFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
-      const selectedFiles = Array.from(files).slice(0, 4);
+      const selectedFiles = Array.from(files).slice(0, 4); // จำกัดสูงสุด 4 รูป
       const validFiles = selectedFiles.filter(
         (file) => file.size <= 8 * 1024 * 1024,
       );
@@ -176,8 +184,26 @@ export default function SellerInfoWeb() {
       }
 
       setUploadedImages(validFiles);
-      const previews = validFiles.map((file) => URL.createObjectURL(file));
-      setPreviewImages(previews);
+      setPreviewImages(validFiles.map((file) => URL.createObjectURL(file)));
+    }
+  };
+
+  // ✅ ฟังก์ชันอัปโหลดรูปเจ้าของร้าน
+  const handleProfileFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      const selectedFiles = Array.from(files).slice(0, 1); // จำกัด 1 รูป
+      const validFiles = selectedFiles.filter(
+        (file) => file.size <= 8 * 1024 * 1024,
+      );
+
+      if (validFiles.length !== selectedFiles.length) {
+        toast.error("ขนาดไฟล์ไม่ควรเกิน 8MB");
+      }
+
+      setProfileUploadImages(validFiles);
+      const profileImgs = validFiles.map((file) => URL.createObjectURL(file));
+      setPreviewProfileUploadImages(profileImgs); // ✅ ตรงกับ state ข้างบน
     }
   };
 
@@ -194,22 +220,24 @@ export default function SellerInfoWeb() {
       toast.info("กำลังบันทึกข้อมูล...");
 
       const form = new FormData();
-      form.append("firstName", firstName);
-      form.append("lastName", lastName);
-      form.append("shopName", shopName);
-      form.append("hasPhysicalStore", String(hasPhysicalStore));
-      if (hasPhysicalStore) {
-        form.append("pickupAddress", pickupAddress);
-      }
 
-      // เวลาเปิด-ปิด
-      openingTimes.forEach((time: OpeningTime, index: number) => {
-        form.append(`openingTimes[${index}].weekday`, time.weekday.toString());
-        form.append(`openingTimes[${index}].openTime`, time.openTime);
-        form.append(`openingTimes[${index}].closeTime`, time.closeTime);
-      });
+      // ✅ fullName
+      form.append("fullName", JSON.stringify({ firstName, lastName }));
 
-      // ราคา
+      // ✅ information (เฉพาะข้อมูลร้าน)
+      form.append(
+        "information",
+        JSON.stringify({
+          name: shopName,
+          description: "", // ถ้ามี UI ให้ผู้ใช้กรอก เพิ่มตรงนี้
+          address: hasPhysicalStore ? pickupAddress : "",
+          latitude: latitude ?? null,
+          longitude: longitude ?? null,
+          services,
+        }),
+      );
+
+      // ✅ price แยก field ออกมา
       form.append(
         "price",
         JSON.stringify({
@@ -218,26 +246,22 @@ export default function SellerInfoWeb() {
         }),
       );
 
-      // พิกัด
-      if (latitude !== null && longitude !== null) {
-        form.append("latitude", String(latitude));
-        form.append("longitude", String(longitude));
-      }
+      // ✅ contactDetail แยกเป็น field ของมันเอง (string)
+      form.append("contactDetail", contactDetail);
 
-      // services
-      form.append("services", JSON.stringify(services));
+      // ✅ openingTimes แยก field ออกมา
+      form.append("Times", JSON.stringify(openingTimes));
 
-      // รูปภาพ
-      uploadedImages.forEach((file, idx) => {
-        form.append("images", file);
-      });
+      // ✅ รูปภาพ
+      uploadedImages.forEach((file) => form.append("RestaurantImage", file));
+
+      // ✅ รูปเจ้าของร้าน
+      profileImages.forEach((file) => form.append("profilepicture", file));
 
       const res = await fetch(SELLER_ENDPOINT, {
         method: "POST",
         body: form,
-        headers: {
-          "X-CSRF-Token": csrfToken,
-        },
+        headers: { "X-CSRF-Token": csrfToken },
         credentials: "include",
       });
 
@@ -415,15 +439,26 @@ export default function SellerInfoWeb() {
                     </div>
                   </FieldBlock>
 
-                  {/* รูปภาพ */}
+                  <FieldBlock label="ช่องทางติดต่อ (Contact detail)" required>
+                    <Input
+                      value={contactDetail}
+                      onChange={(e) => setContactDetail(e.target.value)}
+                      maxLength={100}
+                      placeholder="เช่น เบอร์โทร, Line ID หรืออีเมล"
+                    />
+                  </FieldBlock>
+
+                  <Separator />
+
+                  {/* รูปภาพร้าน */}
                   <div>
                     <Label className="text-sm">
-                      อัปโหลดรูปภาพ (สูงสุด 4 รูป, ขนาดไม่เกิน 8MB)
+                      อัปโหลดรูปภาพร้าน (สูงสุด 4 รูป, ขนาดไม่เกิน 8MB)
                     </Label>
                     <input
                       type="file"
                       accept="image/*"
-                      onChange={handleFileChange}
+                      onChange={handleStoreFileChange}
                       multiple
                       className="mt-2"
                     />
@@ -434,6 +469,31 @@ export default function SellerInfoWeb() {
                           src={img}
                           alt={`uploaded-img-${index}`}
                           className="h-32 w-32 rounded-md object-cover"
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* รูปเจ้าของร้าน */}
+                  <div>
+                    <Label className="text-sm">
+                      อัปโหลดรูปภาพเจ้าของร้าน (1 รูป, ขนาดไม่เกิน 8MB)
+                    </Label>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleProfileFileChange}
+                      className="mt-2"
+                    />
+                    <div className="mt-4 flex gap-2">
+                      {previewProfileImages.map((img, index) => (
+                        <img
+                          key={index}
+                          src={img}
+                          alt={`owner-profile-${index}`}
+                          className="h-32 w-32 rounded-full object-cover"
                         />
                       ))}
                     </div>
