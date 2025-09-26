@@ -87,6 +87,8 @@ export default function SellerInfoWeb() {
   };
   const [contactDetail, setContactDetail] = useState("");
 
+  const [description, setDescription] = useState("");
+
   // โหลด CSRF token
   useEffect(() => {
     const fetchCsrfToken = async () => {
@@ -229,7 +231,7 @@ export default function SellerInfoWeb() {
         "information",
         JSON.stringify({
           name: shopName,
-          description: "", // ถ้ามี UI ให้ผู้ใช้กรอก เพิ่มตรงนี้
+          description: description, // ถ้ามี UI ให้ผู้ใช้กรอก เพิ่มตรงนี้
           address: hasPhysicalStore ? pickupAddress : "",
           latitude: latitude ?? null,
           longitude: longitude ?? null,
@@ -327,6 +329,15 @@ export default function SellerInfoWeb() {
                       placeholder="ชื่อร้านค้า"
                     />
                   </FieldBlock>
+                  <FieldBlock label="คำอธิบายร้านค้า (Description)">
+                    <Textarea
+                      rows={3}
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="ใส่คำอธิบายสั้น ๆ ของร้านคุณ"
+                    />
+                  </FieldBlock>
+                  <Separator />
 
                   <Separator />
 
