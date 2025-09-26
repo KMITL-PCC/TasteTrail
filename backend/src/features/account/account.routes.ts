@@ -8,7 +8,12 @@ import { isAuthenticated } from "../../middleware/auth.middleware";
 
 const router = Router();
 const storage = multer.memoryStorage();
-const upload = multer({ storage });
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 2 * 1024 * 1024, // 2MB limit per file
+  },
+});
 
 const services = new accountService(prisma);
 const controllers = new accountController(services);
@@ -20,6 +25,14 @@ router.put(
   controllers.updateProfile
 );
 
-router.patch("/openRestaurant", upload.array("images"), isAuthenticated);
+router.patch(
+  "/openRestaurant",
+  isAuthenticated,
+  upload.fields([
+    { name: "profileImage", maxCount: 1 },
+    { name: "restaurantImages", maxCount: 4 },
+  ]),
+  controllers.updateToRestaurantOwner
+);
 
 export default router;

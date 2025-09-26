@@ -149,16 +149,16 @@ export default {
     services: any
   ) => {
     //0. map open hour
-    const availableTime: Restaurant.time[] = [];
-    const [start, stop] = time.weekday.split("-").map(Number);
+    // const availableTime: Restaurant.time[] = [];
+    // const [start, stop] = time.weekday.split("-").map(Number);
 
-    for (let i = start; i < stop + 1; i++) {
-      availableTime.push({
-        weekday: i,
-        openTime: time.openTime,
-        closeTime: time.closeTime,
-      });
-    }
+    // for (let i = start; i < stop + 1; i++) {
+    //   availableTime.push({
+    //     weekday: i,
+    //     openTime: time.openTime,
+    //     closeTime: time.closeTime,
+    //   });
+    // }
 
     // const uploadedResults: { url: string; public_id: string }[] = [];
 
@@ -223,7 +223,13 @@ export default {
 
         //3. create open hour time
         await tx.openingHour.createMany({
-          data: availableTime.map((t) => ({
+          // data: availableTime.map((t) => ({
+          //   weekday: t.weekday,
+          //   openTime: t.openTime,
+          //   closeTime: t.closeTime,
+          //   restaurantId: newRestaurant.id,
+          // })),
+          data: time.map((t: Restaurant.time) => ({
             weekday: t.weekday,
             openTime: t.openTime,
             closeTime: t.closeTime,

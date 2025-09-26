@@ -94,16 +94,16 @@ export class accountService {
     fullname: fullname,
     information: Restaurant.information,
     price: Restaurant.price,
-    time: any,
-    images: Express.Multer.File[],
-    service: string[]
+    time: Restaurant.time[],
+    restaurantPictures: Express.Multer.File[],
+    profilePicture: Express.Multer.File
   ) {
     const restaurant = await RestaurantService.createRestaurant(
       information,
       price,
       time,
-      images,
-      service
+      restaurantPictures,
+      information.service
     );
 
     if (!restaurant) {

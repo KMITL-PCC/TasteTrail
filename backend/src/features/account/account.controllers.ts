@@ -1,4 +1,4 @@
-import { User } from "@prisma/client";
+import { Role, User } from "@prisma/client";
 import { Restaurant } from "../../types/restaurant";
 import { Request, Response, NextFunction } from "express";
 import { accountService } from "./account.services";
@@ -84,12 +84,51 @@ export class accountController {
     const role = user.role;
     const id = user.id;
 
+    const files = req.files as {
+      profileImage: Express.Multer.File[];
+      restaurantImages: Express.Multer.File[];
+    };
+
+    const profilePicture = files.profileImage[0] as Express.Multer.File;
+    const restaurantPictures = files.restaurantImages;
+
     const information = req.body.information as Restaurant.information;
     const price = req.body.price as Restaurant.price;
-    const time = req.body.time as Restaurant.time;
+    const time = req.body.time as Restaurant.time[];
     const fullname = req.body.fullname as fullname;
 
+    if (
+      !user ||
+      role !== Role.User ||
+      !profilePicture ||
+      !restaurantPictures ||
+      restaurantPictures.length !== 4
+    ) {
+      return res.status(400).json({
+        message: "missing files or invalid role",
+      });
+    }
+
+    if (!information || !price || !time || !fullname) {
+      return res.status(400).json({
+        message: "missing information",
+      });
+    }
+
     try {
+      await this.service.updateToRestaurantOwner(
+        id,
+        fullname,
+        information,
+        price,
+        time,
+        restaurantPictures,
+        profilePicture
+      );
+
+      return res.status(200).json({
+        message: "Successfully updated to restaurant owner",
+      });
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.error(
