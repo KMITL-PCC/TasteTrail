@@ -5,6 +5,7 @@ export function middleware(request: NextRequest) {
   const url = request.nextUrl.clone();
   const cookie = request.cookies.get("connect.sid");
   const hasSession = Boolean(cookie?.value);
+  console.log(hasSession);
 
   const isLoginRoute = url.pathname === "/login";
   const isRegisterRoute = url.pathname === "/register";
@@ -21,6 +22,9 @@ export function middleware(request: NextRequest) {
   return NextResponse.next();
 }
 
+// export const config = {
+//   matcher: ["/login/:path*", "/register/:path*", "/forgotpassword/:path*"],
+// };
 export const config = {
   matcher: ["/login/:path*", "/register/:path*" /*"/forgotpassword/:path*"*/],
 };

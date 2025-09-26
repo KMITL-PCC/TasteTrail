@@ -24,7 +24,7 @@ import Feature from "ol/Feature";
 const backendURL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
 const CSRF_ENDPOINT = `${backendURL}/api/csrf-token`;
-const SELLER_ENDPOINT = `${backendURL}/openRestaurant`;
+const SELLER_ENDPOINT = `${backendURL}/account/openRestaurant`;
 
 // วันในสัปดาห์
 const daysOfWeek = [
@@ -222,7 +222,7 @@ export default function SellerInfoWeb() {
       const form = new FormData();
 
       // ✅ fullName
-      form.append("fullName", JSON.stringify({ firstName, lastName }));
+      form.append("fullname", JSON.stringify({ firstName, lastName }));
 
       // ✅ information (เฉพาะข้อมูลร้าน)
       form.append(
@@ -234,6 +234,7 @@ export default function SellerInfoWeb() {
           latitude: latitude ?? null,
           longitude: longitude ?? null,
           services,
+          contactDetail,
         }),
       );
 
@@ -247,16 +248,16 @@ export default function SellerInfoWeb() {
       );
 
       // ✅ contactDetail แยกเป็น field ของมันเอง (string)
-      form.append("contactDetail", contactDetail);
+      // form.append("contactDetail", contactDetail);
 
       // ✅ openingTimes แยก field ออกมา
-      form.append("Times", JSON.stringify(openingTimes));
+      form.append("time", JSON.stringify(openingTimes));
 
       // ✅ รูปภาพ
-      uploadedImages.forEach((file) => form.append("RestaurantImage", file));
+      uploadedImages.forEach((file) => form.append("restaurantImages", file));
 
       // ✅ รูปเจ้าของร้าน
-      profileImages.forEach((file) => form.append("profilepicture", file));
+      profileImages.forEach((file) => form.append("profileImage", file));
 
       const res = await fetch(SELLER_ENDPOINT, {
         method: "POST",

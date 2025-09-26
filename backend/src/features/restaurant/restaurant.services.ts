@@ -146,19 +146,19 @@ export default {
     price: Restaurant.price,
     time: any,
     pictures: Express.Multer.File[],
-    services: any
+    services: number[]
   ) => {
     //0. map open hour
-    const availableTime: Restaurant.time[] = [];
-    const [start, stop] = time.weekday.split("-").map(Number);
+    // const availableTime: Restaurant.time[] = [];
+    // const [start, stop] = time.weekday.split("-").map(Number);
 
-    for (let i = start; i < stop + 1; i++) {
-      availableTime.push({
-        weekday: i,
-        openTime: time.openTime,
-        closeTime: time.closeTime,
-      });
-    }
+    // for (let i = start; i < stop + 1; i++) {
+    //   availableTime.push({
+    //     weekday: i,
+    //     openTime: time.openTime,
+    //     closeTime: time.closeTime,
+    //   });
+    // }
 
     // const uploadedResults: { url: string; public_id: string }[] = [];
 
@@ -202,7 +202,7 @@ export default {
 
     try {
       uploadedResults.push(...(await Promise.all(uploadPromises)));
-      console.log(uploadedResults);
+      // console.log(uploadedResults);
       const restaurant = await prisma.$transaction(async (tx) => {
         //2. create restaurant
         const newRestaurant = await tx.restaurant.create({
@@ -215,15 +215,24 @@ export default {
             contact: {
               create: {
                 contactType: "phone",
-                contactDetail: "0868225445",
+                contactDetail: information.contactDetail || "",
               },
+            },
+            restaurantServices: {
+              create: services.map((s: number) => ({ serviceId: s })),
             },
           },
         });
 
         //3. create open hour time
         await tx.openingHour.createMany({
-          data: availableTime.map((t) => ({
+          // data: availableTime.map((t) => ({
+          //   weekday: t.weekday,
+          //   openTime: t.openTime,
+          //   closeTime: t.closeTime,
+          //   restaurantId: newRestaurant.id,
+          // })),
+          data: time.map((t: Restaurant.time) => ({
             weekday: t.weekday,
             openTime: t.openTime,
             closeTime: t.closeTime,
@@ -239,9 +248,11 @@ export default {
             publicId: img.public_id,
           })),
         });
+
+        return newRestaurant;
       });
 
-      return true;
+      return { success: true, id: restaurant.id };
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.log("Error during create restaurant ERROR:", error.message);
@@ -253,7 +264,7 @@ export default {
         await cloudinary.uploader.destroy(img.public_id);
       }
 
-      return false;
+      return { success: false };
     }
   },
 
