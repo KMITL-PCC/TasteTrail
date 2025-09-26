@@ -1,39 +1,80 @@
 "use client";
 
 import Image from "next/image";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import useSWR, { useSWRConfig } from "swr";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { useUserStore } from "@/store/user-store"; // path ของคุณเอง
 
 const backendURL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
 const PROFILE_ENDPOINT = `${backendURL}/profile`;
+const CSRF_ENDPOINT = `${backendURL}/api/csrf-token`;
 
-const fetcher = async (url: string) => {
-  const res = await fetch(url, { credentials: "include" });
+const fetcher = async (url: string, csrfToken?: string) => {
+  const res = await fetch(url, {
+    credentials: "include",
+    headers: csrfToken ? { "X-CSRF-Token": csrfToken } : undefined,
+  });
   if (!res.ok) throw new Error("Failed to load profile");
   return res.json();
 };
 
 const ProfileForm = () => {
+  const { user, setUser } = useUserStore();
   const { mutate } = useSWRConfig();
   const searchParams = useSearchParams();
 
-  const { data, isLoading, error } = useSWR(PROFILE_ENDPOINT, fetcher, {
-    revalidateOnFocus: true,
-  });
+  const [csrfToken, setCsrfToken] = useState<string | null>(null);
 
-  // 👇 ถ้ามี ?updated=1 ให้ revalidate ทันที
+  // โหลด CSRF token
+  useEffect(() => {
+    const fetchCsrfToken = async () => {
+      try {
+        const res = await fetch(CSRF_ENDPOINT, {
+          method: "GET",
+          credentials: "include",
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        setCsrfToken(data.csrfToken || null);
+      } catch (err) {
+        console.error("Failed to load CSRF token");
+      }
+    };
+    fetchCsrfToken();
+  }, []);
+
+  // SWR fetch เผื่อ user ยังไม่มีข้อมูลใน store
+  const { data, isLoading, error } = useSWR(
+    user || !csrfToken ? null : [PROFILE_ENDPOINT, csrfToken],
+    fetcher,
+    { revalidateOnFocus: true },
+  );
+
+  // ถ้ามีข้อมูลจาก API ให้ set ใน store
+  useEffect(() => {
+    if (data) {
+      setUser({
+        username: data.username || "Unnamed User",
+        email: data.email || "unknown@example.com",
+        role: data.role || "user",
+        profilePictureUrl: data.avatarUrl || "/user.png",
+      });
+    }
+  }, [data, setUser]);
+
+  // Revalidate เมื่อมี ?updated=1
   useEffect(() => {
     if (searchParams.get("updated") === "1") {
       mutate(PROFILE_ENDPOINT);
     }
   }, [searchParams, mutate]);
 
-  // 👇 ฟังสัญญาณ BroadcastChannel จากหน้า Edit
+  // ฟัง BroadcastChannel จากหน้า Edit
   useEffect(() => {
     if (typeof window === "undefined" || !("BroadcastChannel" in window))
       return;
@@ -44,17 +85,10 @@ const ProfileForm = () => {
     return () => ch.close();
   }, [mutate]);
 
-  // เตรียมข้อมูลจาก backend
-  const firstName = data?.firstName?.trim?.() || "";
-  const lastName = data?.lastName?.trim?.() || "";
-  const username = data?.username?.trim?.() || "";
-  const email = data?.email || "unknown@example.com";
-  const avatarUrl = data?.avatarUrl || "/user.png";
-
-  const displayName =
-    firstName || lastName
-      ? `${firstName} ${lastName}`.trim()
-      : username || "Unnamed User";
+  // เตรียมข้อมูลจาก store
+  const username = user?.username || "Unnamed User";
+  const email = user?.email || "unknown@example.com";
+  const profilePictureUrl = user?.profilePictureUrl || "/user.png";
 
   return (
     <div className="to-muted/50 min-h-screen bg-gradient-to-b from-white">
@@ -62,36 +96,28 @@ const ProfileForm = () => {
         <CardContent className="flex items-center gap-2">
           <div className="relative h-[120px] w-[120px]">
             <Image
-              src={avatarUrl}
+              src={profilePictureUrl}
               alt="User"
               fill
               className="rounded-full object-cover"
               sizes="120px"
-              // NOTE: ถ้า avatarUrl เป็นโดเมนภายนอก ต้องอนุญาตใน next.config.js (images.remotePatterns)
             />
           </div>
 
           <div className="min-w-0 flex-1">
-            {isLoading ? (
+            {isLoading && !user ? (
               <>
                 <p className="bg-muted h-4 w-48 animate-pulse rounded" />
                 <p className="bg-muted mt-2 h-3 w-64 animate-pulse rounded" />
               </>
-            ) : error ? (
+            ) : error && !user ? (
               <>
                 <p className="truncate text-lg font-semibold">Failed to load</p>
                 <p className="text-sm text-red-500">Please refresh the page.</p>
               </>
             ) : (
               <>
-                <p className="truncate text-lg font-semibold">{displayName}</p>
-
-                {username && displayName !== username && (
-                  <p className="text-muted-foreground truncate text-sm">
-                    @{username}
-                  </p>
-                )}
-
+                <p className="truncate text-lg font-semibold">{username}</p>
                 <p className="text-muted-foreground truncate text-sm">
                   Email : {email}
                 </p>

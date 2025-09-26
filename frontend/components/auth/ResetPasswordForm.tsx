@@ -8,6 +8,8 @@ interface ResetPasswordFormProps {
   email: string | null; // เปลี่ยนเป็น string | null เพื่อรองรับกรณีที่ email อาจเป็น null
 }
 
+const RESET_PASSWORD_ENDPOINT = `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/update-password`;
+
 const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
   csrfToken,
   setFormStep,
@@ -37,7 +39,7 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
     // Submit the new password (use your backend endpoint)
     try {
       // Replace with your actual API endpoint for password reset
-      const res = await fetch("/api/reset-password", {
+      const res = await fetch(RESET_PASSWORD_ENDPOINT, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
