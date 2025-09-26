@@ -25,7 +25,7 @@ router.put(
   controllers.updateProfile
 );
 
-router.patch(
+router.post(
   "/openRestaurant",
   isAuthenticated,
   upload.fields([

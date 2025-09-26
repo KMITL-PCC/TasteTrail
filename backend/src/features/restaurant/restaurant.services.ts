@@ -146,7 +146,7 @@ export default {
     price: Restaurant.price,
     time: any,
     pictures: Express.Multer.File[],
-    services: any
+    services: number[]
   ) => {
     //0. map open hour
     // const availableTime: Restaurant.time[] = [];
@@ -202,7 +202,7 @@ export default {
 
     try {
       uploadedResults.push(...(await Promise.all(uploadPromises)));
-      console.log(uploadedResults);
+      // console.log(uploadedResults);
       const restaurant = await prisma.$transaction(async (tx) => {
         //2. create restaurant
         const newRestaurant = await tx.restaurant.create({

@@ -95,10 +95,12 @@ export class accountController {
     const profilePicture = files.profileImage[0] as Express.Multer.File;
     const restaurantPictures = files.restaurantImages;
 
-    const information = req.body.information as Restaurant.information;
-    const price = req.body.price as Restaurant.price;
-    const time = req.body.time as Restaurant.time[];
-    const fullname = req.body.fullname as fullname;
+    const information = JSON.parse(
+      req.body.information
+    ) as Restaurant.information;
+    const price = JSON.parse(req.body.price) as Restaurant.price;
+    const time = JSON.parse(req.body.time) as Restaurant.time[];
+    const fullname = JSON.parse(req.body.fullname) as fullname;
 
     if (
       !user ||

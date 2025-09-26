@@ -5,7 +5,7 @@ export declare namespace Restaurant {
     address: string;
     latitude: number;
     longitude: number;
-    service?: string[];
+    services?: number[];
     contactDetail?: string;
   }
 

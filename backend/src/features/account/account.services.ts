@@ -103,7 +103,7 @@ export class accountService {
       price,
       time,
       restaurantPictures,
-      information.service
+      information.services || []
     );
 
     if (!restaurant || !restaurant.id) {
