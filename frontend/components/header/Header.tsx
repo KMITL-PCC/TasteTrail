@@ -13,11 +13,12 @@ import {
 import { useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Utensils } from "lucide-react";
-import { useUserStore } from "@/store/user-store";
+import { Skeleton } from "../ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
+import { useUser } from "@/store/user-store";
 
 import Logo from "../Logo";
 import Link from "next/link";
-import { Skeleton } from "../ui/skeleton";
 
 const getUserInfo = async () => {
   const res = await fetch(`${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/me`, {
@@ -52,9 +53,9 @@ const Header = () => {
   const searchParams = useSearchParams();
   const initialSearch = searchParams.get("search") || "";
 
-  const [search, setSearch] = useState<string>(initialSearch);
-  const [loading, setLoading] = useState<boolean>(true);
-  const { user, setUser, clearUser } = useUserStore();
+  const [search, setSearch] = useState(initialSearch);
+  const [loading, setLoading] = useState(true);
+  const { user, setUser, clearUser } = useUser();
 
   const handleSearch = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -92,11 +93,11 @@ const Header = () => {
       }
     };
     fetchUserInfo();
-  }, []);
+  }, [pathname]);
 
   return (
     <header className="sticky top-0 z-50 w-full border bg-background">
-      <div className="flex items-center justify-between gap-8 px-8 py-4 mx-auto md:px-14">
+      <div className="mx-auto flex max-w-[1150px] items-center justify-between gap-8 px-8 py-4 lg:px-14">
         <Logo width={50} height={50} />
 
         {/* Search */}
@@ -114,57 +115,55 @@ const Header = () => {
 
         {/* Auth action */}
         {/* desktop */}
-        <div className="hidden w-[250px] items-center justify-end gap-2 md:flex">
+        <div className="items-center justify-end hidden gap-2 md:flex">
           {loading ? (
             <div className="flex items-center gap-2">
               <Skeleton className="w-8 h-8 rounded-full" />
             </div>
           ) : user ? (
             // Show user info when authenticated
-            <div className="flex items-center gap-2">
-              <DropdownMenu>
-                <DropdownMenuTrigger>
-                  <User
-                    size={30}
-                    className="border rounded-full border-border"
-                  />
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="mt-2">
+            <DropdownMenu>
+              <DropdownMenuTrigger className="focus-visible:ring-0">
+                <Avatar className="border rounded-full cursor-pointer border-border">
+                  <AvatarImage src={user?.profilePictureUrl} />
+                  <AvatarFallback>{user.username.charAt(0)}</AvatarFallback>
+                </Avatar>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="mt-2">
+                <DropdownMenuItem>
+                  <Link href="/profile" className="flex items-center gap-2">
+                    <User size={20} />
+                    <span>ข้อมูลส่วนตัว</span>
+                  </Link>
+                </DropdownMenuItem>
+
+                {user?.role === "RestaurantOwner" ? (
                   <DropdownMenuItem>
                     <Link href="/profile" className="flex items-center gap-2">
-                      <User size={20} />
-                      <span>ข้อมูลส่วนตัว</span>
+                      <Utensils size={20} />
+                      <span>ร้านค้าของฉัน</span>
                     </Link>
                   </DropdownMenuItem>
-
-                  {user?.role === "RestaurantOwner" ? (
-                    <DropdownMenuItem>
-                      <Link href="/profile" className="flex items-center gap-2">
-                        <Utensils size={20} />
-                        <span>ร้านค้าของฉัน</span>
-                      </Link>
-                    </DropdownMenuItem>
-                  ) : (
-                    <DropdownMenuItem>
-                      <Link
-                        href="/restaurants/create"
-                        className="flex items-center gap-2"
-                      >
-                        <Utensils size={20} />
-                        <span>สร้างร้านค้า</span>
-                      </Link>
-                    </DropdownMenuItem>
-                  )}
-                  <DropdownMenuItem
-                    className="flex items-center gap-2"
-                    onClick={handleLogout}
-                  >
-                    <LogIn size={20} />
-                    <span>ออกจากระบบ</span>
+                ) : (
+                  <DropdownMenuItem>
+                    <Link
+                      href="/restaurants/create"
+                      className="flex items-center gap-2"
+                    >
+                      <Utensils size={20} />
+                      <span>สร้างร้านค้า</span>
+                    </Link>
                   </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+                )}
+                <DropdownMenuItem
+                  className="flex items-center gap-2"
+                  onClick={handleLogout}
+                >
+                  <LogIn size={20} />
+                  <span>ออกจากระบบ</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           ) : (
             // Show login/register when not authenticated
             <>

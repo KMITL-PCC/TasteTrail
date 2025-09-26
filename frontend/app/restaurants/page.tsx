@@ -1,13 +1,13 @@
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { RestaurantProps } from "@/types";
+
 import FilterRestaurant from "@/components/restaurants/FilterRestaurant";
 import PrimaryRestaurantCard from "@/components/restaurants/PrimaryRestaurantCard.tsx";
 import RecommendFilterButton from "@/components/restaurants/RecommendFilterButton";
 import SecondaryRestaurantCard from "@/components/restaurants/SecondaryRestaurantCard";
 import Link from "next/link";
-import restaurantData from "@/mockdata/restaurant.json";
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { RestaurantProps } from "@/types";
+import restaurantData from "@/mockdata/restaurants.json";
 
 const getRestaurants = async (
   search: string,
@@ -42,23 +42,23 @@ const RestaurantsPage = async ({
     prices: string;
     search: string;
   };
-  const { restaurant } = await getRestaurants(
-    search,
-    categories,
-    ratings,
-    prices,
-  );
+  // const { restaurant } = await getRestaurants(
+  //   search,
+  //   categories,
+  //   ratings,
+  //   prices,
+  // );
 
-  console.log(restaurant);
+  // console.log(restaurant);
 
   return (
-    <div className="flex flex-col gap-4 p-4 md:flex-row md:p-8">
+    <div className="mx-auto flex max-w-[1300px] flex-col gap-4 p-4 md:flex-row md:p-8">
       {/* Filter */}
       <div>
         <FilterRestaurant />
       </div>
 
-      <div className="flex flex-1 flex-col gap-4">
+      <div className="flex flex-col flex-1 gap-4">
         {/* Recommended Restaurants */}
         {/* <div>
           <Card>
@@ -66,7 +66,6 @@ const RestaurantsPage = async ({
               <CardTitle className="flex gap-2">
                 <RecommendFilterButton filter="popular" />
                 <RecommendFilterButton filter="new" />
-                ร้านยอดนิยม
               </CardTitle>
             </CardHeader>
             <Separator />
@@ -112,11 +111,11 @@ const RestaurantsPage = async ({
         <div>
           <Card>
             <CardHeader>
-              <CardTitle>Restaurants</CardTitle>
+              <CardTitle className="text-lg font-medium">Restaurants</CardTitle>
             </CardHeader>
             <Separator />
             <CardContent className="grid gap-4">
-              {restaurant.map((restaurant: RestaurantProps) => (
+              {restaurantData.map((restaurant: RestaurantProps) => (
                 <Link
                   href={`/restaurants/${restaurant.id}`}
                   key={restaurant.id}

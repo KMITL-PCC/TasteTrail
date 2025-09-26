@@ -11,11 +11,10 @@ const GoBackButton = ({ className }: { className?: string }) => {
   return (
     <Button
       variant="outline"
-      size="icon"
-      onClick={() => router.back()}
-      className={cn("rounded-full", className)}
+      onClick={() => router.push("/")}
+      className={cn("size-7 rounded-full", className)}
     >
-      <ArrowLeftIcon className="text-black size-6" />
+      <ArrowLeftIcon className="text-black size-4" />
     </Button>
   );
 };

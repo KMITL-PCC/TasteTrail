@@ -1,43 +1,38 @@
 import {
   Card,
+  CardAction,
   CardContent,
+  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { BadgeCheck } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import {
+  PhoneIcon,
+  Locate,
+  Share,
+  CircleAlert,
+  SquareCheck,
+  Edit,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { RestaurantInfoProps } from "@/types";
 
 import Image from "next/image";
 import RestaurantImagesCarousel from "@/components/restaurant-detail/RestaurantImagesCarousel";
-import { RestaurantInfoProps } from "@/types";
-import GoBackButton from "@/components/GoBackButton";
-
-const restaurantInfo: RestaurantInfoProps = {
-  name: "Dib lamun cafe",
-  description: "คาเฟ่อร่อยโดนใจ กลางคืนมีเครื่องดื่ม บรรยากาศดี",
-  address: "เลขที่ 13 ตำบล ชุมโค อำเภอปะทิว ชุมพร 86160",
-  latitude: "10.7253421",
-  longitude: "99.3797746",
-  status: "Closed",
-  minPrice: "30",
-  maxPrice: "500",
-  image: [
-    "https://lh3.googleusercontent.com/p/AF1QipPu7yh6jBKNfQ9LVXYXb3X02OaHsFy2JQN2Yj6F=w289-h312-n-k-no",
-    "https://lh3.googleusercontent.com/gps-cs-s/AC9h4npE-KnWUc0FD-2QPTCnEoZueH1W3idMtsRNGGkTxpwoAP7FEqA_kxudVoKUB-tS36s73kZqTQ-usVSG9gv9Y7qQDxVyxHvPKr5pJSgVLPPtu7WFQ0-lEXaQrGrwodTAKhwhIIE=s1360-w1360-h1020",
-    "https://lh3.googleusercontent.com/gps-cs-s/AC9h4npSDuEDS1Bl652bgOJzvJdRxs0odYI14yj4CN-FjqQszFqE8gsP1JI5BzzNhrUMdlEGGC7OeWDoi84PegblecaT8yGKi--LrM87k9TSBXrY_XlAbCEemyWPcFWVK7DXhDtAo168Ag=s1360-w1360-h1020",
-    "https://lh3.googleusercontent.com/gps-cs-s/AC9h4nqZy7KRc5AIxfrQx3-Dikws7aDBGfiQB_1B8dbBNzwi5C-UiJyGALE8t349DUUzEs4RTnjC-eHbSr6jLoSabb6Pt5yOjFtNGEpmM6EhpLBORWO-eAlPjj3C6XE2wCemaY8zkKFN=s1360-w1360-h1020",
-  ],
-  openingHour: {
-    day: "อาทิตย์ - เสาร์",
-    time: "09:00 - 21:00",
-  },
-  contact: {
-    contactType: "phone",
-    contactDetail: "012-345-6789",
-  },
-  services: ["delivery"],
-};
+import Link from "next/link";
+import RestaurantStatus from "../../../components/restaurant-detail/RestaurantStatus";
+import restaurantData from "@/mockdata/restaurants-detail.json";
+import BreadcrumbComponent from "@/components/BreadcrumbCompoent";
+import EditRestaurantButton from "@/components/restaurant-detail/EditRestaurantButton";
 
 const getRestaurantById = async (id: string) => {
   try {
@@ -62,116 +57,261 @@ const RestaurantDetailPage = async ({
   params: Promise<{ id: string }>;
 }) => {
   const { id } = await params;
+  const restaurantInfo: RestaurantInfoProps = restaurantData[parseInt(id) - 1];
 
   // const { restaurantInfo } = await getRestaurantById(id);
-  // const restaurant = restaurantInfo;
 
-  // console.log(restaurant);
+  // console.log(restaurantInfo);
 
   return (
-    <div className="relative flex flex-col gap-4 pt-8">
-      {/* <div className="grid grid-cols-2 gap-2 px-4">
-        <div className="relative border border-border h-80 rounded-xl md:h-96">
-          <Image
-            src={restaurant.image[0]}
-            alt={restaurant.name}
-            fill
-            objectFit="cover"
-            className="rounded-xl"
-          />
+    <div className="relative mx-auto flex max-w-[1150px] flex-col gap-4 pt-2 xl:px-14">
+      <div className="flex flex-col gap-2">
+        {/* Breadcrumb */}
+
+        <BreadcrumbComponent restaurantName={restaurantInfo.name} />
+
+        {/* Restaurant Images Carousel */}
+        <RestaurantImagesCarousel restaurantInfo={restaurantInfo} />
+      </div>
+
+      {/* Restaurant Info */}
+      {/* Desktop */}
+      <div className="hidden gap-4 px-4 lg:flex">
+        <div className="flex flex-col flex-1 gap-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-2xl font-normal">
+                {restaurantInfo.name}
+              </CardTitle>
+              {/* Edit Button */}
+              <CardAction>
+                <EditRestaurantButton />
+              </CardAction>
+              <CardDescription className="text-base">
+                {restaurantInfo.description}
+              </CardDescription>
+            </CardHeader>
+            <CardFooter>
+              <RestaurantStatus status={restaurantInfo.status} />
+            </CardFooter>
+          </Card>
+
+          {restaurantInfo.address && (
+            <Card className="flex items-center justify-center">
+              <CardContent className="flex flex-row items-center justify-between w-full gap-14">
+                <Link
+                  href={`https://www.google.com/maps?q=${restaurantInfo.latitude},${restaurantInfo.longitude}`}
+                  target="_blank"
+                >
+                  <div className="relative size-45">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      viewBox="0 0 24 24"
+                      fill="oklch(0.5523 0.1927 32.7272)"
+                      width="45"
+                      height="45"
+                      className="absolute z-10 -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2"
+                    >
+                      <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
+                      <circle cx="12" cy="9" r="2.5" fill="white" />
+                    </svg>
+                    <Image
+                      src="/google-map.webp"
+                      alt="map"
+                      fill
+                      className="object-cover rounded-xl"
+                    />
+                  </div>
+                </Link>
+                <div className="flex flex-col w-full gap-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <p>{restaurantInfo.address}</p>
+                    <Button variant="secondary" asChild>
+                      <Link
+                        href={`https://www.google.com/maps?q=${restaurantInfo.latitude},${restaurantInfo.longitude}`}
+                        target="_blank"
+                      >
+                        ดูเส้นทาง
+                      </Link>
+                    </Button>
+                  </div>
+                  <Separator />
+                  <div className="flex items-center justify-between gap-2">
+                    <p>เบอร์โทร: {restaurantInfo.contact.contactDetail}</p>
+                    <Link href={`tel:${restaurantInfo.contact.contactDetail}`}>
+                      <PhoneIcon className="size-5" />
+                    </Link>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
-        <div className="relative border border-border h-80 rounded-xl md:h-96">
-          <Image
-            src={restaurant.image[1]}
-            alt={restaurant.name}
-            fill
-            objectFit="cover"
-            className="rounded-xl"
-          />
-        </div>
-      </div> */}
-<<<<<<< Updated upstream
-=======
 
-      {/* <div className="relative">
-        <GoBackButton className="absolute left-0 z-10 top-1" />
-
-      </div> */}
->>>>>>> Stashed changes
-
-      <GoBackButton className="absolute left-0 z-50 top-1" />
-
-      <RestaurantImagesCarousel restaurantInfo={restaurantInfo} />
-
-      <div className="grid grid-cols-2 grid-rows-2 gap-2 px-4 md:px-8">
-        <Card className="col-span-2 md:col-span-1">
-          <CardHeader>
-            <CardTitle>{restaurantInfo.name}</CardTitle>
-          </CardHeader>
-          <CardContent>{restaurantInfo.description}</CardContent>
-          <CardFooter>{restaurantInfo.status}</CardFooter>
-        </Card>
-
-        <Card className="col-span-2 md:col-span-1 md:row-span-2">
-          <CardContent className="flex flex-col gap-2">
-            <div className="flex flex-col gap-2">
-              <h1>เวลาเปิด</h1>
-              <p>{restaurantInfo.openingHour.day}</p>
-              <p>{restaurantInfo.openingHour.time}</p>
-            </div>
-            <div>
-              <h1>ช่วงราคา</h1>
-              <p>
-                {restaurantInfo.minPrice} - {restaurantInfo.maxPrice} บาท
-              </p>
-            </div>
-            {restaurantInfo.services.map((service: string) => (
-              <div className="flex items-center gap-2" key={service}>
-                <BadgeCheck />
-                {service}
+        <div className="min-w-[300px]">
+          <Card>
+            <CardContent className="flex flex-col gap-2">
+              <div className="flex flex-col gap-2">
+                <h1 className="w-full text-base font-medium text-left">
+                  เวลาเปิดร้าน
+                </h1>
+                <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
+                  <p>{restaurantInfo.openingHour.day}</p>
+                  <p>{restaurantInfo.openingHour.time}</p>
+                </div>
               </div>
-            ))}
-          </CardContent>
-        </Card>
+              <div className="flex flex-col items-start gap-2">
+                <h1 className="w-full text-base font-medium text-left">
+                  ช่วงราคา
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                  {restaurantInfo.minPrice} - {restaurantInfo.maxPrice} ฿
+                </p>
+              </div>
+              <ul>
+                {restaurantInfo.services.map((service: string) => (
+                  <li className="flex items-center gap-2" key={service}>
+                    <SquareCheck className="text-white size-6 fill-green-500" />
+                    <span>{service}</span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
+      {/* Mobile */}
+      <div className="flex flex-col flex-1 gap-6 px-4 lg:hidden">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl">{restaurantInfo.name}</h1>
+            <EditRestaurantButton />
+          </div>
+          <p className="text-base text-muted-foreground">
+            {restaurantInfo.description}
+          </p>
+          <div className="flex items-center justify-between gap-2">
+            <RestaurantStatus status={restaurantInfo.status} />
+            {/* More Info Dialog */}
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  className="flex items-center gap-2 text-muted-foreground"
+                >
+                  ข้อมูลเพิ่มเติม
+                  <span>
+                    <CircleAlert />
+                  </span>
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>ข้อมูลเพิ่มเติม</DialogTitle>
+                  <Separator />
+                  <div className="flex flex-col gap-2">
+                    <h1 className="w-full text-base font-medium text-left">
+                      เวลาเปิดร้าน
+                    </h1>
+                    <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
+                      <p>{restaurantInfo.openingHour.day}</p>
+                      <p>{restaurantInfo.openingHour.time}</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-start gap-2">
+                    <h1 className="w-full text-base font-medium text-left">
+                      ช่วงราคา
+                    </h1>
+                    <p className="text-sm text-muted-foreground">
+                      {restaurantInfo.minPrice} - {restaurantInfo.maxPrice} ฿
+                    </p>
+                  </div>
+                  <ul>
+                    {restaurantInfo.services.map((service: string) => (
+                      <li className="flex items-center gap-2" key={service}>
+                        <SquareCheck className="text-white size-6 fill-green-500" />
+                        <span>{service}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </DialogHeader>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
+        <Separator />
 
         {restaurantInfo.address && (
-          <Card className="flex items-center justify-center col-span-2 md:col-span-1">
-            <CardContent className="flex flex-row items-center gap-4 lg:gap-10 xl:gap-20">
-              <a
+          <div className="flex flex-col gap-4">
+            <Link
+              href={`https://www.google.com/maps?q=${restaurantInfo.latitude},${restaurantInfo.longitude}`}
+              target="_blank"
+            >
+              <div className="relative w-full h-25">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="oklch(0.5523 0.1927 32.7272)"
+                  width="45"
+                  height="45"
+                  className="absolute z-10 -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2"
+                >
+                  <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
+                  <circle cx="12" cy="9" r="2.5" fill="white" />
+                </svg>
+                <Image
+                  src="/google-map.webp"
+                  alt="map"
+                  fill
+                  className="object-cover rounded-xl"
+                />
+              </div>
+            </Link>
+
+            <ul className="flex items-center justify-between w-full gap-2 px-10 text-sm md:px-18">
+              <li className="flex flex-col items-center gap-2 rounded-full">
+                <Link
+                  href={`https://www.google.com/maps?q=${restaurantInfo.latitude},${restaurantInfo.longitude}`}
+                  target="_blank"
+                  className="bg-accent rounded-full p-1.5"
+                >
+                  <Locate className="size-5" />
+                </Link>
+                <p>ดูเส้นทาง</p>
+              </li>
+              <li className="flex flex-col items-center gap-2">
+                <Link
+                  href={`tel:${restaurantInfo.contact.contactDetail}`}
+                  className="bg-accent rounded-full p-1.5"
+                >
+                  <PhoneIcon className="size-5" />
+                </Link>
+                <p>ติดต่อ</p>
+              </li>
+              <li className="flex flex-col items-center gap-2">
+                <span className="bg-accent rounded-full p-1.5">
+                  <Share className="size-5" />
+                </span>
+                <p>แชร์</p>
+              </li>
+            </ul>
+
+            <Separator />
+
+            <div className="flex flex-col gap-4">
+              <Link
                 href={`https://www.google.com/maps?q=${restaurantInfo.latitude},${restaurantInfo.longitude}`}
                 target="_blank"
               >
-<<<<<<< Updated upstream
-                <div className="relative mx-auto border border-border h-30 w-30 rounded-xl">
-=======
-                <div className="relative mx-auto h-30 w-30 rounded-xl xl:h-40 xl:w-40">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    fill="red"
-                    width="24"
-                    height="24"
-                  >
-                    <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
-                    <circle cx="12" cy="9" r="2.5" fill="white" />
-                  </svg>
->>>>>>> Stashed changes
-                <div className="relative mx-auto h-30 w-30 rounded-xl xl:h-40 xl:w-40">
-                  <Image
-                    src="/map-pic.jpg"
-                    alt="map"
-                    fill
-                    className="object-cover rounded-xl"
-                  />
-                </div>
-              </a>
-              <div className="flex flex-col w-full gap-2">
                 <p>{restaurantInfo.address}</p>
-                <Separator />
-                <p>{restaurantInfo.contact.contactDetail}</p>
-              </div>
-            </CardContent>
-          </Card>
+              </Link>
+              <Separator />
+              <Link href={`tel:${restaurantInfo.contact.contactDetail}`}>
+                <p>เบอร์โทร: {restaurantInfo.contact.contactDetail}</p>
+              </Link>
+            </div>
+          </div>
         )}
       </div>
     </div>
