@@ -522,13 +522,27 @@ export default {
       });
     }
 
-    res.status(200).json({
-      user: {
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        profilePictureUrl: user.profilePictureUrl,
-      },
-    });
+    try {
+      const restaurantId = await authServices.getRestaurantByOwnerId(user.id);
+      res.status(200).json({
+        user: {
+          username: user.username,
+          email: user.email,
+          role: user.role,
+          profilePictureUrl: user.profilePictureUrl,
+          restaurantId: restaurantId || null,
+        },
+      });
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error("Error during get user data ERROR:", err.message);
+      } else {
+        console.error("Error during get user data ERROR:", err);
+      }
+
+      res.status(500).json({
+        message: "Error during get user data",
+      });
+    }
   },
 };

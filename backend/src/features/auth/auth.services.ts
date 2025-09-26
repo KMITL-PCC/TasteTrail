@@ -169,4 +169,15 @@ export default {
       message: "Update password success",
     };
   },
+
+  getRestaurantByOwnerId: async (ownerId: string) => {
+    const restaurant = await prisma.restaurant.findFirst({
+      where: { ownerId },
+      select: {
+        id: true,
+      },
+    });
+
+    return restaurant?.id;
+  },
 };
