@@ -60,7 +60,7 @@ export default {
         services
       );
 
-      if (!result) {
+      if (result && result?.success === false) {
         return res.status(500).json({
           message: "Error during create restaurant",
         });

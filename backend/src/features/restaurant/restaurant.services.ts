@@ -215,8 +215,11 @@ export default {
             contact: {
               create: {
                 contactType: "phone",
-                contactDetail: "0868225445",
+                contactDetail: information.contactDetail || "",
               },
+            },
+            restaurantServices: {
+              create: services.map((s: number) => ({ serviceId: s })),
             },
           },
         });
@@ -245,9 +248,11 @@ export default {
             publicId: img.public_id,
           })),
         });
+
+        return newRestaurant;
       });
 
-      return true;
+      return { success: true, id: restaurant.id };
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.log("Error during create restaurant ERROR:", error.message);
@@ -259,7 +264,7 @@ export default {
         await cloudinary.uploader.destroy(img.public_id);
       }
 
-      return false;
+      return { success: false };
     }
   },
 

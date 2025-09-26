@@ -51,6 +51,7 @@ export class accountController {
   };
 
   updateToRestaurantOwner = async (req: Request, res: Response) => {
+    // {
     //fullname : {
     // firstName,
     // lastName
@@ -61,7 +62,8 @@ export class accountController {
     //       "address",
     //       "latitude": number,
     //       "longitude": number,
-    //       "services": [1,2,3,4] //delivery,QR, WIFI, alcohol
+    //       "services": [1,2,3,4] //delivery,QR, WIFI, alcohol,
+    //       "contactDetail": ""
     // },
     // price: {
     //       "minPrice",
@@ -76,7 +78,8 @@ export class accountController {
     //       "openTime",
     //       "closeTime"
     // }
-    // ]
+    // ],
+    // }
 
     //5 pic
     //4 for Restaurant page and 1 for Owner selfie picture

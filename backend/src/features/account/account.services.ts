@@ -106,11 +106,34 @@ export class accountService {
       information.service
     );
 
-    if (!restaurant) {
+    if (!restaurant || !restaurant.id) {
       throw Error("Create restaurant fail");
     }
 
+    const profileUploadResult = await new Promise<any>((resolve, rejects) => {
+      const stream = cloudinary.uploader.upload_stream(
+        { folder: "owner_profiles" },
+        (error, result) => {
+          if (error) rejects(error);
+          else resolve(result);
+        }
+      );
+      stream.end(profilePicture.buffer);
+    });
+
+    const profileImageUrl = profileUploadResult.secure_url;
+    const profilePublicId = profileUploadResult.public_id;
+
     await this.prisma.$transaction(async (tx) => {
+      await tx.restaurantImage.create({
+        data: {
+          imageUrl: profileImageUrl,
+          publicId: profilePublicId,
+          profilePic: true,
+          restaurantId: restaurant.id,
+        },
+      });
+
       await tx.user.update({
         where: {
           id: userId,
@@ -119,6 +142,15 @@ export class accountService {
           firstName: fullname.firstName,
           lastName: fullname.lastName,
           role: Role.RestaurantOwner,
+        },
+      });
+
+      await tx.restaurant.update({
+        where: {
+          id: restaurant.id,
+        },
+        data: {
+          ownerId: userId,
         },
       });
     });
