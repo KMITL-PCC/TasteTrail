@@ -5,14 +5,14 @@ import React, { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { useUserStore } from "@/store/user-store";
+import { useUser } from "@/store/user-store";
 
 const backendURL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
 const CSRF_ENDPOINT = `${backendURL}/api/csrf-token`;
 
 const ProfileForm = () => {
-  const { user } = useUserStore();
+  const { user } = useUser();
   const [csrfToken, setCsrfToken] = useState<string | null>(null);
 
   // โหลด CSRF token
