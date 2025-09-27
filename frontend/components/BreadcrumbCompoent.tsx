@@ -8,26 +8,33 @@ import {
   BreadcrumbList,
   BreadcrumbSeparator,
 } from "./ui/breadcrumb";
+import { cn } from "@/lib/utils";
 
 const BreadcrumbComponent = ({
+  className,
   restaurantName,
 }: {
-  restaurantName: string;
+  restaurantName?: string;
+  className?: string;
 }) => {
   const pathname = usePathname();
 
   return (
     <Breadcrumb>
-      <BreadcrumbList className="px-4">
+      <BreadcrumbList className={cn("px-4", className)}>
         <BreadcrumbItem>
           <BreadcrumbLink href="/restaurants">ร้านอาหาร</BreadcrumbLink>
         </BreadcrumbItem>
-        <BreadcrumbSeparator>/</BreadcrumbSeparator>
-        <BreadcrumbItem>
-          <BreadcrumbLink className="cursor-default">
-            {restaurantName}
-          </BreadcrumbLink>
-        </BreadcrumbItem>
+        {restaurantName && (
+          <>
+            <BreadcrumbSeparator>/</BreadcrumbSeparator>
+            <BreadcrumbItem>
+              <BreadcrumbLink className="cursor-default">
+                {restaurantName}
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+          </>
+        )}
       </BreadcrumbList>
     </Breadcrumb>
   );

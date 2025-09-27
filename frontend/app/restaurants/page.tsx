@@ -8,6 +8,7 @@ import RecommendFilterButton from "@/components/restaurants/RecommendFilterButto
 import SecondaryRestaurantCard from "@/components/restaurants/SecondaryRestaurantCard";
 import Link from "next/link";
 import restaurantData from "@/mockdata/restaurants.json";
+import BreadcrumbComponent from "@/components/BreadcrumbCompoent";
 
 const getRestaurants = async (
   search: string,
@@ -52,15 +53,18 @@ const RestaurantsPage = async ({
   // console.log(restaurant);
 
   return (
-    <div className="mx-auto flex max-w-[1300px] flex-col gap-4 p-4 md:flex-row md:p-8">
-      {/* Filter */}
-      <div>
-        <FilterRestaurant />
-      </div>
+    <div className="mx-auto flex max-w-[1300px] flex-col gap-2 p-4 pt-2 md:p-8 md:pt-2">
+      {/* Breadcrumb */}
+      <BreadcrumbComponent className="hidden md:block" />
+      <div className="flex flex-col w-full gap-4 md:flex-row">
+        {/* Filter */}
+        <div>
+          <FilterRestaurant />
+        </div>
 
-      <div className="flex flex-col flex-1 gap-4">
-        {/* Recommended Restaurants */}
-        {/* <div>
+        <div className="flex flex-col flex-1 gap-4">
+          {/* Recommended Restaurants */}
+          {/* <div>
           <Card>
             <CardHeader>
               <CardTitle className="flex gap-2">
@@ -94,8 +98,8 @@ const RestaurantsPage = async ({
           </Card>
         </div> */}
 
-        {/* Map */}
-        {/* <div>
+          {/* Map */}
+          {/* <div>
           <Card>
             <CardHeader>
               <CardTitle>Map</CardTitle>
@@ -107,24 +111,27 @@ const RestaurantsPage = async ({
           </Card>
         </div> */}
 
-        {/* Restaurants List*/}
-        <div>
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg font-medium">Restaurants</CardTitle>
-            </CardHeader>
-            <Separator />
-            <CardContent className="grid gap-4">
-              {restaurantData.map((restaurant: RestaurantProps) => (
-                <Link
-                  href={`/restaurants/${restaurant.id}`}
-                  key={restaurant.id}
-                >
-                  <PrimaryRestaurantCard restaurant={restaurant} />
-                </Link>
-              ))}
-            </CardContent>
-          </Card>
+          {/* Restaurants List*/}
+          <div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg font-medium">
+                  Restaurants
+                </CardTitle>
+              </CardHeader>
+              <Separator />
+              <CardContent className="grid gap-4">
+                {restaurantData.map((restaurant: RestaurantProps) => (
+                  <Link
+                    href={`/restaurants/${restaurant.id}`}
+                    key={restaurant.id}
+                  >
+                    <PrimaryRestaurantCard restaurant={restaurant} />
+                  </Link>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </div>
     </div>
