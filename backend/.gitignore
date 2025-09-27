@@ -4,6 +4,6 @@ node_modules
 
 /generated/prisma
 pgadmin
-prisma/migrations
+# prisma/migrations
 
 coverage/
