@@ -16,7 +16,7 @@ type Actions = {
   clearUser: () => void;
 };
 
-export const useUserStore = create<State & Actions>((set) => ({
+export const useUser = create<State & Actions>((set) => ({
   user: null,
   setUser: (user: userInfoProps) => set({ user }),
   clearUser: () => set({ user: null }),
