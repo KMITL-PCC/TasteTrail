@@ -8,7 +8,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Textarea } from "../ui/textarea";
 import { toast } from "sonner";
 import { Map, View } from "ol";
 import "ol/ol.css";
@@ -23,8 +22,8 @@ import Feature from "ol/Feature";
 const backendURL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
 const CSRF_ENDPOINT = `${backendURL}/api/csrf-token`;
-const GET_RESTAURANT_ENDPOINT = `${backendURL}/account/updateRestaurant`;
-const UPDATE_RESTAURANT_ENDPOINT = `${backendURL}/account/updateRestaurant`;
+const GET_RESTAURANT_ENDPOINT = `${backendURL}/account/updateRestaurantInfo`;
+const UPDATE_RESTAURANT_ENDPOINT = `${backendURL}/account/updateRestaurantInfo`;
 
 const daysOfWeek = [
   "อาทิตย์",
@@ -42,11 +41,10 @@ type OpeningTime = {
   closeTime: string;
 };
 
-// เพิ่ม type สำหรับรูปเดิม
 type RestaurantImage = {
-  id: string; // ไอดีรูปใน DB
-  url: string; // URL รูป
-  file?: File; // ถ้ามีอัปโหลดใหม่
+  id: string;
+  url: string;
+  file?: File;
 };
 
 export default function EditRestaurant() {
@@ -62,18 +60,14 @@ export default function EditRestaurant() {
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
 
-  const [uploadedImages, setUploadedImages] = useState<File[]>([]);
-  const [previewImages, setPreviewImages] = useState<string[]>([]);
   const [profileImages, setProfileImages] = useState<File[]>([]);
   const [previewProfileImages, setPreviewProfileImages] = useState<string[]>(
     [],
   );
-
-  const handleReplaceProfileImage = (file: File) => {
-    setProfileImages([file]);
-    setPreviewProfileImages([URL.createObjectURL(file)]);
-  };
-
+  const [restaurantImages, setRestaurantImages] = useState<RestaurantImage[]>(
+    [],
+  );
+  const [services, setServices] = useState<number[]>([]);
   const [openingTimes, setOpeningTimes] = useState<OpeningTime[]>([
     { weekday: 0, openTime: "", closeTime: "" },
     { weekday: 1, openTime: "", closeTime: "" },
@@ -84,23 +78,13 @@ export default function EditRestaurant() {
     { weekday: 6, openTime: "", closeTime: "" },
   ]);
 
-  const [services, setServices] = useState<number[]>([]);
-  const toggleService = (id: number) => {
-    setServices((prev) =>
-      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id],
-    );
-  };
-
-  const [restaurantImages, setRestaurantImages] = useState<RestaurantImage[]>(
-    [],
-  );
-
   const [csrfToken, setCsrfToken] = useState<string | null>(null);
-  const mapRef = useRef<HTMLDivElement | null>(null);
-
   const [isLoading, setIsLoading] = useState(true);
+  const mapRef = useRef<HTMLDivElement | null>(null);
+  const mapInstance = useRef<Map | null>(null);
+  const markerSource = useRef<VectorSource | null>(null);
 
-  // โหลด CSRF token
+  // CSRF token
   useEffect(() => {
     fetch(CSRF_ENDPOINT, { method: "GET", credentials: "include" })
       .then((res) => res.json())
@@ -108,7 +92,7 @@ export default function EditRestaurant() {
       .catch(() => toast.error("ไม่สามารถโหลด CSRF token"));
   }, []);
 
-  // โหลดข้อมูลร้านค้า
+  // โหลดข้อมูลร้าน
   useEffect(() => {
     const fetchRestaurant = async () => {
       try {
@@ -119,19 +103,16 @@ export default function EditRestaurant() {
         if (!res.ok) throw new Error();
         const data = await res.json();
 
-        // ข้อมูล fullname
-        setFirstName(data.fullname?.firstName || "");
-        setLastName(data.fullname?.lastName || "");
+        setFirstName(data.fullname?.firstName ?? "");
+        setLastName(data.fullname?.lastName ?? "");
 
-        // ข้อมูลร้าน
-        setShopName(data.information?.name || "");
-        setDescription(data.information?.description || "");
-        setPickupAddress(data.information?.address || "");
-        setLatitude(data.information?.latitude || null);
-        setLongitude(data.information?.longitude || null);
-        setContactDetail(data.information?.contactDetail || "");
+        setShopName(data.information?.name ?? "");
+        setDescription(data.information?.description ?? "");
+        setPickupAddress(data.information?.address ?? "");
+        setLatitude(data.information?.latitude ?? 10.7246);
+        setLongitude(data.information?.longitude ?? 99.3743);
+        setContactDetail(data.information?.contactDetail ?? "");
 
-        // Services: แปลง string เป็นตัวเลขให้ตรงกับ checkbox
         const serviceMapReverse: Record<string, number> = {
           delivery: 1,
           QR: 2,
@@ -144,86 +125,71 @@ export default function EditRestaurant() {
           ) || [],
         );
 
-        // ราคา
-        setMinPrice(data.price?.minPrice || "");
-        setMaxPrice(data.price?.maxPrice || "");
-
-        // เวลาเปิดปิด
+        setMinPrice(data.price?.minPrice ?? "");
+        setMaxPrice(data.price?.maxPrice ?? "");
         setOpeningTimes(data.time || openingTimes);
 
-        // รูปภาพร้าน
-        if (data.restaurantImages) {
-          setRestaurantImages(data.restaurantImages);
-          setPreviewImages(data.restaurantImages.map((img: any) => img.url));
-        }
-
-        // รูปเจ้าของร้าน
-        if (data.profileImage) {
-          setProfileImages([]); // ยังไม่มีไฟล์ใหม่
-          setPreviewProfileImages([data.profileImage.url]);
-        }
+        if (data.restaurantImages) setRestaurantImages(data.restaurantImages);
+        if (data.profileImage) setPreviewProfileImages([data.profileImage.url]);
 
         setIsLoading(false);
-      } catch (err) {
+      } catch {
         toast.error("โหลดข้อมูลร้านล้มเหลว");
         setIsLoading(false);
       }
     };
-
     fetchRestaurant();
   }, []);
 
-  const handleReplaceStoreImage = (index: number, file: File) => {
-    setRestaurantImages((prev) => {
-      const copy = [...prev];
-      copy[index] = { ...copy[index], file }; // แทนด้วยไฟล์ใหม่
-      return copy;
-    });
-    setPreviewImages((prev) => {
-      const copy = [...prev];
-      copy[index] = URL.createObjectURL(file);
-      return copy;
-    });
-  };
-
-  // สร้างแผนที่
+  // สร้าง Map ครั้งเดียว
   useEffect(() => {
     if (!mapRef.current) return;
 
-    const map = new Map({
+    markerSource.current = new VectorSource();
+    const markerLayer = new VectorLayer({ source: markerSource.current });
+
+    mapInstance.current = new Map({
       target: mapRef.current,
-      layers: [new TileLayer({ source: new OSM() })],
+      layers: [new TileLayer({ source: new OSM() }), markerLayer],
       view: new View({
-        center: fromLonLat([
-          longitude || 99.37429103738151,
-          latitude || 10.724606159636176,
-        ]),
+        center: fromLonLat([longitude ?? 99.3743, latitude ?? 10.7246]),
         zoom: 12,
       }),
     });
 
-    const markerSource = new VectorSource();
-    const markerLayer = new VectorLayer({ source: markerSource });
-    map.addLayer(markerLayer);
+    mapInstance.current.on("click", (event) => {
+      const lonLat = toLonLat(event.coordinate);
+      if (markerSource.current) {
+        markerSource.current.clear();
+        const marker = new Feature({ geometry: new Point(event.coordinate) });
+        markerSource.current.addFeature(marker);
+        setLongitude(lonLat[0]);
+        setLatitude(lonLat[1]);
+      }
+    });
 
-    if (latitude && longitude) {
+    return () => mapInstance.current?.setTarget(undefined);
+  }, []);
+
+  // อัปเดต marker เมื่อ latitude/longitude เปลี่ยน
+  useEffect(() => {
+    if (latitude && longitude && markerSource.current) {
+      markerSource.current.clear();
       const marker = new Feature({
         geometry: new Point(fromLonLat([longitude, latitude])),
       });
-      markerSource.addFeature(marker);
+      markerSource.current.addFeature(marker);
+      mapInstance.current
+        ?.getView()
+        .setCenter(fromLonLat([longitude, latitude]));
     }
-
-    map.on("click", (event) => {
-      const lonLat = toLonLat(event.coordinate);
-      markerSource.clear();
-      const marker = new Feature({ geometry: new Point(event.coordinate) });
-      markerSource.addFeature(marker);
-      setLongitude(lonLat[0]);
-      setLatitude(lonLat[1]);
-    });
-
-    return () => map.setTarget(undefined);
   }, [latitude, longitude]);
+
+  const toggleService = (id: number) => {
+    setServices((prev) =>
+      prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id],
+    );
+  };
 
   const handleTimeChange = (
     weekday: number,
@@ -237,24 +203,17 @@ export default function EditRestaurant() {
     });
   };
 
-  const handleStoreFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-    const validFiles = Array.from(files)
-      .slice(0, 4)
-      .filter((f) => f.size <= 8 * 1024 * 1024);
-    setUploadedImages(validFiles);
-    setPreviewImages(validFiles.map((f) => URL.createObjectURL(f)));
+  const handleReplaceProfileImage = (file: File) => {
+    setProfileImages([file]);
+    setPreviewProfileImages([URL.createObjectURL(file)]);
   };
 
-  const handleProfileFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files) return;
-    const validFiles = Array.from(files)
-      .slice(0, 1)
-      .filter((f) => f.size <= 8 * 1024 * 1024);
-    setProfileImages(validFiles);
-    setPreviewProfileImages(validFiles.map((f) => URL.createObjectURL(f)));
+  const handleReplaceStoreImage = (index: number, file: File) => {
+    setRestaurantImages((prev) => {
+      const copy = [...prev];
+      copy[index] = { ...copy[index], file };
+      return copy;
+    });
   };
 
   const handleSave = async () => {
@@ -262,7 +221,6 @@ export default function EditRestaurant() {
       toast.error("Session not ready");
       return;
     }
-
     try {
       const form = new FormData();
       form.append("fullname", JSON.stringify({ firstName, lastName }));
@@ -284,16 +242,11 @@ export default function EditRestaurant() {
       );
       form.append("time", JSON.stringify(openingTimes));
 
-      // ส่งไฟล์ร้าน
       restaurantImages.forEach((img) => {
-        if (img.file) {
-          form.append("restaurantImages", img.file);
-        } else {
-          form.append("existingImageIds", img.id); // ส่งไอดีรูปเดิมให้ backend
-        }
+        if (img.file) form.append("restaurantImages", img.file);
+        else form.append("existingImageIds", img.id);
       });
 
-      // ส่งไฟล์เจ้าของร้าน
       profileImages.forEach((f) => form.append("profileImage", f));
 
       const res = await fetch(UPDATE_RESTAURANT_ENDPOINT, {
@@ -301,14 +254,6 @@ export default function EditRestaurant() {
         body: form,
         headers: { "X-CSRF-Token": csrfToken },
         credentials: "include",
-      });
-
-      restaurantImages.forEach((img) => {
-        if (img.file) {
-          form.append("restaurantImages", img.file);
-        } else {
-          form.append("existingImageIds", img.id); // ส่งไอดีรูปเดิมให้ backend
-        }
       });
 
       if (!res.ok) {
@@ -338,10 +283,8 @@ export default function EditRestaurant() {
                   ปรับแก้ข้อมูลร้านของคุณ
                 </p>
               </div>
-
               <div className="md:col-span-8">
                 <div className="grid gap-6">
-                  {/* ชื่อ */}
                   <FieldBlock label="ชื่อจริงและนามสกุล" required>
                     <Input
                       value={firstName}
@@ -356,7 +299,6 @@ export default function EditRestaurant() {
                   </FieldBlock>
                   <Separator />
 
-                  {/* ชื่อร้าน */}
                   <FieldBlock label="ชื่อร้านค้า" required>
                     <Input
                       value={shopName}
@@ -365,18 +307,17 @@ export default function EditRestaurant() {
                     />
                   </FieldBlock>
 
-                  {/* Description */}
                   <FieldBlock label="คำอธิบายร้านค้า">
-                    <Textarea
+                    <textarea
                       value={description}
                       onChange={(e) => setDescription(e.target.value)}
                       rows={3}
+                      className="w-full rounded-md border px-4 py-2"
                       placeholder="คำอธิบายสั้น"
                     />
                   </FieldBlock>
                   <Separator />
 
-                  {/* หน้าร้าน */}
                   <FieldBlock label="มีหน้าร้าน">
                     <div className="flex items-center gap-2">
                       <Checkbox
@@ -391,18 +332,21 @@ export default function EditRestaurant() {
                   {hasPhysicalStore && (
                     <>
                       <FieldBlock label="ที่อยู่ในการเข้ารับสินค้า" required>
-                        <Textarea
+                        <textarea
                           value={pickupAddress}
                           onChange={(e) => setPickupAddress(e.target.value)}
                           rows={3}
+                          className="w-full rounded-md border px-4 py-2"
                         />
                       </FieldBlock>
-                      <div style={{ height: "400px" }}>
-                        <div ref={mapRef} style={{ height: "100%" }} />
-                      </div>
+
+                      <FieldBlock label="ตำแหน่งร้านค้า">
+                        <div style={{ height: "400px" }}>
+                          <div ref={mapRef} style={{ height: "100%" }} />
+                        </div>
+                      </FieldBlock>
                       <Separator />
 
-                      {/* เวลาเปิดปิด */}
                       {openingTimes.map((t, i) => (
                         <div key={i} className="mb-4">
                           <p>วัน {daysOfWeek[t.weekday]}</p>
@@ -444,7 +388,6 @@ export default function EditRestaurant() {
                     </>
                   )}
 
-                  {/* ราคา */}
                   <FieldBlock label="ช่วงราคา (บาท)">
                     <div className="flex gap-4">
                       <Input
@@ -477,58 +420,55 @@ export default function EditRestaurant() {
                   </FieldBlock>
                   <Separator />
 
-                  {/* รูปภาพร้าน */}
-                  <div className="mt-4 flex gap-2">
-                    {restaurantImages.map((img, i) => (
-                      <div key={img.id} className="relative">
+                  <FieldBlock label="รูปภาพร้าน (สูงสุด 4 รูป)">
+                    <div className="mt-2 flex gap-2">
+                      {restaurantImages.map((img, i) => (
+                        <div key={img.id} className="relative">
+                          <img
+                            src={
+                              img.file ? URL.createObjectURL(img.file) : img.url
+                            }
+                            className="h-32 w-32 cursor-pointer rounded-md object-cover"
+                            onClick={() => {
+                              const input = document.createElement("input");
+                              input.type = "file";
+                              input.accept = "image/*";
+                              input.onchange = (e: any) => {
+                                if (e.target.files && e.target.files[0])
+                                  handleReplaceStoreImage(i, e.target.files[0]);
+                              };
+                              input.click();
+                            }}
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  </FieldBlock>
+                  <Separator />
+
+                  <FieldBlock label="รูปเจ้าของร้าน">
+                    <div className="mt-2 flex gap-2">
+                      {previewProfileImages.map((img, i) => (
                         <img
-                          src={
-                            img.file ? URL.createObjectURL(img.file) : img.url
-                          }
-                          className="h-32 w-32 cursor-pointer rounded-md object-cover"
+                          key={i}
+                          src={img}
+                          className="h-32 w-32 cursor-pointer rounded-full object-cover"
                           onClick={() => {
                             const input = document.createElement("input");
                             input.type = "file";
                             input.accept = "image/*";
                             input.onchange = (e: any) => {
-                              if (e.target.files && e.target.files[0]) {
-                                handleReplaceStoreImage(i, e.target.files[0]);
-                              }
+                              if (e.target.files && e.target.files[0])
+                                handleReplaceProfileImage(e.target.files[0]);
                             };
                             input.click();
                           }}
                         />
-                      </div>
-                    ))}
-                  </div>
-
+                      ))}
+                    </div>
+                  </FieldBlock>
                   <Separator />
 
-                  {/* รูปเจ้าของร้าน */}
-                  <div className="mt-4 flex gap-2">
-                    {previewProfileImages.map((img, i) => (
-                      <img
-                        key={i}
-                        src={img}
-                        className="h-32 w-32 cursor-pointer rounded-full object-cover"
-                        onClick={() => {
-                          const input = document.createElement("input");
-                          input.type = "file";
-                          input.accept = "image/*";
-                          input.onchange = (e: any) => {
-                            if (e.target.files && e.target.files[0]) {
-                              handleReplaceProfileImage(e.target.files[0]);
-                            }
-                          };
-                          input.click();
-                        }}
-                      />
-                    ))}
-                  </div>
-
-                  <Separator />
-
-                  {/* Services */}
                   <FieldBlock label="บริการที่มี">
                     <div className="grid gap-2 sm:grid-cols-2">
                       <div className="flex items-center gap-2">
