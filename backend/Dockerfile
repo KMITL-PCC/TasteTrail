@@ -1,29 +1,19 @@
-# --- Stage 1: Build Stage ---
-FROM node:20-alpine AS builder
-WORKDIR /app
-
-COPY package*.json ./
-RUN npm install
-
-COPY . .
-
-# รัน prisma generate หลังจาก install เสร็จ
-RUN npx prisma generate
-
-# รัน build TypeScript
-RUN npm run build
-
-# --- Stage 2: Production Stage ---
+# --- Dev Stage ---
 FROM node:20-alpine
 WORKDIR /app
 
+# ติดตั้ง package.json ก่อน (เพื่อ cache)
 COPY package*.json ./
-# RUN npm install --omit=dev
 RUN npm install
 
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/prisma ./prisma
-COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+# คัดลอกโค้ดทั้งหมด
+COPY . .
 
+# Prisma generate ให้มี client ใช้งาน
+RUN npx prisma generate
+
+# expose port backend
 EXPOSE 3001
-CMD ["npm", "start"]
+
+# ใช้ ts-node-dev สำหรับ hot reload
+CMD ["npm", "run", "dev"]
