@@ -188,6 +188,8 @@ export class accountController {
     const role = user.role;
     const id = user.id;
 
+    console.log("req.body", req);
+
     const information = JSON.parse(
       req.body.information
     ) as Restaurant.information;

@@ -267,6 +267,9 @@ export class accountService {
         minPrice: true,
         maxPrice: true,
         images: {
+          where: {
+            profilePic: false,
+          },
           select: {
             id: true,
             imageUrl: true,
@@ -302,6 +305,17 @@ export class accountService {
       throw Error("Restaurant not found for this owner");
     }
 
+    const profileImage = await this.prisma.restaurantImage.findFirst({
+      where: {
+        restaurant: { id: restaurantId?.id },
+        profilePic: true,
+      },
+      select: {
+        id: true,
+        imageUrl: true,
+      },
+    });
+
     const restaurantInformation = {
       name: information.name,
       description: information.description,
@@ -311,9 +325,14 @@ export class accountService {
       status: information.status,
       minPrice: information.minPrice,
       maxPrice: information.maxPrice,
-      image: information.images.map((image) => {
-        return { id: image.id, url: image.imageUrl };
-      }),
+      image: {
+        restaurantImages: information.images.map((image) => {
+          return { id: image.id, url: image.imageUrl };
+        }),
+        profileImage: profileImage
+          ? { id: profileImage.id, url: profileImage.imageUrl }
+          : null,
+      },
       openingHour: information.openninghour.map((hour) => ({
         weekday: hour.weekday,
         openTime: hour.openTime,
