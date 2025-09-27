@@ -188,7 +188,7 @@ export class accountController {
     const role = user.role;
     const id = user.id;
 
-    console.log("req.body", req);
+    console.log("req.body", req.body);
 
     const information = JSON.parse(
       req.body.information
