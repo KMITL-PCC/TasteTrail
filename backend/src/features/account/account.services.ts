@@ -10,7 +10,7 @@ import { fullname } from "./account.controllers";
 
 export class accountService {
   private prisma: PrismaClient;
-
+  public restaurantId: string | null = null;
   constructor(prisma: PrismaClient) {
     this.prisma = prisma;
   }
@@ -121,6 +121,8 @@ export class accountService {
       stream.end(profilePicture.buffer);
     });
 
+    this.restaurantId = restaurant.id;
+
     const profileImageUrl = profileUploadResult.secure_url;
     const profilePublicId = profileUploadResult.public_id;
 
@@ -154,5 +156,178 @@ export class accountService {
         },
       });
     });
+  }
+
+  async updateRestaurantInfo(
+    information: Restaurant.information,
+    price: Restaurant.price,
+    time: Restaurant.time[],
+    fullname: fullname,
+    id: string
+  ) {
+    const updateData = await this.prisma.$transaction(async (tx) => {
+      //1. find restaurant id by owner id
+      const restaurant = await tx.restaurant.findFirst({
+        where: {
+          ownerId: id,
+        },
+        select: {
+          id: true,
+        },
+      });
+
+      if (!restaurant || !restaurant.id) {
+        throw Error("Restaurant not found for this owner");
+      }
+      //2. update user fullname
+      await tx.restaurant.update({
+        where: {
+          id: restaurant?.id,
+        },
+        data: {
+          //restaurant
+          name: information.name,
+          description: information.description,
+          address: information.address,
+          latitude: information.latitude,
+          longitude: information.longitude,
+          minPrice: price.minPrice,
+          maxPrice: price.maxPrice,
+          //user
+          owner: {
+            update: {
+              firstName: fullname.firstName,
+              lastName: fullname.lastName,
+            },
+          },
+        },
+      });
+
+      //3. update opening hour
+      // delete all and create new one
+      await tx.openingHour.deleteMany({
+        where: {
+          restaurantId: restaurant?.id,
+        },
+      });
+
+      await tx.openingHour.createMany({
+        data: time.map((t) => ({
+          weekday: t.weekday,
+          openTime: t.openTime,
+          closeTime: t.closeTime,
+          restaurantId: restaurant?.id || "",
+        })),
+      });
+
+      //4. update services
+      // delete all and create new one
+      await tx.restaurantService.deleteMany({
+        where: {
+          restaurantId: restaurant?.id,
+        },
+      });
+
+      await tx.restaurantService.createMany({
+        data: (information.services || []).map((serviceId) => ({
+          restaurantId: restaurant?.id,
+          serviceId: serviceId,
+        })),
+      });
+    });
+  }
+
+  async getRestaurantByOwnerId(ownerId: string) {
+    // if (!this.restaurantId) {
+    //   return null;
+    // }
+
+    //find restaurant id form owner id
+    const restaurantId = await this.prisma.restaurant.findFirst({
+      where: {
+        ownerId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    //1. find restaurant id by owner id
+    const information = await this.prisma.restaurant.findFirst({
+      where: {
+        id: restaurantId?.id,
+      },
+      select: {
+        name: true,
+        description: true,
+        status: true,
+        address: true,
+        latitude: true,
+        longitude: true,
+        minPrice: true,
+        maxPrice: true,
+        images: {
+          select: {
+            id: true,
+            imageUrl: true,
+          },
+        },
+        openninghour: {
+          take: 7,
+          select: {
+            weekday: true,
+            openTime: true,
+            closeTime: true,
+          },
+        },
+        restaurantServices: {
+          select: {
+            service: {
+              select: {
+                service: true,
+              },
+            },
+          },
+        },
+        contact: {
+          select: {
+            contactDetail: true,
+            contactType: true,
+          },
+        },
+      },
+    });
+
+    if (!information) {
+      throw Error("Restaurant not found for this owner");
+    }
+
+    const restaurantInformation = {
+      name: information.name,
+      description: information.description,
+      address: information.address,
+      latitude: information.latitude,
+      longitude: information.longitude,
+      status: information.status,
+      minPrice: information.minPrice,
+      maxPrice: information.maxPrice,
+      image: information.images.map((image) => {
+        return { id: image.id, url: image.imageUrl };
+      }),
+      openingHour: information.openninghour.map((hour) => ({
+        weekday: hour.weekday,
+        openTime: hour.openTime,
+        closeTime: hour.closeTime,
+      })),
+      contact: {
+        contactType: information.contact[0].contactType,
+        contactDetail: information.contact[0].contactDetail,
+      },
+      services: information.restaurantServices.map(
+        (service) => service.service.service
+      ),
+    };
+
+    return restaurantInformation;
   }
 }

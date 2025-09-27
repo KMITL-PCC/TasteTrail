@@ -149,4 +149,111 @@ export class accountController {
       });
     }
   };
+
+  updateRestaurantInfo = async (req: Request, res: Response) => {
+    // {
+    //fullname : {
+    // firstName,
+    // lastName
+    //},
+    // information: {
+    //       "name",
+    //       "description",
+    //       "address",
+    //       "latitude": number,
+    //       "longitude": number,
+    //       "services": [1,2,3,4] //delivery,QR, WIFI, alcohol,
+    //       "contactDetail": ""
+    // },
+    // price: {
+    //       "minPrice",
+    //       "maxPrice"
+    // },
+    // time : [{
+    //       "weekday" : 0, 0 = sun, 6= saturday
+    //       "openTime",
+    //       "closeTime"
+    // },{
+    //       "weekday" : 0, 0 = sun, 6= saturday
+    //       "openTime",
+    //       "closeTime"
+    // }
+    // ],
+    // }
+
+    //5 pic
+    //4 for Restaurant page and 1 for Owner selfie picture
+
+    const user = req.user as User;
+    const role = user.role;
+    const id = user.id;
+
+    const information = JSON.parse(
+      req.body.information
+    ) as Restaurant.information;
+    const price = JSON.parse(req.body.price) as Restaurant.price;
+    const time = JSON.parse(req.body.time) as Restaurant.time[];
+    const fullname = JSON.parse(req.body.fullname) as fullname;
+
+    if (!user || role !== Role.RestaurantOwner) {
+      return res.status(400).json({
+        message: "invalid role",
+      });
+    }
+
+    try {
+      const updateRestaurantInfo = await this.service.updateRestaurantInfo(
+        information,
+        price,
+        time,
+        fullname,
+        id
+      );
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error(
+          "Error during update restaurant info ERROR:",
+          error.message
+        );
+      } else {
+        console.error("Error during update restaurant info ERROR:", error);
+      }
+
+      res.status(500).json({
+        message: "Error during update restaurant info ",
+      });
+    }
+  };
+
+  getInfoForEditRestaurant = async (req: Request, res: Response) => {
+    const user = req.user as User;
+    const id = user.id;
+
+    try {
+      const result = await this.service.getRestaurantByOwnerId(id);
+
+      if (!result) {
+        return res.status(400).json({
+          message: "can't find restaurant",
+        });
+      }
+
+      res.json({
+        ...result,
+      });
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error(
+          "Error during update restaurant info ERROR:",
+          error.message
+        );
+      } else {
+        console.error("Error during update restaurant info ERROR:", error);
+      }
+
+      res.status(500).json({
+        message: "Error during update restaurant info ",
+      });
+    }
+  };
 }

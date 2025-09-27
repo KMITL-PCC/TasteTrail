@@ -4,7 +4,7 @@ import multer from "multer";
 import { accountController } from "./account.controllers";
 import { accountService } from "./account.services";
 import prisma from "../../config/db.config";
-import { isAuthenticated } from "../../middleware/auth.middleware";
+import { isAuthenticated, hasRole } from "../../middleware/auth.middleware";
 
 const router = Router();
 const storage = multer.memoryStorage();
@@ -28,11 +28,26 @@ router.put(
 router.post(
   "/openRestaurant",
   isAuthenticated,
+  hasRole("User"),
   upload.fields([
     { name: "profileImage", maxCount: 1 },
     { name: "restaurantImages", maxCount: 4 },
   ]),
   controllers.updateToRestaurantOwner
+);
+
+router.put(
+  "/updateRestaurantInfo",
+  isAuthenticated,
+  hasRole("RestaurantOwner"),
+  controllers.updateRestaurantInfo
+);
+
+router.get(
+  "/updateRestaurantInfo",
+  isAuthenticated,
+  // hasRole("RestaurantOwner"),
+  controllers.getInfoForEditRestaurant
 );
 
 export default router;
