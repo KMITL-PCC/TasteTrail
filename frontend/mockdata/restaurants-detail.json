@@ -1,0 +1,102 @@
+[
+  {
+    "name": "ครัวคุณแม่",
+    "description": "อาหารไทยรสจัดจ้าน วัตถุดิบสดใหม่ เมนูแนะนำคือแกงเขียวหวานและผัดไทย",
+    "address": "เลขที่ 13 ตำบล ชุมโค อำเภอปะทิว ชุมพร 86160",
+    "latitude": "10.7253421",
+    "longitude": "99.3797746",
+    "status": "Temporarily_Closed",
+    "minPrice": "30",
+    "maxPrice": "500",
+    "image": [
+      "https://lh3.googleusercontent.com/p/AF1QipPu7yh6jBKNfQ9LVXYXb3X02OaHsFy2JQN2Yj6F=w289-h312-n-k-no",
+      "https://lh3.googleusercontent.com/gps-cs-s/AC9h4npE-KnWUc0FD-2QPTCnEoZueH1W3idMtsRNGGkTxpwoAP7FEqA_kxudVoKUB-tS36s73kZqTQ-usVSG9gv9Y7qQDxVyxHvPKr5pJSgVLPPtu7WFQ0-lEXaQrGrwodTAKhwhIIE=s1360-w1360-h1020",
+      "https://lh3.googleusercontent.com/gps-cs-s/AC9h4npSDuEDS1Bl652bgOJzvJdRxs0odYI14yj4CN-FjqQszFqE8gsP1JI5BzzNhrUMdlEGGC7OeWDoi84PegblecaT8yGKi--LrM87k9TSBXrY_XlAbCEemyWPcFWVK7DXhDtAo168Ag=s1360-w1360-h1020",
+      "https://lh3.googleusercontent.com/gps-cs-s/AC9h4nqZy7KRc5AIxfrQx3-Dikws7aDBGfiQB_1B8dbBNzwi5C-UiJyGALE8t349DUUzEs4RTnjC-eHbSr6jLoSabb6Pt5yOjFtNGEpmM6EhpLBORWO-eAlPjj3C6XE2wCemaY8zkKFN=s1360-w1360-h1020"
+    ],
+    "openingHour": {
+      "day": "อาทิตย์ - เสาร์",
+      "time": "10:00 - 22:00"
+    },
+    "contact": {
+      "contactType": "phone",
+      "contactDetail": "012-345-6789"
+    },
+    "services": ["delivery", "takeaway"]
+  },
+  {
+    "name": "Sushi world",
+    "description": "ซูชิระดับพรีเมียม เชฟญี่ปุ่นมากประสบการณ์ บรรยากาศร้านสบายๆ",
+    "address": "เลขที่ 13 ตำบล ชุมโค อำเภอปะทิว ชุมพร 86160",
+    "latitude": "10.7253421",
+    "longitude": "99.3797746",
+    "status": "Temporarily_Closed",
+    "minPrice": "30",
+    "maxPrice": "500",
+    "image": [
+      "https://lh3.googleusercontent.com/p/AF1QipPu7yh6jBKNfQ9LVXYXb3X02OaHsFy2JQN2Yj6F=w289-h312-n-k-no",
+      "https://lh3.googleusercontent.com/gps-cs-s/AC9h4npE-KnWUc0FD-2QPTCnEoZueH1W3idMtsRNGGkTxpwoAP7FEqA_kxudVoKUB-tS36s73kZqTQ-usVSG9gv9Y7qQDxVyxHvPKr5pJSgVLPPtu7WFQ0-lEXaQrGrwodTAKhwhIIE=s1360-w1360-h1020",
+      "https://lh3.googleusercontent.com/gps-cs-s/AC9h4npSDuEDS1Bl652bgOJzvJdRxs0odYI14yj4CN-FjqQszFqE8gsP1JI5BzzNhrUMdlEGGC7OeWDoi84PegblecaT8yGKi--LrM87k9TSBXrY_XlAbCEemyWPcFWVK7DXhDtAo168Ag=s1360-w1360-h1020",
+      "https://lh3.googleusercontent.com/gps-cs-s/AC9h4nqZy7KRc5AIxfrQx3-Dikws7aDBGfiQB_1B8dbBNzwi5C-UiJyGALE8t349DUUzEs4RTnjC-eHbSr6jLoSabb6Pt5yOjFtNGEpmM6EhpLBORWO-eAlPjj3C6XE2wCemaY8zkKFN=s1360-w1360-h1020"
+    ],
+    "openingHour": {
+      "day": "อาทิตย์ - เสาร์",
+      "time": "8:00 - 20:00"
+    },
+    "contact": {
+      "contactType": "phone",
+      "contactDetail": "012-345-6789"
+    },
+    "services": ["delivery", "takeaway", "dine-in"]
+  },
+  {
+    "name": "Burger Kingz",
+    "description": "เบอร์เกอร์เนื้อแน่น ชีสเยิ้ม เฟรนช์ฟรายกรอบกำลังดี",
+    "address": "เลขที่ 13 ตำบล ชุมโค อำเภอปะทิว ชุมพร 86160",
+    "latitude": "10.7253421",
+    "longitude": "99.3797746",
+    "status": "Open",
+    "minPrice": "30",
+    "maxPrice": "500",
+    "image": [
+      "https://lh3.googleusercontent.com/p/AF1QipPu7yh6jBKNfQ9LVXYXb3X02OaHsFy2JQN2Yj6F=w289-h312-n-k-no",
+      "https://lh3.googleusercontent.com/gps-cs-s/AC9h4npE-KnWUc0FD-2QPTCnEoZueH1W3idMtsRNGGkTxpwoAP7FEqA_kxudVoKUB-tS36s73kZqTQ-usVSG9gv9Y7qQDxVyxHvPKr5pJSgVLPPtu7WFQ0-lEXaQrGrwodTAKhwhIIE=s1360-w1360-h1020",
+      "https://lh3.googleusercontent.com/gps-cs-s/AC9h4npSDuEDS1Bl652bgOJzvJdRxs0odYI14yj4CN-FjqQszFqE8gsP1JI5BzzNhrUMdlEGGC7OeWDoi84PegblecaT8yGKi--LrM87k9TSBXrY_XlAbCEemyWPcFWVK7DXhDtAo168Ag=s1360-w1360-h1020",
+      "https://lh3.googleusercontent.com/gps-cs-s/AC9h4nqZy7KRc5AIxfrQx3-Dikws7aDBGfiQB_1B8dbBNzwi5C-UiJyGALE8t349DUUzEs4RTnjC-eHbSr6jLoSabb6Pt5yOjFtNGEpmM6EhpLBORWO-eAlPjj3C6XE2wCemaY8zkKFN=s1360-w1360-h1020"
+    ],
+    "openingHour": {
+      "day": "อาทิตย์ - เสาร์",
+      "time": "09:00 - 21:00"
+    },
+    "contact": {
+      "contactType": "phone",
+      "contactDetail": "012-345-6789"
+    },
+    "services": ["delivery"]
+  },
+  {
+    "name": "Dib lamun cafe",
+    "description": "คาเฟ่อร่อยโดนใจ กลางคืนมีเครื่องดื่ม บรรยากาศดี",
+    "address": "เลขที่ 13 ตำบล ชุมโค อำเภอปะทิว ชุมพร 86160",
+    "latitude": "10.7253421",
+    "longitude": "99.3797746",
+    "status": "Closed",
+    "minPrice": "30",
+    "maxPrice": "500",
+    "image": [
+      "https://lh3.googleusercontent.com/p/AF1QipPu7yh6jBKNfQ9LVXYXb3X02OaHsFy2JQN2Yj6F=w289-h312-n-k-no",
+      "https://lh3.googleusercontent.com/gps-cs-s/AC9h4npE-KnWUc0FD-2QPTCnEoZueH1W3idMtsRNGGkTxpwoAP7FEqA_kxudVoKUB-tS36s73kZqTQ-usVSG9gv9Y7qQDxVyxHvPKr5pJSgVLPPtu7WFQ0-lEXaQrGrwodTAKhwhIIE=s1360-w1360-h1020",
+      "https://lh3.googleusercontent.com/gps-cs-s/AC9h4npSDuEDS1Bl652bgOJzvJdRxs0odYI14yj4CN-FjqQszFqE8gsP1JI5BzzNhrUMdlEGGC7OeWDoi84PegblecaT8yGKi--LrM87k9TSBXrY_XlAbCEemyWPcFWVK7DXhDtAo168Ag=s1360-w1360-h1020",
+      "https://lh3.googleusercontent.com/gps-cs-s/AC9h4nqZy7KRc5AIxfrQx3-Dikws7aDBGfiQB_1B8dbBNzwi5C-UiJyGALE8t349DUUzEs4RTnjC-eHbSr6jLoSabb6Pt5yOjFtNGEpmM6EhpLBORWO-eAlPjj3C6XE2wCemaY8zkKFN=s1360-w1360-h1020"
+    ],
+    "openingHour": {
+      "day": "อาทิตย์ - เสาร์",
+      "time": "09:00 - 21:00"
+    },
+    "contact": {
+      "contactType": "phone",
+      "contactDetail": "012-345-6789"
+    },
+    "services": ["delivery"]
+  }
+]

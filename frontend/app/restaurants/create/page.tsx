@@ -1,7 +1,7 @@
-import StoreEditForm from "@/components/store/StoreEditForm";
+import RestaurantcreateForm from "@/components/store/RestaurantcreateForm";
 
-const storeeditpage = () => {
-  return <StoreEditForm />;
+const Restaurantcreatepage = () => {
+  return <RestaurantcreateForm />;
 };
 
-export default storeeditpage;
+export default Restaurantcreatepage;

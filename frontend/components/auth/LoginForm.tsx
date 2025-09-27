@@ -19,7 +19,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 
 const GoogleIcon = () => (
-  <svg className="mr-3 h-5 w-5" viewBox="0 0 48 48">
+  <svg className="w-5 h-5 mr-3" viewBox="0 0 48 48">
     <path
       fill="#FFC107"
       d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"
@@ -164,18 +164,18 @@ export default function LoginForm() {
   }
 
   return (
-    <div className="flex min-h-60 flex-col bg-white p-10 md:p-10">
-      <div className="items-top flex flex-grow justify-center">
+    <div className="flex flex-col p-10 min-h-60 md:p-10">
+      <div className="flex justify-center flex-grow items-top">
         <div className="w-full max-w-sm space-y-6">
           <div className="text-center">
             <h1 className="text-4xl font-bold text-black">Welcome</h1>
-            <p className="text-green-600">to your account</p>
+            <p className="text-primary">to your account</p>
           </div>
 
           {/* Google Login */}
           <Button
             variant="outline"
-            className="h-12 w-full text-base"
+            className="w-full h-12 text-base"
             onClick={handleGoogleLogin}
           >
             <GoogleIcon />
@@ -230,7 +230,7 @@ export default function LoginForm() {
               {/* ปุ่ม Submit — ไม่ครอบด้วย <Link> */}
               <Button
                 type="submit"
-                className="h-12 w-full bg-green-500 text-lg font-semibold text-white hover:bg-green-600"
+                className="w-full h-12 text-lg font-semibold"
                 disabled={!csrfToken || isSubmitting}
                 aria-busy={isSubmitting}
               >
@@ -254,7 +254,7 @@ export default function LoginForm() {
             </Link>
           </div>
 
-          <p className="text-center text-xs text-gray-500">
+          <p className="text-xs text-center text-gray-500">
             By continuing, you agree to Supabase&apos;s{" "}
             <a href="/terms" className="underline hover:text-black">
               Terms of Service
