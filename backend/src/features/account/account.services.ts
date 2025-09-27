@@ -1,4 +1,4 @@
-import { PrismaClient, Role, User } from "@prisma/client";
+import { PrismaClient, Role, User, RestaurantStatus } from "@prisma/client";
 import { Express } from "express";
 import cloudinary from "../../config/cloudinary.config";
 import { Restaurant } from "../../types/restaurant";
@@ -329,5 +329,30 @@ export class accountService {
     };
 
     return restaurantInformation;
+  }
+
+  async updateRestaurantStatus(ownerId: string, status: RestaurantStatus) {
+    //1. find restaurant id by owner id
+    const restaurant = await this.prisma.restaurant.findFirst({
+      where: {
+        ownerId,
+      },
+      select: {
+        id: true,
+      },
+    });
+    if (!restaurant || !restaurant.id) {
+      throw Error("Restaurant not found for this owner");
+    }
+
+    //2. update status
+    const updated = await this.prisma.restaurant.update({
+      where: {
+        id: restaurant.id,
+      },
+      data: {
+        status,
+      },
+    });
   }
 }

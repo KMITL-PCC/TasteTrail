@@ -1,4 +1,4 @@
-import { Role, User } from "@prisma/client";
+import { Role, User, RestaurantStatus } from "@prisma/client";
 import { Restaurant } from "../../types/restaurant";
 import { Request, Response, NextFunction } from "express";
 import { accountService } from "./account.services";
@@ -253,6 +253,38 @@ export class accountController {
 
       res.status(500).json({
         message: "Error during update restaurant info ",
+      });
+    }
+  };
+
+  updateRestaurantStatus = async (req: Request, res: Response) => {
+    const user = req.user as User;
+    const role = user.role;
+    const id = user.id;
+    const status = req.body.status as RestaurantStatus;
+
+    if (!user || role !== Role.RestaurantOwner || !status) {
+      return res.status(400).json({
+        message: "missing data or invalid role",
+      });
+    }
+
+    try {
+      const result = await this.service.updateRestaurantStatus(id, status);
+
+      res.sendStatus(200);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error(
+          "Error during update restaurant status ERROR:",
+          error.message
+        );
+      } else {
+        console.error("Error during update restaurant status ERROR:", error);
+      }
+
+      res.status(500).json({
+        message: "Error during update restaurant status ",
       });
     }
   };
