@@ -128,7 +128,7 @@ export default function SellerInfoWeb() {
           }),
         ],
         view: new View({
-          center: fromLonLat([100.5018, 13.7563]), // Bangkok
+          center: fromLonLat([10.724606159636176, 99.37429103738151]), // ปะทิว
           zoom: 12,
         }),
       });
