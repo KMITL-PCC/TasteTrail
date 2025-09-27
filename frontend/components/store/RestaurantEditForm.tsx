@@ -23,8 +23,8 @@ import Feature from "ol/Feature";
 const backendURL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
 const CSRF_ENDPOINT = `${backendURL}/api/csrf-token`;
-const GET_RESTAURANT_ENDPOINT = `${backendURL}/account/updateRestaurant`;
-const UPDATE_RESTAURANT_ENDPOINT = `${backendURL}/account/updateRestaurant`;
+const GET_RESTAURANT_ENDPOINT = `${backendURL}/account/updateRestaurantInfo`;
+const UPDATE_RESTAURANT_ENDPOINT = `${backendURL}/account/updateRestaurantInfo`;
 
 const daysOfWeek = [
   "อาทิตย์",
