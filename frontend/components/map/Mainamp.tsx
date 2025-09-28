@@ -62,7 +62,7 @@ const MainMap = ({ onLocationChange }: MainMapProps) => {
     <div className="h-[50vh] rounded-md">
       <MapContainer
         className="h-full w-full"
-        center={DEFAULT_LOCATION}
+        center={DEFAULT_LOCATION} // ✅ ต้องมี
         zoom={13}
         scrollWheelZoom={true}
       >
