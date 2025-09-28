@@ -19,12 +19,16 @@ services:
       DATABASE_URL: postgres://admin:12345@db:5432/review_restaurant?schema=public
       REDIS_URL: redis://redis:6379
       PORT: 3001
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_started
-    command: sh -c "npx prisma migrate deploy && npm start"
+    command: >
+      sh -c "npx prisma migrate dev --name init && npm run dev"
 
   # frontend:
   #   build: ./frontend
