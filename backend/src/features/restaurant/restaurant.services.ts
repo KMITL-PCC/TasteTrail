@@ -184,7 +184,7 @@ export default {
       return new Promise<{ url: string; public_id: string }>(
         (resolve, reject) => {
           const stream = cloudinary.uploader.upload_stream(
-            { resource_type: "image" },
+            { resource_type: "image", folder: "restaurant_images" },
             (error, result: any) => {
               if (error) reject(error);
               resolve({

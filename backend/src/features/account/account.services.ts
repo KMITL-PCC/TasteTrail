@@ -6,7 +6,7 @@ import RestaurantService from "../restaurant/restaurant.services";
 import { resolve } from "path";
 import { rejects } from "assert";
 
-import { fullname } from "./account.controllers";
+import { fullname, updateRestaurantImages } from "./account.controllers";
 
 export class accountService {
   private prisma: PrismaClient;
@@ -163,8 +163,10 @@ export class accountService {
     price: Restaurant.price,
     time: Restaurant.time[],
     fullname: fullname,
-    id: string
+    id: string,
+    images: updateRestaurantImages
   ) {
+    //0. update restaurant information
     const updateData = await this.prisma.$transaction(async (tx) => {
       //1. find restaurant id by owner id
       const restaurant = await tx.restaurant.findFirst({
@@ -235,6 +237,92 @@ export class accountService {
         })),
       });
     });
+
+    // console.log(images.profilePicture);
+    //5. update owner images
+    if (images.profilePicture) {
+      const profileId = await this.prisma.restaurantImage.findFirst({
+        where: {
+          restaurant: { ownerId: id },
+          profilePic: true,
+        },
+        select: {
+          id: true,
+          publicId: true,
+        },
+      });
+
+      const profileUploadResult = await new Promise<any>((resolve, rejects) => {
+        const stream = cloudinary.uploader.upload_stream(
+          {
+            folder: "restaurant_profiles",
+            public_id: profileId?.publicId?.split("/")[1] || undefined,
+            overwrite: true,
+          },
+          (error, result) => {
+            if (error) rejects(error);
+            else resolve(result);
+          }
+        );
+        stream.end(images.profilePicture.buffer);
+      });
+
+      await this.prisma.restaurantImage.update({
+        where: {
+          id: profileId?.id || 0,
+        },
+        data: {
+          imageUrl: profileUploadResult.secure_url,
+          publicId: profileUploadResult.public_id,
+        },
+      });
+    }
+
+    //6. update restaurant images
+    if (images.restaurantPictures.images.length > 0) {
+      //find old pic from image id
+      const oldImages = await this.prisma.restaurantImage.findMany({
+        where: {
+          id: { in: images.restaurantPictures.updateImageIds },
+        },
+        select: {
+          id: true,
+          publicId: true,
+        },
+      });
+
+      //upload many pic to cloudinary overwrite public id
+      const uploadPromises = oldImages.map((image, index) => {
+        return new Promise<any>((resolve, rejects) => {
+          const stream = cloudinary.uploader.upload_stream(
+            {
+              folder: "restaurant_images",
+              public_id: image.publicId?.split("/")[1] || undefined,
+              overwrite: true,
+            },
+            (error, result) => {
+              if (error) rejects(error);
+              else resolve(result);
+            }
+          );
+          stream.end(images.restaurantPictures.images[index].buffer);
+        });
+      });
+
+      const uploadResults = await Promise.all(uploadPromises);
+
+      await Promise.all(
+        uploadResults.map((result, index) =>
+          this.prisma.restaurantImage.update({
+            where: { id: oldImages[index].id },
+            data: {
+              imageUrl: result.secure_url,
+              publicId: result.public_id,
+            },
+          })
+        )
+      );
+    }
   }
 
   async getRestaurantByOwnerId(ownerId: string) {
