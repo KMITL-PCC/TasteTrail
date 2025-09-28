@@ -10,15 +10,9 @@ import { Separator } from "@/components/ui/separator";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "../ui/textarea";
 import { toast } from "sonner";
-import { Map, View } from "ol";
-import "ol/ol.css";
-import OSM from "ol/source/OSM";
-import TileLayer from "ol/layer/Tile";
-import { fromLonLat, toLonLat } from "ol/proj";
-import VectorLayer from "ol/layer/Vector";
-import VectorSource from "ol/source/Vector";
-import { Point } from "ol/geom";
-import Feature from "ol/Feature";
+import dynamic from "next/dynamic";
+
+const Mainmap = dynamic(() => import("../map/Mainamp"), { ssr: false });
 
 // ✅ Backend URL
 const backendURL =
@@ -76,7 +70,6 @@ export default function SellerInfoWeb() {
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
 
-  const mapRef = useRef<HTMLDivElement | null>(null);
   const [csrfToken, setCsrfToken] = useState<string | null>(null);
 
   const [services, setServices] = useState<number[]>([]);
@@ -118,47 +111,6 @@ export default function SellerInfoWeb() {
   }, []);
 
   // สร้างแผนที่
-  useEffect(() => {
-    if (mapRef.current) {
-      const map = new Map({
-        target: mapRef.current,
-        layers: [
-          new TileLayer({
-            source: new OSM(),
-          }),
-        ],
-        view: new View({
-          center: fromLonLat([10.724606159636176, 99.37429103738151]), // ปะทิว
-          zoom: 12,
-        }),
-      });
-
-      const markerSource = new VectorSource();
-      const markerLayer = new VectorLayer({
-        source: markerSource,
-      });
-      map.addLayer(markerLayer);
-
-      map.on("click", (event) => {
-        const coordinate = event.coordinate;
-        const lonLat = toLonLat(coordinate);
-
-        const marker = new Feature({
-          geometry: new Point(coordinate),
-        });
-
-        markerSource.clear();
-        markerSource.addFeature(marker);
-
-        setLongitude(lonLat[0]);
-        setLatitude(lonLat[1]);
-      });
-
-      return () => {
-        map.setTarget(undefined);
-      };
-    }
-  }, []);
 
   // ฟังก์ชันแก้ไขเวลา
   const handleTimeChange = (
@@ -365,15 +317,14 @@ export default function SellerInfoWeb() {
                           placeholder="บ้านเลขที่ / หมู่ / ตำบล / อำเภอ / จังหวัด / รหัสไปรษณีย์"
                         />
                       </FieldBlock>
-
                       <Separator />
-
-                      <div style={{ height: "400px" }}>
-                        <div ref={mapRef} style={{ height: "100%" }} />
-                      </div>
-
+                      <Mainmap
+                        onLocationChange={([lat, lng]) => {
+                          setLatitude(lat);
+                          setLongitude(lng);
+                        }}
+                      />
                       <Separator />
-
                       {/* เวลาเปิดปิด */}
                       <div>
                         {openingTimes.map(
@@ -416,7 +367,6 @@ export default function SellerInfoWeb() {
                           ),
                         )}
                       </div>
-
                       <Separator />
                     </>
                   )}
