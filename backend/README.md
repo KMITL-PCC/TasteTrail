@@ -82,3 +82,42 @@ Reset password if forgot password.
   Update user profile (picture and username)  
   **Body:** `{ "username": "string" }`  
   **File:** `avatar` (image file)
+
+- `POST account/openRestaurant`
+  User open restaurant
+
+  **Body:**
+
+  ```json
+  {
+    "fullname": {
+      "firstName": "string",
+      "lastName": "string"
+    },
+    "information": {
+      "name": "string",
+      "description": "string",
+      "address": "string",
+      "latitude": "number",
+      "longitude": "number",
+      "services": [1, 2, 3, 4], //delivery,QR, WIFI, alcohol
+      "contactDetail": "string"
+    },
+    "price": {
+      "minPrice": "number",
+      "maxPrice": "number"
+    },
+    "time": [
+      {
+        "weekday": "number", //0 = sunday, 6 = saturday
+        "openTime": "string",
+        "closeTime": "string"
+      }
+    ]
+  }
+  ```
+
+  **File:**
+
+  - `profileImage` - Restaurant profile image (1 file max)
+  - `restaurantImages` - Restaurant gallery images (4 files max)
