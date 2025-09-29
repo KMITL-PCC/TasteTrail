@@ -12,7 +12,7 @@ import { Textarea } from "../ui/textarea";
 import { toast } from "sonner";
 import dynamic from "next/dynamic";
 
-const Mainmap = dynamic(() => import("../map/Mainamp"), { ssr: false });
+const Mainmap = dynamic(() => import("../map/MainMap"), { ssr: false });
 
 // ✅ Backend URL
 const backendURL =
