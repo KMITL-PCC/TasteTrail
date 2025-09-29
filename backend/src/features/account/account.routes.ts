@@ -40,17 +40,17 @@ router.put(
   "/updateRestaurantInfo",
   isAuthenticated,
   hasRole("RestaurantOwner"),
+  upload.fields([
+    { name: "profileImage", maxCount: 1 },
+    { name: "restaurantImages", maxCount: 4 },
+  ]),
   controllers.updateRestaurantInfo
 );
 
 router.get(
   "/updateRestaurantInfo",
   isAuthenticated,
-  // hasRole("RestaurantOwner"),
-  upload.fields([
-    { name: "profileImage", maxCount: 1 },
-    { name: "restaurantImages", maxCount: 4 },
-  ]),
+  hasRole("RestaurantOwner"),
   controllers.getInfoForEditRestaurant
 );
 
