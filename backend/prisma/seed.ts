@@ -4,6 +4,37 @@ import { faker } from "@faker-js/faker";
 const prisma = new PrismaClient();
 
 async function main() {
+  //truncate all tables
+  await prisma.$executeRaw`TRUNCATE TABLE "Category", "Service" RESTART IDENTITY CASCADE`;
+  //insert to service delivery, QR, WIFI, alcohol
+  const services = [
+    { id: 1, service: "delivery" },
+    { id: 2, service: "QR" },
+    { id: 3, service: "WIFI" },
+    { id: 4, service: "alcohol" },
+  ];
+
+  await prisma.service.createMany({
+    data: services,
+    skipDuplicates: true,
+  });
+
+  const categories = [
+    { id: 1, name: "ร้านอาหารตามสั่ง" },
+    { id: 2, name: "ร้านก๋วยเตี๋ยว" },
+    { id: 3, name: "คาเฟ่" },
+    { id: 4, name: "ร้านเครื่องดื่ม" },
+    { id: 5, name: "ร้านของหวาน" },
+    { id: 6, name: "ร้านของกินเล่น" },
+    { id: 7, name: "อาหารฮาลาล" },
+    { id: 8, name: "ร้านอาหารอีสาน" },
+  ];
+
+  await prisma.category.createMany({
+    data: categories,
+    skipDuplicates: true,
+  });
+
   for (let i = 0; i < 10; i++) {
     // สร้าง Restaurant
     await prisma.$transaction(async (prisma) => {
