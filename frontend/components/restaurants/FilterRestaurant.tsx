@@ -118,7 +118,7 @@ const FilterRestaurant = () => {
 
   return (
     <>
-      <Card className="sticky top-0 hidden md:flex md:w-50 lg:w-60 lg:pl-4">
+      <Card className="sticky hidden top-24 md:flex md:w-50 lg:w-60 lg:pl-4">
         <CardContent className="flex flex-col gap-4 px-0">
           {/* Category */}
           <div className="flex flex-col gap-3 px-3">

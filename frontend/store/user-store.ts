@@ -5,6 +5,7 @@ export type userInfoProps = {
   email: string;
   role: string;
   profilePictureUrl: string;
+  restaurantId: string;
 };
 
 type State = {

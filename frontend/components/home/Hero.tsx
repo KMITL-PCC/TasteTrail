@@ -14,7 +14,7 @@ export default function Hero() {
   };
 
   return (
-    <div className="flex flex-col items-center bg-white">
+    <div className="flex flex-col items-center">
       <main className="container flex flex-col items-center w-full px-4 pt-5 pb-16 mx-auto md:px-8">
         {/* <h1 className="mt-20 mb-8 text-4xl text-center font-Inter text-black/50 sm:text-5xl md:mb-12 md:text-6xl">
           อยากกินอะไร เราหาให้
