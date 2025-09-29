@@ -43,14 +43,14 @@ const RestaurantsPage = async ({
     prices: string;
     search: string;
   };
-  // const { restaurant } = await getRestaurants(
-  //   search,
-  //   categories,
-  //   ratings,
-  //   prices,
-  // );
+  const { restaurant } = await getRestaurants(
+    search,
+    categories,
+    ratings,
+    prices,
+  );
 
-  // console.log(restaurant);
+  console.log(restaurant);
 
   return (
     <div className="mx-auto flex max-w-[1300px] flex-col gap-2 p-4 pt-2 md:p-8 md:pt-2">
@@ -110,7 +110,6 @@ const RestaurantsPage = async ({
             </CardContent>
           </Card>
         </div> */}
-
           {/* Restaurants List*/}
           <div>
             <Card>
@@ -121,7 +120,7 @@ const RestaurantsPage = async ({
               </CardHeader>
               <Separator />
               <CardContent className="grid gap-4">
-                {restaurantData.map((restaurant: RestaurantProps) => (
+                {restaurant.map((restaurant: RestaurantProps) => (
                   <Link
                     href={`/restaurants/${restaurant.id}`}
                     key={restaurant.id}
