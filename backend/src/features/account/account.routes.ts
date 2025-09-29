@@ -11,7 +11,7 @@ const storage = multer.memoryStorage();
 const upload = multer({
   storage,
   limits: {
-    fileSize: 2 * 1024 * 1024, // 2MB limit per file
+    fileSize: 4 * 1024 * 1024, // 4MB limit per file
   },
 });
 
@@ -52,6 +52,13 @@ router.get(
   isAuthenticated,
   hasRole("RestaurantOwner"),
   controllers.getInfoForEditRestaurant
+);
+
+router.put(
+  "/updateStatus",
+  isAuthenticated,
+  hasRole("RestaurantOwner"),
+  controllers.updateRestaurantStatus
 );
 
 export default router;

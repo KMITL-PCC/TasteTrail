@@ -95,40 +95,33 @@ export class accountController {
     const role = user.role;
     const id = user.id;
 
-    const files = req.files as {
-      profileImage: Express.Multer.File[];
-      restaurantImages: Express.Multer.File[];
-    };
+    const requiredFields = ["information", "price", "time", "fullname"];
+    const missing = requiredFields.filter(
+      (field) => !req.body[field] && req.body[field] === null
+    );
 
-    const profilePicture = files.profileImage[0] as Express.Multer.File;
-    const restaurantPictures = files.restaurantImages;
-
-    const information = JSON.parse(
-      req.body.information
-    ) as Restaurant.information;
-    const price = JSON.parse(req.body.price) as Restaurant.price;
-    const time = JSON.parse(req.body.time) as Restaurant.time[];
-    const fullname = JSON.parse(req.body.fullname) as fullname;
-
-    if (
-      !user ||
-      role !== Role.User ||
-      !profilePicture ||
-      !restaurantPictures ||
-      restaurantPictures.length !== 4
-    ) {
+    if (missing.length > 0) {
       return res.status(400).json({
         message: "missing files or invalid role",
       });
     }
 
-    if (!information || !price || !time || !fullname) {
-      return res.status(400).json({
-        message: "missing information",
-      });
-    }
-
     try {
+      const files = req.files as {
+        profileImage: Express.Multer.File[];
+        restaurantImages: Express.Multer.File[];
+      };
+
+      const profilePicture = files.profileImage[0] as Express.Multer.File;
+      const restaurantPictures = files.restaurantImages;
+
+      const information = JSON.parse(
+        req.body.information
+      ) as Restaurant.information;
+      const price = JSON.parse(req.body.price) as Restaurant.price;
+      const time = JSON.parse(req.body.time) as Restaurant.time[];
+      const fullname = JSON.parse(req.body.fullname) as fullname;
+
       await this.service.updateToRestaurantOwner(
         id,
         fullname,
@@ -200,7 +193,13 @@ export class accountController {
       });
     }
 
-    const requiredFields = ["information", "price", "time", "fullname"];
+    const requiredFields = [
+      "information",
+      "price",
+      "time",
+      "fullname",
+      "updateImage",
+    ];
     const missing = requiredFields.filter((field) => !req.body[field]);
 
     if (missing.length) {
