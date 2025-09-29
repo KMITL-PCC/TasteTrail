@@ -233,6 +233,11 @@ export class accountController {
       } as updateRestaurantImages;
       // const profilePicture = files.profileImage[0] as Express.Multer.File;
       // const restaurantPictures = files.restaurantImages;
+      if (images.restaurantPictures.images.length < 4) {
+        return res.status(400).json({
+          message: "You can upload up to 4 restaurant images in total",
+        });
+      }
 
       const updateRestaurantInfo = await this.service.updateRestaurantInfo(
         information,
@@ -307,7 +312,9 @@ export class accountController {
     try {
       const result = await this.service.updateRestaurantStatus(id, status);
 
-      res.sendStatus(200);
+      res.status(200).json({
+        message: "Successfully update restaurant status:" + result,
+      });
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.error(

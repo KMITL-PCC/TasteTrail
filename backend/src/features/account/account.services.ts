@@ -346,6 +346,12 @@ export class accountService {
         id: restaurantId?.id,
       },
       select: {
+        owner: {
+          select: {
+            firstName: true,
+            lastName: true,
+          },
+        },
         name: true,
         description: true,
         status: true,
@@ -405,6 +411,10 @@ export class accountService {
     });
 
     const restaurantInformation = {
+      fullname: {
+        firstName: information.owner?.firstName,
+        lastName: information.owner?.lastName,
+      },
       name: information.name,
       description: information.description,
       address: information.address,
@@ -461,5 +471,7 @@ export class accountService {
         status,
       },
     });
+
+    return updated.status;
   }
 }
