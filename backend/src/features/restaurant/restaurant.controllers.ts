@@ -3,6 +3,7 @@ import { Request, Response, NextFunction } from "express";
 import { Restaurant } from "../../types/restaurant";
 import restaurantServices from "./restaurant.services";
 import { User } from "@prisma/client";
+import { get } from "http";
 
 function validateNestedFields(obj: any, requiredFields: string[]): string[] {
   return requiredFields.filter((field) => !obj?.[field]);
@@ -160,6 +161,33 @@ export default {
       }
       res.status(500).json({
         message: "Error during get restaurant infomation",
+      });
+    }
+  },
+
+  getPopularRestaurants: async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const popularRestaurants =
+        await restaurantServices.getPopularRestaurants();
+      res.status(200).json({
+        message: "ok",
+        popularRestaurants,
+      });
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error(
+          "Error during get popular restaurants ERROR:",
+          error.message
+        );
+      } else {
+        console.error("Error during get popular restaurants ERROR:", error);
+      }
+      res.status(500).json({
+        message: "Error during get popular restaurants",
       });
     }
   },

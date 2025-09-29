@@ -4,6 +4,7 @@ import cloudinary from "../../config/cloudinary.config";
 import prisma from "../../config/db.config";
 import { Restaurant } from "../../types/restaurant";
 import { error } from "console";
+import { get } from "http";
 
 const weekArrayFromat = (openninghour: Restaurant.time[]) => {
   const day = ["อาทิตย์", "จันทร์", "อังคาร", "พุธ", "พฤหัส", "ศุกร์", "เสาร์"];
@@ -345,5 +346,38 @@ export default {
     };
 
     return restaurantInformation;
+  },
+
+  getPopularRestaurants: async () => {
+    //query popular restaurant
+    const popularRestaurants = await prisma.$queryRaw<{
+      id: string;
+      name: string;
+      totalReviews: number;
+      avgRating: number;
+      imageUrl: string;
+    }>`
+      SELECT
+        r.restaurant_id, r.name, r.total_reviews, r.avg_rating, ri.image_url,
+        (r.avg_rating * 0.25 + r.total_reviews * 0.3 ) AS popularity_score
+      FROM
+        "Restaurant" r
+      LEFT JOIN LATERAL (
+        SELECT ri.image_url
+        FROM "RestaurantImage" ri
+        WHERE ri.restaurant_id = r.restaurant_id
+        ORDER BY ri.image_id ASC
+        LIMIT 1
+      ) ri
+      ON 
+        true
+      GROUP BY
+        r.restaurant_id, ri.image_url
+      ORDER BY
+        popularity_score DESC
+      LIMIT 3;
+    `;
+
+    return popularRestaurants;
   },
 };
