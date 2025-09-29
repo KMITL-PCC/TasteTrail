@@ -94,6 +94,8 @@ export default function EditRestaurantPage() {
 
   const [updateImages, setUpdateImages] = useState<number[]>([]);
 
+  const [imageIDs, setImageIDs] = useState<number[]>([]);
+
   // --- fetch data once on mount ---
   useEffect(() => {
     const fetchData = async () => {
@@ -107,6 +109,7 @@ export default function EditRestaurantPage() {
         });
         if (!res.ok) throw new Error("Failed to fetch restaurant info");
         const data = await res.json();
+        console.log(data);
 
         // --- fullname ---
         if (typeof data.fullname === "string") {
@@ -162,6 +165,13 @@ export default function EditRestaurantPage() {
         if (data.image?.profileImage)
           setPreviewProfileImages([data.image.profileImage.url]);
 
+        if (data.image?.restaurantImages) {
+          setPreviewImages(
+            data.image.restaurantImages.map((img: any) => img.url),
+          );
+          setImageIDs(data.image.restaurantImages.map((img: any) => img.id));
+        }
+
         setIsLoading(false);
       } catch (err) {
         console.error(err);
@@ -208,19 +218,19 @@ export default function EditRestaurantPage() {
   };
 
   // เปลี่ยนรูป
-  const handleUpdateImage = (id: number, file: File) => {
-    handleReplaceImage(id, file); // อัปเดต previewImages + uploadedImages
-    if (!updateImages.includes(id)) {
-      setUpdateImages((prev) => [...prev, id]);
-    }
+  const handleUpdateImage = (index: number, file: File) => {
+    handleReplaceImage(index, file);
+    const id = imageIDs[index]; // เอา ID จริง
+    if (!updateImages.includes(id)) setUpdateImages((prev) => [...prev, id]);
   };
 
   // ลบรูป
-  const handleRemoveUpdateImage = (id: number) => {
-    handleRemoveImage(id); // อัปเดต previewImages + uploadedImages
-    if (!updateImages.includes(id)) {
-      setUpdateImages((prev) => [...prev, id]);
-    }
+  const handleRemoveUpdateImage = (index: number) => {
+    handleRemoveImage(index);
+    const id = imageIDs[index];
+    if (!updateImages.includes(id)) setUpdateImages((prev) => [...prev, id]);
+    // ลบ ID จาก imageIDs ด้วย
+    setImageIDs((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleSave = async () => {
@@ -255,6 +265,7 @@ export default function EditRestaurantPage() {
 
       // เฉพาะ updateImages: ส่ง array ของ id ถ้ามีการแก้ไข
       form.append("updateImage", JSON.stringify(updateImages));
+      console.log(updateImages);
 
       const res = await fetch(SAVE_RESTAURANT_ENDPOINT, {
         method: "PUT",
