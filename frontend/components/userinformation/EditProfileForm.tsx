@@ -396,14 +396,36 @@ export default function EditProfilePage() {
                     {savingPassword ? "Updating..." : "Update password"}
                   </Button>
 
-                  <Link
-                    href={`/forgotpassword?from=edit&return=${encodeURIComponent(
-                      "/editprofile?tab=password",
-                    )}`}
-                    className="text-muted-foreground text-sm hover:underline"
+                  <Button
+                    variant="link"
+                    size="sm"
+                    onClick={async () => {
+                      if (!csrfToken) {
+                        toast.error("Session not ready");
+                        return;
+                      }
+                      try {
+                        const res = await fetch(`${backendURL}/auth/sendOTP`, {
+                          method: "POST",
+                          headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRF-Token": csrfToken,
+                          },
+                          credentials: "include",
+                        });
+                        if (!res.ok) throw new Error("Failed to send OTP");
+
+                        toast.success("OTP sent successfully!");
+                        router.push(
+                          `/updatebyotp?return=${encodeURIComponent("/editprofile?tab=password")}`,
+                        );
+                      } catch (err) {
+                        toast.error("Error sending OTP");
+                      }
+                    }}
                   >
-                    Forgot password?
-                  </Link>
+                    Update By OTP
+                  </Button>
                 </CardFooter>
               </Card>
             </form>

@@ -1,23 +1,23 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useRouter } from "next/navigation"; // import router
+import { useRouter } from "next/navigation";
 
 interface ResetPasswordFormProps {
-  csrfToken: string;
   setFormStep: (step: "otp" | "resetPassword") => void;
   email: string | null;
+  mode: "forgot" | "updateByOtp";
 }
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
-const RESET_PASSWORD_ENDPOINT = `${BACKEND_URL}/auth/reset-password`;
 const CSRF_TOKEN_ENDPOINT = `${BACKEND_URL}/api/csrf-token`;
 
 const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
   setFormStep,
   email,
+  mode,
 }) => {
-  const router = useRouter(); // ใช้ router
+  const router = useRouter();
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [message, setMessage] = useState("");
@@ -64,8 +64,14 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
       return;
     }
 
+    // เลือก endpoint ตาม mode
+    const endpoint =
+      mode === "forgot"
+        ? `${BACKEND_URL}/auth/reset-password`
+        : `${BACKEND_URL}/auth/updatepass`;
+
     try {
-      const res = await fetch(RESET_PASSWORD_ENDPOINT, {
+      const res = await fetch(endpoint, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -81,11 +87,10 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
       if (!res.ok)
         throw new Error(data?.message || "Failed to reset password.");
 
-      setMessage("Password reset successful. Redirecting to login...");
+      setMessage("Password reset successful. Redirecting...");
 
-      // redirect ไปหน้า login หลังจาก 1.5 วินาที
       setTimeout(() => {
-        router.push("/login"); // เปลี่ยนเป็น path หน้า login ของคุณ
+        router.push("/login");
       }, 1500);
     } catch (err: any) {
       console.error("Error resetting password:", err);
@@ -114,21 +119,15 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
         >
           New Password
         </label>
-        <div className="relative">
-          <input
-            id="newPassword"
-            name="newPassword"
-            type="password"
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            required
-            className="w-full rounded-md border border-gray-300 px-3 py-2 pr-12 shadow-sm focus:ring-2 focus:ring-green-500 focus:outline-none"
-            placeholder="Enter new password"
-          />
-          <span className="absolute top-1/2 right-3 -translate-y-1/2 transform text-xl text-gray-500">
-            🔒
-          </span>
-        </div>
+        <input
+          id="newPassword"
+          type="password"
+          value={newPassword}
+          onChange={(e) => setNewPassword(e.target.value)}
+          required
+          className="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-green-500 focus:outline-none"
+          placeholder="Enter new password"
+        />
       </div>
 
       <div>
@@ -140,7 +139,6 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
         </label>
         <input
           id="confirmPassword"
-          name="confirmPassword"
           type="password"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
@@ -153,13 +151,13 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full justify-center rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-green-400"
+        className="w-full rounded-md bg-green-600 px-4 py-2 text-white hover:bg-green-700 disabled:bg-green-400"
       >
         {isLoading ? "Saving..." : "Reset Password"}
       </button>
 
       {message && (
-        <div className="mt-2 text-center text-sm text-red-500">{message}</div>
+        <div className="text-center text-sm text-red-500">{message}</div>
       )}
 
       <div className="mt-4 text-center">
