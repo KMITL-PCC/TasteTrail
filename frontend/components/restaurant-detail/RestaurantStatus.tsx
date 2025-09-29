@@ -11,8 +11,7 @@ import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { RestaurantInfoProps } from "@/types";
 import { useUser } from "@/store/user-store";
-import { usePathname } from "next/navigation";
-import { toast } from "sonner";
+import { usePathname, useRouter } from "next/navigation";
 
 const RestaurantStatus = ({
   status,
@@ -23,6 +22,7 @@ const RestaurantStatus = ({
   const [csrfToken, setCsrfToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useUser();
+  const router = useRouter();
   const pathname = usePathname();
   const id = pathname.split("/")[2];
 
@@ -74,13 +74,11 @@ const RestaurantStatus = ({
         if (!res.ok) {
           console.error("Failed to update restaurant status" + res.status);
         }
-        const data = await res.json();
-        // setRestaurantStatus(data.restaurantInfo.status);
-        console.log(data);
       } catch (err) {
         console.error("Failed to update restaurant status" + err);
       } finally {
         setIsLoading(false);
+        router.refresh();
       }
     };
 
@@ -90,7 +88,7 @@ const RestaurantStatus = ({
   if (user?.role === "RestaurantOwner" && user?.restaurantId === id) {
     return (
       <Select
-        defaultValue={restaurantStatus}
+        value={restaurantStatus}
         onValueChange={setRestaurantStatus}
         disabled={isLoading}
       >
