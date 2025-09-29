@@ -15,5 +15,6 @@ router.post(
 );
 router.get("/get", restaurantControllers.getRestaurants);
 router.get("/get/:id", restaurantControllers.getInformation);
+router.get("/popular", restaurantControllers.getPopularRestaurants);
 
 export default router;

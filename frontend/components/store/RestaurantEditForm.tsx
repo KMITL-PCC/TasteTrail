@@ -103,6 +103,7 @@ export default function EditRestaurant() {
         if (!res.ok) throw new Error();
         const data = await res.json();
 
+        console.log(data);
         setFirstName(data.fullname?.firstName ?? "");
         setLastName(data.fullname?.lastName ?? "");
 

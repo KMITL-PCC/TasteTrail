@@ -52,7 +52,7 @@ router.post(
 router.patch("/reset-password", authControllers.updatePass);
 
 router.post("/sendOTP", isAuthenticated, authControllers.sendOTP);
-router.patch("/updatepass", authControllers.updatePass);
+router.patch("/updatepass", isAuthenticated, authControllers.updatePass);
 router.patch(
   "/updatepass-current",
   isAuthenticated,
