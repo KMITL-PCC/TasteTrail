@@ -60,7 +60,39 @@ export default function EditRestaurantPage() {
   const [previewProfileImages, setPreviewProfileImages] = useState<string[]>(
     [],
   );
+
+  // ฟังก์ชันเปลี่ยนรูปตาม index
+  const handleReplaceImage = (index: number, file: File) => {
+    // update uploadedImages
+    const newUploaded = [...uploadedImages];
+    newUploaded[index] = file;
+    setUploadedImages(newUploaded);
+
+    // update preview
+    const newPreview = [...previewImages];
+    newPreview[index] = URL.createObjectURL(file);
+    setPreviewImages(newPreview);
+  };
+
+  // ฟังก์ชันลบรูป
+  const handleRemoveImage = (index: number) => {
+    setUploadedImages((prev) => prev.filter((_, i) => i !== index));
+    setPreviewImages((prev) => prev.filter((_, i) => i !== index));
+  };
   const [profileImages, setProfileImages] = useState<File[]>([]);
+  // เปลี่ยนรูปเจ้าของร้านตาม index
+  const handleReplaceProfileImage = (file: File) => {
+    setProfileImages([file]); // เก็บแค่ 1 ไฟล์
+    setPreviewProfileImages([URL.createObjectURL(file)]);
+  };
+
+  // ลบรูปเจ้าของร้าน
+  const handleRemoveProfileImage = () => {
+    setProfileImages([]);
+    setPreviewProfileImages([]);
+  };
+
+  const [updateImages, setUpdateImages] = useState<number[]>([]);
 
   // --- fetch data once on mount ---
   useEffect(() => {
@@ -166,10 +198,28 @@ export default function EditRestaurantPage() {
     setPreviewProfileImages(selected.map((f) => URL.createObjectURL(f)));
   };
 
+  // เปลี่ยนรูป
+  const handleUpdateImage = (id: number, file: File) => {
+    handleReplaceImage(id, file); // อัปเดต previewImages + uploadedImages
+    if (!updateImages.includes(id)) {
+      setUpdateImages((prev) => [...prev, id]);
+    }
+  };
+
+  // ลบรูป
+  const handleRemoveUpdateImage = (id: number) => {
+    handleRemoveImage(id); // อัปเดต previewImages + uploadedImages
+    if (!updateImages.includes(id)) {
+      setUpdateImages((prev) => [...prev, id]);
+    }
+  };
+
   const handleSave = async () => {
     if (!csrfToken) return toast.error("Session not ready");
     try {
       const form = new FormData();
+
+      // ข้อมูลทั่วไป
       form.append("fullname", JSON.stringify({ firstName, lastName }));
       form.append(
         "information",
@@ -188,8 +238,13 @@ export default function EditRestaurantPage() {
         JSON.stringify({ minPrice: minPrice || 0, maxPrice: maxPrice || 0 }),
       );
       form.append("time", JSON.stringify(openingTimes));
+
+      // รูปภาพ
       uploadedImages.forEach((f) => form.append("restaurantImages", f));
       profileImages.forEach((f) => form.append("profileImage", f));
+
+      // เฉพาะ updateImages: ส่ง array ของ id ถ้ามีการแก้ไข
+      form.append("updateImages", JSON.stringify(updateImages));
 
       const res = await fetch(SAVE_RESTAURANT_ENDPOINT, {
         method: "PUT",
@@ -357,38 +412,104 @@ export default function EditRestaurantPage() {
 
                 {/* รูปภาพร้าน */}
                 <FieldBlock label="รูปภาพร้าน">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={handleStoreFileChange}
-                  />
                   <div className="mt-2 flex flex-wrap gap-2">
                     {previewImages.map((img, i) => (
-                      <img
-                        key={i}
-                        src={img}
-                        className="h-32 w-32 rounded-md object-cover"
-                      />
+                      <div key={i} className="relative">
+                        <img
+                          src={previewImages[i]}
+                          className="h-32 w-32 cursor-pointer rounded-md object-cover"
+                          onClick={() => {
+                            const input = document.createElement("input");
+                            input.type = "file";
+                            input.accept = "image/*";
+                            input.onchange = (ev: any) => {
+                              if (!ev.target.files) return;
+                              const file = ev.target.files[0];
+                              handleUpdateImage(i, file);
+                            };
+                            input.click();
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveUpdateImage(i)}
+                          className="absolute top-0 right-0 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs text-white"
+                        >
+                          ✕
+                        </button>
+                      </div>
                     ))}
+
+                    {/* ปุ่มเพิ่มรูป ถ้ายังไม่เต็ม 4 รูป */}
+                    {previewImages.length < 4 && (
+                      <div
+                        className="flex h-32 w-32 cursor-pointer items-center justify-center rounded-md bg-gray-200 text-gray-500"
+                        onClick={() => {
+                          const input = document.createElement("input");
+                          input.type = "file";
+                          input.accept = "image/*";
+                          input.onchange = (ev: any) => {
+                            if (!ev.target.files) return;
+                            const file = ev.target.files[0];
+                            setUploadedImages((prev) => [...prev, file]);
+                            setPreviewImages((prev) => [
+                              ...prev,
+                              URL.createObjectURL(file),
+                            ]);
+                          };
+                          input.click();
+                        }}
+                      >
+                        เพิ่มรูป
+                      </div>
+                    )}
                   </div>
                 </FieldBlock>
 
                 {/* รูปเจ้าของร้าน */}
                 <FieldBlock label="รูปเจ้าของร้าน">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleProfileFileChange}
-                  />
                   <div className="mt-2 flex gap-2">
-                    {previewProfileImages.map((img, i) => (
-                      <img
-                        key={i}
-                        src={img}
-                        className="h-32 w-32 rounded-full object-cover"
-                      />
-                    ))}
+                    {previewProfileImages.length > 0 ? (
+                      <div className="relative">
+                        <img
+                          src={previewProfileImages[0]}
+                          className="h-32 w-32 cursor-pointer rounded-full object-cover"
+                          onClick={() => {
+                            const input = document.createElement("input");
+                            input.type = "file";
+                            input.accept = "image/*";
+                            input.onchange = (ev: any) => {
+                              if (!ev.target.files) return;
+                              handleReplaceProfileImage(ev.target.files[0]);
+                            };
+                            input.click();
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={handleRemoveProfileImage}
+                          className="absolute top-0 right-0 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs text-white"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    ) : (
+                      <div
+                        className="flex h-32 w-32 cursor-pointer items-center justify-center rounded-full bg-gray-200 text-gray-500"
+                        onClick={() => {
+                          const input = document.createElement("input");
+                          input.type = "file";
+                          input.accept = "image/*";
+                          input.onchange = (ev: any) => {
+                            if (!ev.target.files) return;
+                            handleReplaceProfileImage(ev.target.files[0]);
+                          };
+                          input.click();
+                        }}
+                      >
+                        เพิ่มรูป
+                      </div>
+                    )}
                   </div>
                 </FieldBlock>
 
