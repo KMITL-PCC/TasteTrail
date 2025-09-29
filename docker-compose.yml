@@ -18,6 +18,9 @@ services:
       GOOGLE_CALLBACK_URL: http://localhost:3001/auth/google/callback
       DATABASE_URL: postgres://admin:12345@db:5432/review_restaurant?schema=public
       REDIS_URL: redis://redis:6379
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
       PORT: 3001
     volumes:
       - ./backend:/app
@@ -28,7 +31,7 @@ services:
       redis:
         condition: service_started
     command: >
-      sh -c "npx prisma migrate dev --name init && npm run dev"
+      sh -c "npx prisma migrate dev --name init && npm run seed && npm run dev"
 
   # frontend:
   #   build: ./frontend
