@@ -107,9 +107,18 @@ export default function EditRestaurantPage() {
         });
         if (!res.ok) throw new Error("Failed to fetch restaurant info");
         const data = await res.json();
-        console.log(data);
 
-        // --- set fields ---
+        // --- fullname ---
+        if (typeof data.fullname === "string") {
+          const [first = "", last = ""] = data.fullname.split(" ");
+          setFirstName(first);
+          setLastName(last);
+        } else {
+          setFirstName(data.fullname?.firstName ?? "");
+          setLastName(data.fullname?.lastName ?? "");
+        }
+
+        // --- fields ---
         setShopName(data.name ?? "");
         setDescription(data.description ?? "");
         setPickupAddress(data.address ?? "");
@@ -119,20 +128,20 @@ export default function EditRestaurantPage() {
         setMinPrice(data.minPrice ? Number(data.minPrice) : "");
         setMaxPrice(data.maxPrice ? Number(data.maxPrice) : "");
 
-        // services mapping
+        // --- services ---
         const serviceMap: Record<string, number> = {
           delivery: 1,
-          QR: 2,
-          WIFI: 3,
+          qr: 2,
+          wifi: 3,
           alcohol: 4,
         };
         setServices(
           (data.services ?? [])
-            .map((s: string) => serviceMap[s])
+            .map((s: string) => serviceMap[s.toLowerCase()])
             .filter(Boolean),
         );
 
-        // openingHours
+        // --- opening hours ---
         const timeFromAPI: any[] = data.openingHour ?? [];
         setOpeningTimes(
           Array.from({ length: 7 }, (_, i) => {
@@ -145,7 +154,7 @@ export default function EditRestaurantPage() {
           }),
         );
 
-        // images
+        // --- images ---
         if (data.image?.restaurantImages)
           setPreviewImages(
             data.image.restaurantImages.map((img: any) => img.url),
@@ -238,13 +247,14 @@ export default function EditRestaurantPage() {
         JSON.stringify({ minPrice: minPrice || 0, maxPrice: maxPrice || 0 }),
       );
       form.append("time", JSON.stringify(openingTimes));
+      console.log(openingTimes);
 
       // รูปภาพ
       uploadedImages.forEach((f) => form.append("restaurantImages", f));
       profileImages.forEach((f) => form.append("profileImage", f));
 
       // เฉพาะ updateImages: ส่ง array ของ id ถ้ามีการแก้ไข
-      form.append("updateImages", JSON.stringify(updateImages));
+      form.append("updateImage", JSON.stringify(updateImages));
 
       const res = await fetch(SAVE_RESTAURANT_ENDPOINT, {
         method: "PUT",

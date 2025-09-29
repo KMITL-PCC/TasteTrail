@@ -7,7 +7,7 @@ import PrimaryRestaurantCard from "@/components/restaurants/PrimaryRestaurantCar
 import RecommendFilterButton from "@/components/restaurants/RecommendFilterButton";
 import SecondaryRestaurantCard from "@/components/restaurants/SecondaryRestaurantCard";
 import Link from "next/link";
-import restaurantData from "@/mockdata/restaurants.json";
+// import restaurantData from "@/mockdata/restaurants.json";
 
 const getRestaurants = async (
   search: string,
@@ -42,14 +42,14 @@ const RestaurantsPage = async ({
     prices: string;
     search: string;
   };
-  // const { restaurant } = await getRestaurants(
-  //   search,
-  //   categories,
-  //   ratings,
-  //   prices,
-  // );
+  const { restaurant } = await getRestaurants(
+    search,
+    categories,
+    ratings,
+    prices,
+  );
 
-  // console.log(restaurant);
+  console.log(restaurant);
 
   return (
     <div className="mx-auto flex max-w-[1300px] flex-col gap-4 p-4 md:flex-row md:p-8">
@@ -58,7 +58,7 @@ const RestaurantsPage = async ({
         <FilterRestaurant />
       </div>
 
-      <div className="flex flex-col flex-1 gap-4">
+      <div className="flex flex-1 flex-col gap-4">
         {/* Recommended Restaurants */}
         {/* <div>
           <Card>
@@ -115,7 +115,7 @@ const RestaurantsPage = async ({
             </CardHeader>
             <Separator />
             <CardContent className="grid gap-4">
-              {restaurantData.map((restaurant: RestaurantProps) => (
+              {restaurant.map((restaurant: RestaurantProps) => (
                 <Link
                   href={`/restaurants/${restaurant.id}`}
                   key={restaurant.id}
