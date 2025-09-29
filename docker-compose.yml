@@ -92,4 +92,3 @@ networks:
 volumes:
   postgres_data:
   redis_data:
-  postgres_v1:
