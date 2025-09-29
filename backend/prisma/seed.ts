@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 async function main() {
   //truncate all tables
   // await prisma.$executeRaw`IF EXISTS (SELECT 1 FROM "Category") THEN TRUNCATE TABLE "Category" RESTART IDENTITY CASCADE;`;
-  // await prisma.$executeRaw`TRUNCATE TABLE "Category", "Service" RESTART IDENTITY CASCADE`;
+  await prisma.$executeRaw`TRUNCATE TABLE "Category", "Service" RESTART IDENTITY CASCADE`;
   //insert to service delivery, QR, WIFI, alcohol
   const services = [
     { id: 1, service: "delivery" },
