@@ -139,7 +139,10 @@ const Header = () => {
 
                 {user?.role === "RestaurantOwner" ? (
                   <DropdownMenuItem>
-                    <Link href="/profile" className="flex items-center gap-2">
+                    <Link
+                      href="/restaurants/myrestaurant"
+                      className="flex items-center gap-2"
+                    >
                       <Utensils size={20} />
                       <span>ร้านค้าของฉัน</span>
                     </Link>
@@ -206,7 +209,10 @@ const Header = () => {
 
                 {user?.role === "RestaurantOwner" ? (
                   <DropdownMenuItem>
-                    <Link href="/profile" className="flex items-center gap-2">
+                    <Link
+                      href="/restaurants/myrestaurant"
+                      className="flex items-center gap-2"
+                    >
                       <Utensils size={20} />
                       <span>ร้านค้าของฉัน</span>
                     </Link>

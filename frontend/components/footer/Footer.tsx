@@ -22,7 +22,7 @@ const links = [
 
 export default function Footer() {
   return (
-    <footer className="py-4 mt-8 border bg-background">
+    <footer className="py-4 border bg-background">
       <div className="max-w-5xl px-6 mx-auto">
         <div className="flex flex-col items-center justify-center gap-2 md:justify-between lg:flex-row lg:gap-12">
           <div className="flex items-center order-last gap-3 lg:order-first">

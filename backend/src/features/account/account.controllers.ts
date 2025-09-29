@@ -193,13 +193,7 @@ export class accountController {
       });
     }
 
-    const requiredFields = [
-      "information",
-      "price",
-      "time",
-      "fullname",
-      "updateImage",
-    ];
+    const requiredFields = ["information", "price", "time", "fullname"];
     const missing = requiredFields.filter((field) => !req.body[field]);
 
     if (missing.length) {
@@ -225,15 +219,15 @@ export class accountController {
       };
 
       const images = {
-        profilePicture: files.profileImage[0],
+        profilePicture: files?.profileImage?.[0] ?? undefined,
         restaurantPictures: {
-          images: files.restaurantImages,
+          images: files?.restaurantImages ?? [],
           updateImageIds: updateImage,
         },
       } as updateRestaurantImages;
       // const profilePicture = files.profileImage[0] as Express.Multer.File;
       // const restaurantPictures = files.restaurantImages;
-      if (images.restaurantPictures.images.length < 4) {
+      if (images.restaurantPictures.images.length > 4) {
         return res.status(400).json({
           message: "You can upload up to 4 restaurant images in total",
         });
