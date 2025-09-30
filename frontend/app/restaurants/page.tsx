@@ -64,39 +64,39 @@ const RestaurantsPage = async ({
 
         <div className="flex flex-1 flex-col gap-4">
           {/* Recommended Restaurants */}
-          {/* <div>
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex gap-2">
-                <RecommendFilterButton filter="popular" />
-                <RecommendFilterButton filter="new" />
-              </CardTitle>
-            </CardHeader>
-            <Separator />
-            <CardContent className="grid grid-cols-3 gap-4">
-              <Link href="/restaurants/1">
-                <SecondaryRestaurantCard />
-              </Link>
-              <Link href="/restaurants/2">
-                <SecondaryRestaurantCard />
-              </Link>
-              <Link href="/restaurants/3">
-                <SecondaryRestaurantCard className="hidden md:flex" />
-              </Link>
-              <Link href="/restaurants/4">
-                <SecondaryRestaurantCard className="hidden lg:flex" />
-              </Link>
-              {restaurantData.slice(0, 3).map((restaurant) => (
-                <Link
-                  href={`/restaurants/${restaurant.id}`}
-                  key={restaurant.id}
-                >
-                  <SecondaryRestaurantCard restaurant={restaurant} />
+          <div>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex gap-2">
+                  <RecommendFilterButton filter="popular" />
+                  {/* <RecommendFilterButton filter="new" /> */}
+                </CardTitle>
+              </CardHeader>
+              <Separator />
+              <CardContent className="grid grid-cols-3 gap-4">
+                {/* <Link href="/restaurants/1">
+                  <SecondaryRestaurantCard />
                 </Link>
-              ))}
-            </CardContent>
-          </Card>
-        </div> */}
+                <Link href="/restaurants/2">
+                  <SecondaryRestaurantCard />
+                </Link>
+                <Link href="/restaurants/3">
+                  <SecondaryRestaurantCard className="hidden md:flex" />
+                </Link>
+                <Link href="/restaurants/4">
+                  <SecondaryRestaurantCard className="hidden lg:flex" />
+                </Link> */}
+                {restaurantData.slice(0, 3).map((restaurant) => (
+                  <Link
+                    href={`/restaurants/${restaurant.id}`}
+                    key={restaurant.id}
+                  >
+                    <SecondaryRestaurantCard restaurant={restaurant} />
+                  </Link>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
 
           {/* Map */}
           {/* <div>
