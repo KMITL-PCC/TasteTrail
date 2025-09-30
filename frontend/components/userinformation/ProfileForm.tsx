@@ -57,11 +57,6 @@ const ProfileForm = () => {
             <p className="text-muted-foreground truncate text-sm">
               Email : {email}
             </p>
-            {csrfToken && (
-              <p className="text-muted-foreground mt-1 text-xs">
-                CSRF Token Loaded
-              </p>
-            )}
           </div>
 
           <div className="ml-auto self-center">

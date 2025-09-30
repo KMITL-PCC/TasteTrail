@@ -56,13 +56,13 @@ const RestaurantsPage = async ({
     <div className="mx-auto flex max-w-[1300px] flex-col gap-2 p-4 pt-2 md:p-8 md:pt-2">
       {/* Breadcrumb */}
       <BreadcrumbComponent className="hidden md:block" />
-      <div className="flex flex-col w-full gap-4 md:flex-row">
+      <div className="flex w-full flex-col gap-4 md:flex-row">
         {/* Filter */}
         <div>
           <FilterRestaurant />
         </div>
 
-        <div className="flex flex-col flex-1 gap-4">
+        <div className="flex flex-1 flex-col gap-4">
           {/* Recommended Restaurants */}
           <div>
             <Card>
