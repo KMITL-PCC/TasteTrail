@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { ArrowLeft, Eye, EyeOff } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
 /* ---------------- UI: Google Icon ---------------- */
@@ -52,26 +52,10 @@ const registerFormSchema = z
         message:
           "Only English letters and numbers are allowed (no spaces/symbols).",
       }),
-    email: z
-      .string()
-      .email({ message: "Please enter a valid email address." })
-      .regex(/^[^<>`"';]+$/, { message: "Invalid characters not allowed." }),
-
+    email: z.string().email({ message: "Please enter a valid email address." }),
     password: z
       .string()
-      .min(8, { message: "Password must be at least 8 characters." })
-      .max(128, { message: "Password too long." })
-      .regex(
-        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+={[}\]|:;,.<>?/~`\\]).+$/,
-        {
-          message:
-            "Password must include lowercase, uppercase, number and special character.",
-        },
-      )
-      .refine((val) => !/[<>"'`;]/.test(val), {
-        message: "Password contains invalid characters.",
-      }),
-
+      .min(6, { message: "Password must be at least 6 characters." }),
     confirmPassword: z
       .string()
       .min(6, { message: "Confirm password must be at least 6 characters." }),
@@ -195,9 +179,6 @@ export default function RegisterForm() {
   const [showOtpForm, setShowOtpForm] = useState(false);
   const [registrationEmail, setRegistrationEmail] = useState("");
   const [csrfToken, setCsrfToken] = useState<string | null>(null);
-
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // resend & countdown state
   const [countdown, setCountdown] = useState(0);
@@ -559,31 +540,15 @@ export default function RegisterForm() {
                     <FormLabel className="font-medium text-gray-700">
                       Password
                     </FormLabel>
-                    <div className="relative">
-                      <FormControl>
-                        <Input
-                          type={showPassword ? "text" : "password"}
-                          placeholder="Create a password"
-                          {...field}
-                          className="h-11 rounded-md border-gray-300 pr-10 text-base focus:border-green-500 focus:ring-green-500 sm:h-12"
-                          autoComplete="new-password"
-                        />
-                      </FormControl>
-                      <button
-                        type="button"
-                        aria-label={
-                          showPassword ? "Hide password" : "Show password"
-                        }
-                        onClick={() => setShowPassword((s) => !s)}
-                        className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-1 text-gray-500 hover:text-gray-800 focus:outline-none"
-                      >
-                        {showPassword ? (
-                          <EyeOff className="h-5 w-5" />
-                        ) : (
-                          <Eye className="h-5 w-5" />
-                        )}
-                      </button>
-                    </div>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="Create a password"
+                        {...field}
+                        className="h-11 rounded-md border-gray-300 text-base focus:border-green-500 focus:ring-green-500 sm:h-12"
+                        autoComplete="new-password"
+                      />
+                    </FormControl>
                     <FormMessage className="text-sm text-red-500" />
                   </FormItem>
                 )}
@@ -597,33 +562,15 @@ export default function RegisterForm() {
                     <FormLabel className="font-medium text-gray-700">
                       Confirm Password
                     </FormLabel>
-                    <div className="relative">
-                      <FormControl>
-                        <Input
-                          type={showConfirmPassword ? "text" : "password"}
-                          placeholder="Confirm your password"
-                          {...field}
-                          className="h-11 rounded-md border-gray-300 pr-10 text-base focus:border-green-500 focus:ring-green-500 sm:h-12"
-                          autoComplete="new-password"
-                        />
-                      </FormControl>
-                      <button
-                        type="button"
-                        aria-label={
-                          showConfirmPassword
-                            ? "Hide password"
-                            : "Show password"
-                        }
-                        onClick={() => setShowConfirmPassword((s) => !s)}
-                        className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-1 text-gray-500 hover:text-gray-800 focus:outline-none"
-                      >
-                        {showConfirmPassword ? (
-                          <EyeOff className="h-5 w-5" />
-                        ) : (
-                          <Eye className="h-5 w-5" />
-                        )}
-                      </button>
-                    </div>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="Confirm your password"
+                        {...field}
+                        className="h-11 rounded-md border-gray-300 text-base focus:border-green-500 focus:ring-green-500 sm:h-12"
+                        autoComplete="new-password"
+                      />
+                    </FormControl>
                     <FormMessage className="text-sm text-red-500" />
                   </FormItem>
                 )}

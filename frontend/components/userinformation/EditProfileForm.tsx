@@ -96,7 +96,12 @@ export default function EditProfilePage() {
         }
         const data = await res.json();
         setUsername(data?.username ?? "");
-        if (data?.avatarUrl) setAvatarPreview(data.avatarUrl);
+        if (data?.avatarUrl) {
+          const url = data.avatarUrl.startsWith("http")
+            ? data.avatarUrl
+            : `${backendURL}${data.avatarUrl}`;
+          setAvatarPreview(url);
+        }
       } catch (err) {
         toast.error("Connection Error", {
           description: "Unable to fetch your profile. Please try again.",
@@ -260,7 +265,7 @@ export default function EditProfilePage() {
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-30 py-8">
         <Tabs defaultValue={defaultTab} className="space-y-6">
           <TabsList>
             <TabsTrigger value="profile">
@@ -277,76 +282,83 @@ export default function EditProfilePage() {
             <form
               id="profile-form"
               onSubmit={onSaveProfile}
-              className="grid grid-cols-1 gap-6 lg:grid-cols-1"
+              className="max-h-l w-full max-w-6xl overflow-hidden rounded-2xl border py-0 shadow-sm"
             >
-              <Card className="space-y-6">
-                {/* Avatar Section */}
-                <CardHeader>
-                  <CardTitle>Avatar</CardTitle>
-                  <CardDescription>Upload your profile photo.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex items-center gap-4">
-                    <Avatar className="ring-muted-foreground/20 h-20 w-20 ring-2">
-                      {avatarPreview ? (
-                        <AvatarImage src={avatarPreview} alt="avatar" />
-                      ) : (
-                        <AvatarImage src="/placeholder.svg" alt="avatar" />
+              <Card className="space-y-6 border-0 shadow-sm">
+                <CardContent className="grid grid-cols-1 gap-6 py-10 md:grid-cols-12 md:items-center">
+                  {/* Avatar */}
+                  <div className="flex justify-center md:col-span-5">
+                    <div className="relative h-36 w-36">
+                      <Avatar className="ring-muted-foreground/20 h-50 w-50 cursor-pointer ring-2">
+                        {avatarPreview ? (
+                          <AvatarImage src={avatarPreview} alt="avatar" />
+                        ) : (
+                          <AvatarImage src="/placeholder.svg" alt="avatar" />
+                        )}
+                        <AvatarFallback>
+                          {(username?.[0] || "").toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+
+                      {avatarPreview && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAvatarPreview(null);
+                            setAvatarFile(null);
+                            if (fileInputRef.current)
+                              fileInputRef.current.value = "";
+                          }}
+                          className="absolute top-0 right-0 -translate-x-1/4 -translate-y-1/4 rounded-full bg-red-600 p-1 text-white hover:bg-red-700"
+                          title="Remove"
+                        >
+                          ✕
+                        </button>
                       )}
-                      <AvatarFallback>
-                        {(username?.[0] || "").toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="grid grid-cols-1 gap-2">
+
                       <input
                         ref={fileInputRef}
                         type="file"
                         accept="image/*"
                         className="hidden"
-                        onChange={onUploadAvatar}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          setAvatarFile(file);
+                          setAvatarPreview(URL.createObjectURL(file));
+                        }}
                       />
-                      <Button
-                        type="button"
-                        variant="secondary"
+
+                      <div
+                        className="absolute inset-0 cursor-pointer"
                         onClick={() => fileInputRef.current?.click()}
-                      >
-                        <Upload className="h-4 w-4" /> Upload
-                      </Button>
-                      {avatarPreview && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => {
-                            setAvatarFile(null);
-                            setAvatarPreview(null);
-                            if (fileInputRef.current)
-                              fileInputRef.current.value = "";
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" /> Remove
-                        </Button>
-                      )}
+                      />
                     </div>
+                  </div>
+
+                  {/* Account */}
+                  <div className="flex flex-col justify-center pt-6 md:col-span-7 md:pl-2">
+                    <CardHeader>
+                      <CardTitle>Account</CardTitle>
+                      <CardDescription>
+                        Basic account information.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="space-y-2 pt-5 md:col-span-2">
+                        <Label htmlFor="username">Username</Label>
+                        <Input
+                          id="username"
+                          value={username}
+                          onChange={(e) => setUsername(e.target.value)}
+                          placeholder="username"
+                        />
+                      </div>
+                    </CardContent>
                   </div>
                 </CardContent>
 
-                {/* Account Section */}
-                <CardHeader>
-                  <CardTitle>Account</CardTitle>
-                  <CardDescription>Basic account information.</CardDescription>
-                </CardHeader>
-                <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="space-y-2 md:col-span-2">
-                    <Label htmlFor="username">Username</Label>
-                    <Input
-                      id="username"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      placeholder="username"
-                    />
-                  </div>
-                </CardContent>
-                <CardFooter className="justify-end">
+                <CardFooter className="flex items-center justify-end px-10">
                   <Button type="submit" disabled={savingProfile}>
                     <Save className="h-4 w-4" /> Save profile
                   </Button>
