@@ -14,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Upload, Trash2, Save, User, Lock } from "lucide-react";
+import { Upload, Trash2, Save, User, Lock, EyeOff, Eye } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -26,6 +26,10 @@ const UPDATEPROFILE_ENDPOINT = `${backendURL}/account/updateprofile`;
 const PASSWORD_ENDPOINT = `${backendURL}/auth/updatepass-current`;
 const CSRF_ENDPOINT = `${backendURL}/api/csrf-token`;
 
+function sanitizePassword(input: string) {
+  return input.replace(/[<>"'`;]/g, "").trim();
+}
+
 export default function EditProfilePage() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -33,6 +37,10 @@ export default function EditProfilePage() {
     (searchParams.get("tab") as "profile" | "password") ?? "profile";
 
   const [csrfToken, setCsrfToken] = useState<string | null>(null);
+
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Avatar
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
@@ -186,6 +194,7 @@ export default function EditProfilePage() {
       });
       return;
     }
+
     if (newPassword !== confirmPassword) {
       toast.error("Password mismatch", {
         description: "Confirmation does not match the new password.",
@@ -198,7 +207,7 @@ export default function EditProfilePage() {
       toast.info("Updating password...");
 
       const res = await fetch(PASSWORD_ENDPOINT, {
-        method: "PATCH", // ใช้ PATCH สำหรับการอัปเดตพาสเวิร์ด
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
           "X-CSRF-Token": csrfToken,
@@ -218,9 +227,13 @@ export default function EditProfilePage() {
         description: data.message || "Your password has been changed.",
       });
 
+      // ล้างฟิลด์
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
+
+      // ✅ Redirect ไปหน้า profile หลัง update สำเร็จ
+      router.push("/profile?updated=1");
     } catch (e: any) {
       toast.error("Connection Error", {
         description: "Unable to update password. Please try again.",
@@ -231,7 +244,7 @@ export default function EditProfilePage() {
   }
 
   return (
-    <div className="to-muted/50 min-h-screen bg-gradient-to-b from-white">
+    <div className="">
       <div className="bg-background/80 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10 w-full border-b backdrop-blur">
         <div className="container mx-auto flex items-center justify-between px-4 py-3">
           <div className="text-muted-foreground flex items-center gap-2 text-sm">
@@ -264,89 +277,81 @@ export default function EditProfilePage() {
             <form
               id="profile-form"
               onSubmit={onSaveProfile}
-              className="grid grid-cols-1 gap-6 lg:grid-cols-12"
+              className="grid grid-cols-1 gap-6 lg:grid-cols-1"
             >
-              <div className="space-y-6 lg:col-span-5">
-                <Card className="border-dashed">
-                  <CardHeader>
-                    <CardTitle>Avatar</CardTitle>
-                    <CardDescription>
-                      Upload your profile photo.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center gap-4">
-                      <Avatar className="ring-muted-foreground/20 h-20 w-20 ring-2">
-                        {avatarPreview ? (
-                          <AvatarImage src={avatarPreview} alt="avatar" />
-                        ) : (
-                          <AvatarImage src="/placeholder.svg" alt="avatar" />
-                        )}
-                        <AvatarFallback>
-                          {(username?.[0] || "").toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="grid grid-cols-1 gap-2">
-                        <input
-                          ref={fileInputRef}
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={onUploadAvatar}
-                        />
+              <Card className="space-y-6">
+                {/* Avatar Section */}
+                <CardHeader>
+                  <CardTitle>Avatar</CardTitle>
+                  <CardDescription>Upload your profile photo.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center gap-4">
+                    <Avatar className="ring-muted-foreground/20 h-20 w-20 ring-2">
+                      {avatarPreview ? (
+                        <AvatarImage src={avatarPreview} alt="avatar" />
+                      ) : (
+                        <AvatarImage src="/placeholder.svg" alt="avatar" />
+                      )}
+                      <AvatarFallback>
+                        {(username?.[0] || "").toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="grid grid-cols-1 gap-2">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={onUploadAvatar}
+                      />
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        <Upload className="h-4 w-4" /> Upload
+                      </Button>
+                      {avatarPreview && (
                         <Button
                           type="button"
-                          variant="secondary"
-                          onClick={() => fileInputRef.current?.click()}
+                          variant="outline"
+                          onClick={() => {
+                            setAvatarFile(null);
+                            setAvatarPreview(null);
+                            if (fileInputRef.current)
+                              fileInputRef.current.value = "";
+                          }}
                         >
-                          <Upload className="h-4 w-4" /> Upload
+                          <Trash2 className="h-4 w-4" /> Remove
                         </Button>
-                        {avatarPreview && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => {
-                              setAvatarFile(null);
-                              setAvatarPreview(null);
-                              if (fileInputRef.current)
-                                fileInputRef.current.value = "";
-                            }}
-                          >
-                            <Trash2 className="h-4 w-4" /> Remove
-                          </Button>
-                        )}
-                      </div>
+                      )}
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
+                  </div>
+                </CardContent>
 
-              <div className="space-y-6 lg:col-span-7">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Account</CardTitle>
-                    <CardDescription>
-                      Basic account information.
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div className="space-y-2 md:col-span-2">
-                      <Label htmlFor="username">Username</Label>
-                      <Input
-                        id="username"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
-                        placeholder="username"
-                      />
-                    </div>
-                  </CardContent>
-                  <CardFooter className="justify-end">
-                    <Button type="submit" disabled={savingProfile}>
-                      <Save className="h-4 w-4" /> Save profile
-                    </Button>
-                  </CardFooter>
-                </Card>
-              </div>
+                {/* Account Section */}
+                <CardHeader>
+                  <CardTitle>Account</CardTitle>
+                  <CardDescription>Basic account information.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="username">Username</Label>
+                    <Input
+                      id="username"
+                      value={username}
+                      onChange={(e) => setUsername(e.target.value)}
+                      placeholder="username"
+                    />
+                  </div>
+                </CardContent>
+                <CardFooter className="justify-end">
+                  <Button type="submit" disabled={savingProfile}>
+                    <Save className="h-4 w-4" /> Save profile
+                  </Button>
+                </CardFooter>
+              </Card>
             </form>
           </TabsContent>
 
@@ -360,36 +365,94 @@ export default function EditProfilePage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="grid gap-4">
-                  <div className="space-y-2">
+                  {/* Current Password */}
+                  <div className="relative">
                     <Label htmlFor="currentPassword">Current password</Label>
                     <Input
                       id="currentPassword"
-                      type="password"
+                      type={showCurrentPassword ? "text" : "password"}
                       value={currentPassword}
-                      onChange={(e) => setCurrentPassword(e.target.value)}
+                      onChange={(e) =>
+                        setCurrentPassword(sanitizePassword(e.target.value))
+                      }
+                      className="h-11 rounded-md border-gray-300 pr-10 text-base focus:border-green-500 focus:ring-green-500"
+                      autoComplete="current-password"
                     />
+                    <button
+                      type="button"
+                      aria-label={
+                        showCurrentPassword ? "Hide password" : "Show password"
+                      }
+                      onClick={() => setShowCurrentPassword((prev) => !prev)}
+                      className="absolute top-1/2 right-2 -translate-y-1/2 p-1 text-gray-500 hover:text-gray-800 focus:outline-none"
+                    >
+                      {showCurrentPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
+                    </button>
                   </div>
-                  <div className="space-y-2">
+
+                  {/* New Password */}
+                  <div className="relative">
                     <Label htmlFor="newPassword">New password</Label>
                     <Input
                       id="newPassword"
-                      type="password"
+                      type={showNewPassword ? "text" : "password"}
                       value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
+                      onChange={(e) =>
+                        setNewPassword(sanitizePassword(e.target.value))
+                      }
+                      className="h-11 rounded-md border-gray-300 pr-10 text-base focus:border-green-500 focus:ring-green-500"
+                      autoComplete="new-password"
                     />
+                    <button
+                      type="button"
+                      aria-label={
+                        showNewPassword ? "Hide password" : "Show password"
+                      }
+                      onClick={() => setShowNewPassword((prev) => !prev)}
+                      className="absolute top-1/2 right-2 -translate-y-1/2 p-1 text-gray-500 hover:text-gray-800 focus:outline-none"
+                    >
+                      {showNewPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
+                    </button>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="confirmPassword">
-                      Confirm new password
-                    </Label>
+
+                  {/* Confirm Password */}
+                  <div className="relative">
+                    <Label htmlFor="confirmPassword">Confirm password</Label>
                     <Input
                       id="confirmPassword"
-                      type="password"
+                      type={showConfirmPassword ? "text" : "password"}
                       value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      onChange={(e) =>
+                        setConfirmPassword(sanitizePassword(e.target.value))
+                      }
+                      className="h-11 rounded-md border-gray-300 pr-10 text-base focus:border-green-500 focus:ring-green-500"
+                      autoComplete="new-password"
                     />
+                    <button
+                      type="button"
+                      aria-label={
+                        showConfirmPassword ? "Hide password" : "Show password"
+                      }
+                      onClick={() => setShowConfirmPassword((prev) => !prev)}
+                      className="absolute top-1/2 right-2 -translate-y-1/2 p-1 text-gray-500 hover:text-gray-800 focus:outline-none"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
+                    </button>
                   </div>
                 </CardContent>
+
                 <CardFooter className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <Button type="submit" disabled={savingPassword}>
                     <Lock className="mr-2 h-4 w-4" />

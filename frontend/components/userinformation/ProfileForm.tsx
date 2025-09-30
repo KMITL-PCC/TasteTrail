@@ -39,10 +39,10 @@ const ProfileForm = () => {
   const profilePictureUrl = user?.profilePictureUrl || "/user.png";
 
   return (
-    <div className="to-muted/50 min-h-screen bg-gradient-to-b from-white">
-      <Card className="mx-auto mt-16 max-w-6xl overflow-hidden rounded-2xl border py-0 shadow-sm">
-        <CardContent className="flex items-center gap-2">
-          <div className="relative h-[120px] w-[120px]">
+    <div className="">
+      <Card className="mx-auto mt-9 h-40 max-w-5xl overflow-hidden rounded-2xl border py-0 shadow-sm">
+        <CardContent className="flex h-full items-center gap-2">
+          <div className="relative flex h-[120px] w-[120px] items-center">
             <Image
               src={profilePictureUrl}
               alt="User"

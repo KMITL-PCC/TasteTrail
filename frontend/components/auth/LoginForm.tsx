@@ -18,6 +18,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import DOMPurify from "dompurify";
+import { Eye, EyeOff } from "lucide-react";
 
 const GoogleIcon = () => (
   <svg className="mr-3 h-5 w-5" viewBox="0 0 48 48">
@@ -57,8 +58,9 @@ const formSchema = z.object({
 
   password: z
     .string()
-    .min(8, { message: "Password must be at least 6 characters." })
+    .min(8, { message: "Password must be at least 8 characters." })
     .max(100, { message: "Password too long." })
+    // allow typical special chars, but further checks will be shown in UI
     .regex(/^[\w!@#$%^&*()\-+=.?]+$/, {
       message: "Password contains invalid characters.",
     }),
@@ -69,6 +71,10 @@ export default function LoginForm() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const backendURL = process.env.NEXT_PUBLIC_BACKEND_URL;
   const router = useRouter();
+
+  // password visibility + realtime checks
+  const [showPassword, setShowPassword] = useState(false);
+  const [pwValue, setPwValue] = useState("");
 
   // Prefetch หน้าแรกให้ไวขึ้น
   useEffect(() => {
@@ -105,6 +111,7 @@ export default function LoginForm() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: { username: "", password: "" },
+    mode: "onChange",
   });
 
   // Google login
@@ -116,6 +123,15 @@ export default function LoginForm() {
         description: "The Google login service is not available.",
       });
     }
+  };
+
+  // realtime password checks
+  const checks = {
+    minLength: pwValue.length >= 8,
+    hasLower: /[a-z]/.test(pwValue),
+    hasUpper: /[A-Z]/.test(pwValue),
+    hasNumber: /\d/.test(pwValue),
+    hasSpecial: /[!@#$%^&*()\-+=.?]/.test(pwValue),
   };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -158,7 +174,6 @@ export default function LoginForm() {
 
         // ⬇️ กลับหน้าหลักทันที และล้างหน้า login จาก history
         router.replace("/");
-        // ถ้าโฮมเพจอ่าน session ฝั่งเซิร์ฟเวอร์อยู่แล้ว จะโหลดสถานะใหม่ให้เอง
       } else {
         const errorData = await response.json().catch(() => ({}));
         console.error("Login failed:", errorData);
@@ -208,14 +223,18 @@ export default function LoginForm() {
               <FormField
                 control={form.control}
                 name="username"
-                render={({ field }) => (
+                render={({ field, fieldState }) => (
                   <FormItem>
                     <FormLabel>Username</FormLabel>
                     <FormControl>
                       <Input
                         placeholder="Username"
                         {...field}
-                        className="h-12 text-base"
+                        className={`h-12 text-base ${
+                          fieldState.error
+                            ? "border-red-500 focus:border-red-500 focus:ring-red-500"
+                            : ""
+                        }`}
                       />
                     </FormControl>
                     <FormMessage />
@@ -229,15 +248,91 @@ export default function LoginForm() {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="Password"
-                        {...field}
-                        className="h-12 text-base"
-                      />
-                    </FormControl>
+                    <div className="relative">
+                      <FormControl>
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Password"
+                          {...field}
+                          className="h-12 pr-10 text-base"
+                          value={field.value}
+                          onChange={(e) => {
+                            field.onChange(e);
+                            setPwValue(e.target.value);
+                          }}
+                        />
+                      </FormControl>
+
+                      {/* Eye toggle */}
+                      <button
+                        type="button"
+                        aria-label={
+                          showPassword ? "Hide password" : "Show password"
+                        }
+                        onClick={() => setShowPassword((s) => !s)}
+                        className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-1 text-gray-500 hover:text-gray-800 focus:outline-none"
+                      >
+                        {showPassword ? (
+                          <EyeOff className="h-5 w-5" />
+                        ) : (
+                          <Eye className="h-5 w-5" />
+                        )}
+                      </button>
+                    </div>
+
                     <FormMessage />
+
+                    {/* Real-time password checklist */}
+                    <div className="mt-2 grid grid-cols-1 gap-1 text-sm">
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`inline-block h-3 w-3 rounded-full ${
+                            checks.minLength ? "bg-green-500" : "bg-gray-300"
+                          }`}
+                        />
+                        <span className="text-xs text-gray-600">
+                          At least 8 characters
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`inline-block h-3 w-3 rounded-full ${
+                            checks.hasLower ? "bg-green-500" : "bg-gray-300"
+                          }`}
+                        />
+                        <span className="text-xs text-gray-600">
+                          Lowercase letter
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`inline-block h-3 w-3 rounded-full ${
+                            checks.hasUpper ? "bg-green-500" : "bg-gray-300"
+                          }`}
+                        />
+                        <span className="text-xs text-gray-600">
+                          Uppercase letter
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`inline-block h-3 w-3 rounded-full ${
+                            checks.hasNumber ? "bg-green-500" : "bg-gray-300"
+                          }`}
+                        />
+                        <span className="text-xs text-gray-600">Number</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span
+                          className={`inline-block h-3 w-3 rounded-full ${
+                            checks.hasSpecial ? "bg-green-500" : "bg-gray-300"
+                          }`}
+                        />
+                        <span className="text-xs text-gray-600">
+                          Special character (!@#$...)
+                        </span>
+                      </div>
+                    </div>
                   </FormItem>
                 )}
               />
