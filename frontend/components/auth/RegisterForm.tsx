@@ -52,10 +52,26 @@ const registerFormSchema = z
         message:
           "Only English letters and numbers are allowed (no spaces/symbols).",
       }),
-    email: z.string().email({ message: "Please enter a valid email address." }),
+    email: z
+      .string()
+      .email({ message: "Please enter a valid email address." })
+      .regex(/^[^<>`"';]+$/, { message: "Invalid characters not allowed." }),
+
     password: z
       .string()
-      .min(6, { message: "Password must be at least 6 characters." }),
+      .min(8, { message: "Password must be at least 8 characters." })
+      .max(128, { message: "Password too long." })
+      .regex(
+        /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+={[}\]|:;,.<>?/~`\\]).+$/,
+        {
+          message:
+            "Password must include lowercase, uppercase, number and special character.",
+        },
+      )
+      .refine((val) => !/[<>"'`;]/.test(val), {
+        message: "Password contains invalid characters.",
+      }),
+
     confirmPassword: z
       .string()
       .min(6, { message: "Confirm password must be at least 6 characters." }),

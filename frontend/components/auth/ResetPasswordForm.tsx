@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { z } from "zod";
+import DOMPurify from "dompurify";
 
 interface ResetPasswordFormProps {
   setFormStep: (step: "otp" | "resetPassword") => void;
@@ -11,6 +13,24 @@ interface ResetPasswordFormProps {
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 const CSRF_TOKEN_ENDPOINT = `${BACKEND_URL}/api/csrf-token`;
+
+// Password schema: at least 8 chars, <=100, must include lower, upper, digit, special (selected set),
+// and explicitly forbid dangerous characters like < > " ' `
+const passwordSchema = z
+  .string()
+  .min(8, "Password must be at least 8 characters")
+  .max(100, "Password too long")
+  .regex(/(?=.*[a-z])/, { message: "Password must include a lowercase letter" })
+  .regex(/(?=.*[A-Z])/, {
+    message: "Password must include an uppercase letter",
+  })
+  .regex(/(?=.*\d)/, { message: "Password must include a number" })
+  .regex(/(?=.*[!@#$%^&*()_\-+=[\]{}|:;,.<>/?~])/, {
+    message: "Password must include a special character",
+  })
+  .refine((val) => !/[<>"'`]/.test(val), {
+    message: "Password contains invalid characters (e.g. <, >, \", ', `).",
+  });
 
 const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
   setFormStep,
@@ -46,14 +66,32 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
     setIsLoading(true);
     setMessage("");
 
-    if (!newPassword || newPassword.length < 8) {
+    // sanitize inputs (trim + strip any HTML)
+    const safeNew = DOMPurify.sanitize(newPassword.trim());
+    const safeConfirm = DOMPurify.sanitize(confirmPassword.trim());
+
+    // basic quick checks
+    if (!safeNew || safeNew.length < 8) {
       setMessage("Password must be at least 8 characters long.");
       setIsLoading(false);
       return;
     }
-
-    if (newPassword !== confirmPassword) {
+    if (safeNew !== safeConfirm) {
       setMessage("Passwords do not match.");
+      setIsLoading(false);
+      return;
+    }
+
+    // run full zod validation for better error messages
+    try {
+      passwordSchema.parse(safeNew);
+    } catch (err: any) {
+      // zod error structure: err.errors is an array
+      const first =
+        Array.isArray(err?.errors) && err.errors.length > 0
+          ? err.errors[0].message
+          : "Invalid password.";
+      setMessage(String(first));
       setIsLoading(false);
       return;
     }
@@ -64,13 +102,14 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
       return;
     }
 
-    // เลือก endpoint ตาม mode
+    // choose endpoint
     const endpoint =
       mode === "forgot"
         ? `${BACKEND_URL}/auth/reset-password`
         : `${BACKEND_URL}/auth/updatepass`;
 
     try {
+      // send sanitized new password
       const res = await fetch(endpoint, {
         method: "PATCH",
         headers: {
@@ -78,30 +117,38 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
           "X-CSRF-Token": csrfToken,
         },
         credentials: "include",
-        body: JSON.stringify({ newPassword, email }),
+        body: JSON.stringify({ newPassword: safeNew, email }),
       });
 
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       console.log("Server response:", data);
 
-      if (!res.ok)
-        throw new Error(data?.message || "Failed to reset password.");
+      if (!res.ok) {
+        const serverMsg =
+          data?.message || `Failed to reset password (status ${res.status})`;
+        // sanitize server message before showing
+        setMessage(DOMPurify.sanitize(String(serverMsg)));
+        setIsLoading(false);
+        return;
+      }
 
       setMessage("Password reset successful. Redirecting...");
-
       setTimeout(() => {
         router.push("/login");
       }, 1500);
     } catch (err: any) {
       console.error("Error resetting password:", err);
-      setMessage(err?.message || "Failed to reset password.");
+      const msg =
+        err?.message ||
+        "Failed to reset password. Please check your connection.";
+      setMessage(DOMPurify.sanitize(String(msg)));
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handlePasswordSubmit} className="space-y-6">
+    <form onSubmit={handlePasswordSubmit} className="space-y-6" noValidate>
       <div className="text-center">
         <h1 className="text-3xl font-bold text-green-600">
           Set a New Password
@@ -125,9 +172,14 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
           value={newPassword}
           onChange={(e) => setNewPassword(e.target.value)}
           required
+          aria-describedby="password-hint"
           className="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-green-500 focus:outline-none"
           placeholder="Enter new password"
         />
+        <p id="password-hint" className="mt-1 text-xs text-gray-500">
+          At least 8 characters, include upper & lower case, a number and a
+          special character.
+        </p>
       </div>
 
       <div>
@@ -157,7 +209,13 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
       </button>
 
       {message && (
-        <div className="text-center text-sm text-red-500">{message}</div>
+        <div
+          className="text-center text-sm text-red-500"
+          role="status"
+          aria-live="polite"
+        >
+          {message}
+        </div>
       )}
 
       <div className="mt-4 text-center">

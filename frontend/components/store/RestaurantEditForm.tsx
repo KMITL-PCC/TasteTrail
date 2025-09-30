@@ -229,7 +229,6 @@ export default function EditRestaurantPage() {
     handleRemoveImage(index);
     const id = imageIDs[index];
     if (!updateImages.includes(id)) setUpdateImages((prev) => [...prev, id]);
-    // ลบ ID จาก imageIDs ด้วย
     setImageIDs((prev) => prev.filter((_, i) => i !== index));
   };
 

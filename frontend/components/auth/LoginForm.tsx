@@ -17,9 +17,10 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import DOMPurify from "dompurify";
 
 const GoogleIcon = () => (
-  <svg className="w-5 h-5 mr-3" viewBox="0 0 48 48">
+  <svg className="mr-3 h-5 w-5" viewBox="0 0 48 48">
     <path
       fill="#FFC107"
       d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"
@@ -39,13 +40,28 @@ const GoogleIcon = () => (
   </svg>
 );
 
+const safeInput = z
+  .string()
+  .min(1, "This field is required")
+  .max(100, "Too long")
+  .regex(/^[a-zA-Z0-9_.@-]+$/, "Invalid characters detected");
+
 const formSchema = z.object({
   username: z
     .string()
-    .min(2, { message: "Username must be at least 2 characters." }),
+    .min(2, { message: "Username must be at least 2 characters." })
+    .max(50, { message: "Username too long." })
+    .regex(/^[a-zA-Z0-9_.-]+$/, {
+      message: "Only letters, numbers, underscore, dot, and dash allowed.",
+    }),
+
   password: z
     .string()
-    .min(6, { message: "Password must be at least 6 characters." }),
+    .min(8, { message: "Password must be at least 6 characters." })
+    .max(100, { message: "Password too long." })
+    .regex(/^[\w!@#$%^&*()\-+=.?]+$/, {
+      message: "Password contains invalid characters.",
+    }),
 });
 
 export default function LoginForm() {
@@ -103,24 +119,23 @@ export default function LoginForm() {
   };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!backendURL) {
-      toast.error("Configuration Error", {
-        description: "Backend URL is missing.",
-      });
-      return;
-    }
-    if (!csrfToken) {
+    if (!backendURL || !csrfToken) {
       toast.error("Session not ready", {
-        description: "Please wait a moment and try again.",
+        description: "Please try again later.",
       });
       return;
     }
 
-    setIsSubmitting(true);
+    // 🔒 Sanitize ข้อมูลทุกฟิลด์
+    const cleanUsername = DOMPurify.sanitize(values.username);
+    const cleanPassword = DOMPurify.sanitize(values.password);
+
     toast.info("Verifying data...", {
-      description: `Username: ${values.username}`,
+      description: `Username: ${cleanUsername}`,
       duration: 2000,
     });
+
+    setIsSubmitting(true);
 
     try {
       const response = await fetch(`${backendURL}/auth/login`, {
@@ -130,8 +145,8 @@ export default function LoginForm() {
           "X-CSRF-Token": csrfToken,
         },
         body: JSON.stringify({
-          loginform: values.username,
-          password: values.password,
+          loginform: cleanUsername,
+          password: cleanPassword,
         }),
         credentials: "include",
       });
@@ -164,8 +179,8 @@ export default function LoginForm() {
   }
 
   return (
-    <div className="flex flex-col p-10 min-h-60 md:p-10">
-      <div className="flex justify-center flex-grow items-top">
+    <div className="flex min-h-60 flex-col p-10 md:p-10">
+      <div className="items-top flex flex-grow justify-center">
         <div className="w-full max-w-sm space-y-6">
           <div className="text-center">
             <h1 className="text-4xl font-bold text-black">Welcome</h1>
@@ -175,7 +190,7 @@ export default function LoginForm() {
           {/* Google Login */}
           <Button
             variant="outline"
-            className="w-full h-12 text-base"
+            className="h-12 w-full text-base"
             onClick={handleGoogleLogin}
           >
             <GoogleIcon />
@@ -230,7 +245,7 @@ export default function LoginForm() {
               {/* ปุ่ม Submit — ไม่ครอบด้วย <Link> */}
               <Button
                 type="submit"
-                className="w-full h-12 text-lg font-semibold"
+                className="h-12 w-full text-lg font-semibold"
                 disabled={!csrfToken || isSubmitting}
                 aria-busy={isSubmitting}
               >
@@ -254,7 +269,7 @@ export default function LoginForm() {
             </Link>
           </div>
 
-          <p className="text-xs text-center text-gray-500">
+          <p className="text-center text-xs text-gray-500">
             By continuing, you agree to Supabase&apos;s{" "}
             <a href="/terms" className="underline hover:text-black">
               Terms of Service

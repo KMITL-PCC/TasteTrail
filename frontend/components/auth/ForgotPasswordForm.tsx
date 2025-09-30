@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import DOMPurify from "dompurify";
 
 // The backend URL is correctly defined here and will be used throughout the component.
 const backendURL = process.env.NEXT_PUBLIC_BACKEND_URL;
@@ -22,6 +23,21 @@ const ForgotPasswordForm = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
 
   const [csrfToken, setCsrfToken] = useState<string | null>(null);
+
+  const sanitizeInput = (value: string) => {
+    return DOMPurify.sanitize(value.trim(), {
+      ALLOWED_TAGS: [],
+      ALLOWED_ATTR: [],
+    });
+  };
+
+  // Email ตรวจสอบเบื้องต้น
+  const isValidEmail = (email: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+
+  // Password อย่างน้อย 8 ตัว มีทั้งตัวเล็ก ตัวใหญ่ และตัวเลข
+  const isStrongPassword = (pwd: string) =>
+    pwd.length >= 8 && /[A-Z]/.test(pwd) && /[a-z]/.test(pwd) && /\d/.test(pwd);
 
   // Hide message after 3s
   useEffect(() => {
@@ -76,7 +92,8 @@ const ForgotPasswordForm = () => {
       return;
     }
 
-    if (!email || !/\S+@\S+\.\S+/.test(email)) {
+    const safeEmail = sanitizeInput(email);
+    if (!safeEmail || !isValidEmail(safeEmail)) {
       setMessage("Please enter a valid email address.");
       setMessageType("error");
       setIsLoading(false);
@@ -91,7 +108,7 @@ const ForgotPasswordForm = () => {
           "Content-Type": "application/json",
           "CSRF-Token": csrfToken,
         },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email: safeEmail }),
       });
 
       const data = await response.json();
@@ -100,7 +117,9 @@ const ForgotPasswordForm = () => {
       }
 
       setFormStep("otp");
-      setMessage(data.message || `A 5-digit code has been sent to ${email}.`);
+      setMessage(
+        data.message || `A 5-digit code has been sent to ${safeEmail}.`,
+      );
       setMessageType("success");
       setCountdown(50);
     } catch (error: any) {
@@ -116,12 +135,14 @@ const ForgotPasswordForm = () => {
     event.preventDefault();
     setIsLoading(true);
 
-    if (otp.length !== 5 || !/^\d{5}$/.test(otp)) {
+    const safeOtp = sanitizeInput(otp);
+    if (!/^\d{5}$/.test(safeOtp)) {
       setMessage("Please enter a valid 5-digit OTP.");
       setMessageType("error");
       setIsLoading(false);
       return;
     }
+
     if (!csrfToken) {
       setMessage("Security token is missing. Please refresh the page.");
       setMessageType("error");
@@ -137,7 +158,7 @@ const ForgotPasswordForm = () => {
           "Content-Type": "application/json",
           "CSRF-Token": csrfToken,
         },
-        body: JSON.stringify({ otp }),
+        body: JSON.stringify({ otp: safeOtp }),
       });
 
       const data = await response.json();
@@ -163,12 +184,21 @@ const ForgotPasswordForm = () => {
     event.preventDefault();
     setIsLoading(true);
 
-    if (!password || password !== confirmPassword || password.length < 8) {
-      setMessage("Passwords do not match or are too short (min 8 characters).");
+    const safePassword = sanitizeInput(password);
+    const safeConfirmPassword = sanitizeInput(confirmPassword);
+
+    if (
+      !isStrongPassword(safePassword) ||
+      safePassword !== safeConfirmPassword
+    ) {
+      setMessage(
+        "Passwords must match and be at least 8 chars with uppercase, lowercase, and numbers.",
+      );
       setMessageType("error");
       setIsLoading(false);
       return;
     }
+
     if (!csrfToken) {
       setMessage("Security token is missing. Please refresh the page.");
       setMessageType("error");
@@ -184,7 +214,7 @@ const ForgotPasswordForm = () => {
           "Content-Type": "application/json",
           "CSRF-Token": csrfToken,
         },
-        body: JSON.stringify({ newPassword: password }),
+        body: JSON.stringify({ newPassword: safePassword }),
       });
 
       const data = await response.json();
