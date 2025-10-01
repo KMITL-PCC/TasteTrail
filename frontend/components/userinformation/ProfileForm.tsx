@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useUser } from "@/store/user-store";
+import { ImageZoom } from "@/components/ui/shadcn-io/image-zoom";
 
 const backendURL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
@@ -43,13 +44,18 @@ const ProfileForm = () => {
       <Card className="mx-auto mt-9 h-40 max-w-5xl overflow-hidden rounded-2xl border py-0 shadow-sm">
         <CardContent className="flex h-full items-center gap-2">
           <div className="relative flex h-[120px] w-[120px] items-center">
-            <Image
-              src={profilePictureUrl}
-              alt="User"
-              fill
-              className="rounded-full object-cover"
-              sizes="120px"
-            />
+            <ImageZoom>
+              <div className="h-[120px] w-[120px] overflow-hidden rounded-full">
+                <Image
+                  src={profilePictureUrl}
+                  alt="User"
+                  width={120}
+                  height={120}
+                  className="object-cover"
+                  unoptimized
+                />
+              </div>
+            </ImageZoom>
           </div>
 
           <div className="min-w-0 flex-1">

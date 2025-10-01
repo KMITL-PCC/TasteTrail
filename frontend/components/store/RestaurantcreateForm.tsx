@@ -327,12 +327,14 @@ export default function SellerInfoWeb() {
 
                     <Separator />
 
-                    <Mainmap
-                      onLocationChange={([lat, lng]) => {
-                        setLatitude(lat);
-                        setLongitude(lng);
-                      }}
-                    />
+                    <div className="relative h-64 w-full overflow-hidden rounded-lg">
+                      <Mainmap
+                        onLocationChange={([lat, lng]) => {
+                          setLatitude(lat);
+                          setLongitude(lng);
+                        }}
+                      />
+                    </div>
 
                     <Separator />
 
@@ -341,8 +343,10 @@ export default function SellerInfoWeb() {
                       <Label className="text-sm font-medium">
                         วันและเวลาเปิด-ปิด
                       </Label>
-                      <div className="mt-2 grid grid-cols-2 gap-4 md:grid-cols-4">
-                        {daysOfWeek.map((day, index) => (
+
+                      {/* แถวบน 4 วัน */}
+                      <div className="mt-2 grid grid-cols-1 gap-4 md:grid-cols-4">
+                        {daysOfWeek.slice(0, 4).map((day, index) => (
                           <div
                             key={index}
                             className="flex flex-col rounded-lg border border-gray-200 p-3 shadow-sm transition-shadow hover:shadow-md"
@@ -366,7 +370,7 @@ export default function SellerInfoWeb() {
                                     )
                                   }
                                   className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm"
-                                  step={60} // 24 ชั่วโมง
+                                  step={60}
                                 />
                               </div>
 
@@ -376,7 +380,7 @@ export default function SellerInfoWeb() {
                                 </span>
                                 <input
                                   type="time"
-                                  value={openingTimes[index].closeTime} // ✅ ใช้ closeTime
+                                  value={openingTimes[index].closeTime}
                                   onChange={(e) =>
                                     handleTimeChange(
                                       index,
@@ -385,12 +389,67 @@ export default function SellerInfoWeb() {
                                     )
                                   }
                                   className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm"
-                                  step={60} // 24 ชั่วโมง
+                                  step={60}
                                 />
                               </div>
                             </div>
                           </div>
                         ))}
+                      </div>
+
+                      {/* แถวล่าง 3 วันตรงกลาง */}
+                      <div className="mt-2 flex flex-col items-center gap-2 md:flex-row md:justify-center md:gap-4">
+                        {daysOfWeek.slice(4).map((day, i) => {
+                          const index = i + 4;
+                          return (
+                            <div
+                              key={index}
+                              className="flex w-full flex-col rounded-lg border border-gray-200 p-3 shadow-sm transition-shadow hover:shadow-md md:w-40"
+                            >
+                              <p className="mb-2 text-sm font-semibold text-gray-700">
+                                {day}
+                              </p>
+                              <div className="flex flex-col gap-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-gray-500">
+                                    เปิด
+                                  </span>
+                                  <input
+                                    type="time"
+                                    value={openingTimes[index].openTime}
+                                    onChange={(e) =>
+                                      handleTimeChange(
+                                        index,
+                                        "openTime",
+                                        e.target.value,
+                                      )
+                                    }
+                                    className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm"
+                                    step={60}
+                                  />
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-xs text-gray-500">
+                                    ปิด
+                                  </span>
+                                  <input
+                                    type="time"
+                                    value={openingTimes[index].closeTime}
+                                    onChange={(e) =>
+                                      handleTimeChange(
+                                        index,
+                                        "closeTime",
+                                        e.target.value,
+                                      )
+                                    }
+                                    className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm"
+                                    step={60}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
 
@@ -534,7 +593,7 @@ export default function SellerInfoWeb() {
 
           <CardFooter className="flex justify-end border-t bg-gray-50 p-4">
             <Button
-              className="bg-red-500 hover:bg-red-600"
+              className="bg-green-700 hover:bg-green-600"
               onClick={handleSave}
             >
               <SaveIcon className="mr-2 h-4 w-4" />

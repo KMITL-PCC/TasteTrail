@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import DOMPurify from "dompurify";
+import { Eye, EyeOff } from "lucide-react";
 
 // The backend URL is correctly defined here and will be used throughout the component.
 const backendURL = process.env.NEXT_PUBLIC_BACKEND_URL;
@@ -12,6 +13,7 @@ const ForgotPasswordForm = () => {
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState<"success" | "error">("error");
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [formStep, setFormStep] = useState<"email" | "otp" | "resetPassword">(
     "email",
@@ -427,6 +429,7 @@ const ForgotPasswordForm = () => {
       )}
 
       {/* Reset Password Form */}
+      {/* Reset Password Form */}
       {formStep === "resetPassword" && (
         <div className="w-full max-w-md">
           <div className="mb-6 text-center">
@@ -438,38 +441,94 @@ const ForgotPasswordForm = () => {
             </p>
           </div>
           <form onSubmit={handlePasswordSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="password" className="sr-only">
-                New Password
-              </label>
+            {/* New Password */}
+            <div className="relative">
               <input
-                id="password"
-                name="password"
-                type="password"
-                required
+                type={showPassword ? "text" : "password"}
+                placeholder="New Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
                 className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 placeholder-gray-400 shadow-sm transition focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none disabled:bg-gray-50"
-                placeholder="New Password"
-              />
-            </div>
-            <div>
-              <label htmlFor="confirmPassword" className="sr-only">
-                Confirm New Password
-              </label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
                 required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((s) => !s)}
+                className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-1 text-gray-500 hover:text-gray-800 focus:outline-none"
+              >
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5" />
+                ) : (
+                  <Eye className="h-5 w-5" />
+                )}
+              </button>
+            </div>
+
+            {/* Confirm Password */}
+            <div>
+              <input
+                type="password"
+                placeholder="Confirm New Password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 disabled={isLoading}
                 className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 placeholder-gray-400 shadow-sm transition focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none disabled:bg-gray-50"
-                placeholder="Confirm New Password"
+                required
               />
             </div>
+
+            {/* Password checklist */}
+            <div className="mt-2 grid grid-cols-1 gap-1 text-sm">
+              <div className="flex items-center gap-2">
+                <span
+                  className={`inline-block h-3 w-3 rounded-full ${
+                    password.length >= 8 ? "bg-green-500" : "bg-gray-300"
+                  }`}
+                />
+                <span className="text-xs text-gray-600">
+                  At least 8 characters
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span
+                  className={`inline-block h-3 w-3 rounded-full ${
+                    /[a-z]/.test(password) ? "bg-green-500" : "bg-gray-300"
+                  }`}
+                />
+                <span className="text-xs text-gray-600">Lowercase letter</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span
+                  className={`inline-block h-3 w-3 rounded-full ${
+                    /[A-Z]/.test(password) ? "bg-green-500" : "bg-gray-300"
+                  }`}
+                />
+                <span className="text-xs text-gray-600">Uppercase letter</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span
+                  className={`inline-block h-3 w-3 rounded-full ${
+                    /\d/.test(password) ? "bg-green-500" : "bg-gray-300"
+                  }`}
+                />
+                <span className="text-xs text-gray-600">Number</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span
+                  className={`inline-block h-3 w-3 rounded-full ${
+                    /[!@#$%^&*()_\-+=[\]{}|:;,.<>/?~]/.test(password)
+                      ? "bg-green-500"
+                      : "bg-gray-300"
+                  }`}
+                />
+                <span className="text-xs text-gray-600">
+                  Special character (!@#$...)
+                </span>
+              </div>
+            </div>
+
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={isLoading}
@@ -478,7 +537,7 @@ const ForgotPasswordForm = () => {
               {isLoading ? "Saving..." : "Reset Password"}
             </button>
 
-            {/* Text link back to Login */}
+            {/* Back to Login */}
             <div className="text-center">
               <Link
                 href="/login"

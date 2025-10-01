@@ -463,16 +463,66 @@ export default function EditProfilePage() {
                       )}
                     </button>
                   </div>
+                  {/* ✅ Password strength checklist */}
+                  {newPassword.length > 0 && (
+                    <ul className="mt-2 space-y-1 text-sm">
+                      <li
+                        className={
+                          /[a-z]/.test(newPassword)
+                            ? "text-green-600"
+                            : "text-gray-500"
+                        }
+                      >
+                        • At least one lowercase letter
+                      </li>
+                      <li
+                        className={
+                          /[A-Z]/.test(newPassword)
+                            ? "text-green-600"
+                            : "text-gray-500"
+                        }
+                      >
+                        • At least one uppercase letter
+                      </li>
+                      <li
+                        className={
+                          /\d/.test(newPassword)
+                            ? "text-green-600"
+                            : "text-gray-500"
+                        }
+                      >
+                        • At least one number
+                      </li>
+                      <li
+                        className={
+                          /[!@#$%^&*()\-+=.?]/.test(newPassword)
+                            ? "text-green-600"
+                            : "text-gray-500"
+                        }
+                      >
+                        • At least one special character (!@#$%^&*()-+=.?)
+                      </li>
+                      <li
+                        className={
+                          newPassword.length >= 8
+                            ? "text-green-600"
+                            : "text-gray-500"
+                        }
+                      >
+                        • Minimum 8 characters
+                      </li>
+                    </ul>
+                  )}
 
-                  {/* New Password */}
+                  {/* Confirm Password */}
                   <div className="relative">
-                    <Label htmlFor="newPassword">New password</Label>
+                    <Label htmlFor="confirmPassword">Confirm password</Label>
                     <Input
-                      id="newPassword"
-                      type={showNewPassword ? "text" : "password"}
-                      value={newPassword}
+                      id="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={confirmPassword}
                       onChange={(e) =>
-                        setNewPassword(sanitizePassword(e.target.value))
+                        setConfirmPassword(sanitizePassword(e.target.value))
                       }
                       className="h-11 rounded-md border-gray-300 pr-10 text-base focus:border-green-500 focus:ring-green-500"
                       autoComplete="new-password"
@@ -480,68 +530,17 @@ export default function EditProfilePage() {
                     <button
                       type="button"
                       aria-label={
-                        showNewPassword ? "Hide password" : "Show password"
+                        showConfirmPassword ? "Hide password" : "Show password"
                       }
-                      onClick={() => setShowNewPassword((prev) => !prev)}
+                      onClick={() => setShowConfirmPassword((prev) => !prev)}
                       className="absolute top-1/2 right-2 -translate-y-1/2 p-1 text-gray-500 hover:text-gray-800 focus:outline-none"
                     >
-                      {showNewPassword ? (
+                      {showConfirmPassword ? (
                         <EyeOff className="h-5 w-5" />
                       ) : (
                         <Eye className="h-5 w-5" />
                       )}
                     </button>
-
-                    {/* ✅ Password strength checklist */}
-                    {newPassword.length > 0 && (
-                      <ul className="mt-2 space-y-1 text-sm">
-                        <li
-                          className={
-                            /[a-z]/.test(newPassword)
-                              ? "text-green-600"
-                              : "text-gray-500"
-                          }
-                        >
-                          • At least one lowercase letter
-                        </li>
-                        <li
-                          className={
-                            /[A-Z]/.test(newPassword)
-                              ? "text-green-600"
-                              : "text-gray-500"
-                          }
-                        >
-                          • At least one uppercase letter
-                        </li>
-                        <li
-                          className={
-                            /\d/.test(newPassword)
-                              ? "text-green-600"
-                              : "text-gray-500"
-                          }
-                        >
-                          • At least one number
-                        </li>
-                        <li
-                          className={
-                            /[!@#$%^&*()\-+=.?]/.test(newPassword)
-                              ? "text-green-600"
-                              : "text-gray-500"
-                          }
-                        >
-                          • At least one special character (!@#$%^&*()-+=.?)
-                        </li>
-                        <li
-                          className={
-                            newPassword.length >= 8
-                              ? "text-green-600"
-                              : "text-gray-500"
-                          }
-                        >
-                          • Minimum 8 characters
-                        </li>
-                      </ul>
-                    )}
                   </div>
                 </CardContent>
 
