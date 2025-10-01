@@ -18,6 +18,7 @@ import { Upload, Trash2, Save, User, Lock, EyeOff, Eye } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
+import z from "zod";
 
 const backendURL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
@@ -35,6 +36,26 @@ export default function EditProfilePage() {
   const router = useRouter();
   const defaultTab =
     (searchParams.get("tab") as "profile" | "password") ?? "profile";
+
+  const passwordSchema = z
+    .string()
+    .min(8, { message: "Password must be at least 8 characters." })
+    .max(100, { message: "Password too long." })
+    .regex(/^[\w!@#$%^&*()\-+=.?]+$/, {
+      message: "Password contains invalid characters.",
+    })
+    .refine((val) => /[a-z]/.test(val), {
+      message: "Password must include at least one lowercase letter.",
+    })
+    .refine((val) => /[A-Z]/.test(val), {
+      message: "Password must include at least one uppercase letter.",
+    })
+    .refine((val) => /\d/.test(val), {
+      message: "Password must include at least one number.",
+    })
+    .refine((val) => /[!@#$%^&*()\-+=.?]/.test(val), {
+      message: "Password must include at least one special character.",
+    });
 
   const [csrfToken, setCsrfToken] = useState<string | null>(null);
 
@@ -200,6 +221,15 @@ export default function EditProfilePage() {
       return;
     }
 
+    // ✅ validate newPassword strength
+    const result = passwordSchema.safeParse(newPassword);
+    if (!result.success) {
+      toast.error("Weak password", {
+        description: result.error.issues[0].message,
+      });
+      return;
+    }
+
     if (newPassword !== confirmPassword) {
       toast.error("Password mismatch", {
         description: "Confirmation does not match the new password.",
@@ -247,7 +277,6 @@ export default function EditProfilePage() {
       setSavingPassword(false);
     }
   }
-
   return (
     <div className="">
       <div className="bg-background/80 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10 w-full border-b backdrop-blur">
@@ -435,15 +464,15 @@ export default function EditProfilePage() {
                     </button>
                   </div>
 
-                  {/* Confirm Password */}
+                  {/* New Password */}
                   <div className="relative">
-                    <Label htmlFor="confirmPassword">Confirm password</Label>
+                    <Label htmlFor="newPassword">New password</Label>
                     <Input
-                      id="confirmPassword"
-                      type={showConfirmPassword ? "text" : "password"}
-                      value={confirmPassword}
+                      id="newPassword"
+                      type={showNewPassword ? "text" : "password"}
+                      value={newPassword}
                       onChange={(e) =>
-                        setConfirmPassword(sanitizePassword(e.target.value))
+                        setNewPassword(sanitizePassword(e.target.value))
                       }
                       className="h-11 rounded-md border-gray-300 pr-10 text-base focus:border-green-500 focus:ring-green-500"
                       autoComplete="new-password"
@@ -451,17 +480,68 @@ export default function EditProfilePage() {
                     <button
                       type="button"
                       aria-label={
-                        showConfirmPassword ? "Hide password" : "Show password"
+                        showNewPassword ? "Hide password" : "Show password"
                       }
-                      onClick={() => setShowConfirmPassword((prev) => !prev)}
+                      onClick={() => setShowNewPassword((prev) => !prev)}
                       className="absolute top-1/2 right-2 -translate-y-1/2 p-1 text-gray-500 hover:text-gray-800 focus:outline-none"
                     >
-                      {showConfirmPassword ? (
+                      {showNewPassword ? (
                         <EyeOff className="h-5 w-5" />
                       ) : (
                         <Eye className="h-5 w-5" />
                       )}
                     </button>
+
+                    {/* ✅ Password strength checklist */}
+                    {newPassword.length > 0 && (
+                      <ul className="mt-2 space-y-1 text-sm">
+                        <li
+                          className={
+                            /[a-z]/.test(newPassword)
+                              ? "text-green-600"
+                              : "text-gray-500"
+                          }
+                        >
+                          • At least one lowercase letter
+                        </li>
+                        <li
+                          className={
+                            /[A-Z]/.test(newPassword)
+                              ? "text-green-600"
+                              : "text-gray-500"
+                          }
+                        >
+                          • At least one uppercase letter
+                        </li>
+                        <li
+                          className={
+                            /\d/.test(newPassword)
+                              ? "text-green-600"
+                              : "text-gray-500"
+                          }
+                        >
+                          • At least one number
+                        </li>
+                        <li
+                          className={
+                            /[!@#$%^&*()\-+=.?]/.test(newPassword)
+                              ? "text-green-600"
+                              : "text-gray-500"
+                          }
+                        >
+                          • At least one special character (!@#$%^&*()-+=.?)
+                        </li>
+                        <li
+                          className={
+                            newPassword.length >= 8
+                              ? "text-green-600"
+                              : "text-gray-500"
+                          }
+                        >
+                          • Minimum 8 characters
+                        </li>
+                      </ul>
+                    )}
                   </div>
                 </CardContent>
 
@@ -472,6 +552,7 @@ export default function EditProfilePage() {
                   </Button>
 
                   <Button
+                    type="button" // 👈 เพิ่มบรรทัดนี้
                     variant="link"
                     size="sm"
                     onClick={async () => {

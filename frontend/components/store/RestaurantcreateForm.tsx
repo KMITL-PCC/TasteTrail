@@ -118,10 +118,16 @@ export default function SellerInfoWeb() {
     timeType: "openTime" | "closeTime",
     value: string,
   ) => {
-    setOpeningTimes((prev: OpeningTime[]) => {
-      const updatedTimes = [...prev];
-      updatedTimes[weekday] = { ...updatedTimes[weekday], [timeType]: value };
-      return updatedTimes;
+    // แปลงเวลาเป็น HH:MM 24 ชั่วโมง
+    const [h, m] = value.split(":").map(Number);
+    const formatted = `${h.toString().padStart(2, "0")}:${m
+      .toString()
+      .padStart(2, "0")}`;
+
+    setOpeningTimes((prev) => {
+      const updated = [...prev];
+      updated[weekday] = { ...updated[weekday], [timeType]: formatted };
+      return updated;
     });
   };
 
@@ -241,265 +247,287 @@ export default function SellerInfoWeb() {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="mx-auto mt-6 max-w-5xl px-4">
+      <div className="mx-auto mt-6 max-w-3xl px-4">
         <Card>
           <CardContent className="p-6">
-            <div className="grid grid-cols-1 gap-6 md:grid-cols-12">
-              <div className="md:col-span-4">
+            <div className="grid grid-cols-1 gap-6">
+              {/* หัวข้ออยู่ด้านบน */}
+              <div className="mb-6">
                 <h2 className="text-base font-medium">รายละเอียดร้านค้า</h2>
                 <p className="text-muted-foreground text-sm">
                   กรอกข้อมูลพื้นฐานของร้านคุณให้ครบถ้วน
                 </p>
               </div>
 
-              <div className="md:col-span-8">
-                <div className="grid gap-6">
-                  {/* ชื่อจริง */}
-                  <FieldBlock label="ชื่อจริงและนามสกุล" required>
-                    <Input
-                      value={firstName}
-                      onChange={(e) => setFirstName(e.target.value)}
-                      maxLength={30}
-                      placeholder="ชื่อจริง"
-                    />
-                    <Input
-                      value={lastName}
-                      onChange={(e) => setLastName(e.target.value)}
-                      maxLength={30}
-                      placeholder="นามสกุลจริง"
-                    />
-                  </FieldBlock>
+              <div className="grid gap-6">
+                {/* ชื่อจริงและนามสกุล */}
+                <FieldBlock label="ชื่อจริงและนามสกุล" required>
+                  <Input
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    maxLength={30}
+                    placeholder="ชื่อจริง"
+                  />
+                  <Input
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    maxLength={30}
+                    placeholder="นามสกุลจริง"
+                  />
+                </FieldBlock>
 
-                  <Separator />
+                <Separator />
 
-                  {/* ชื่อร้าน */}
-                  <FieldBlock label="ชื่อร้านค้า" required>
-                    <Input
-                      value={shopName}
-                      onChange={(e) => setShopName(e.target.value)}
-                      maxLength={30}
-                      placeholder="ชื่อร้านค้า"
+                {/* ชื่อร้าน */}
+                <FieldBlock label="ชื่อร้านค้า" required>
+                  <Input
+                    value={shopName}
+                    onChange={(e) => setShopName(e.target.value)}
+                    maxLength={30}
+                    placeholder="ชื่อร้านค้า"
+                  />
+                </FieldBlock>
+
+                {/* คำอธิบายร้าน */}
+                <FieldBlock label="คำอธิบายร้านค้า (Description)">
+                  <Textarea
+                    rows={3}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="ใส่คำอธิบายสั้น ๆ ของร้านคุณ"
+                  />
+                </FieldBlock>
+
+                <Separator />
+
+                {/* หน้าร้าน */}
+                <FieldBlock label="หน้าร้าน">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="hasPhysicalStore"
+                      checked={hasPhysicalStore}
+                      onCheckedChange={(v) => setHasPhysicalStore(!!v)}
                     />
-                  </FieldBlock>
-                  <FieldBlock label="คำอธิบายร้านค้า (Description)">
-                    <Textarea
-                      rows={3}
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      placeholder="ใส่คำอธิบายสั้น ๆ ของร้านคุณ"
-                    />
-                  </FieldBlock>
-                  <Separator />
+                    <Label htmlFor="hasPhysicalStore">มีหน้าร้าน</Label>
+                  </div>
+                </FieldBlock>
 
-                  <Separator />
+                <Separator />
 
-                  {/* หน้าร้าน */}
-                  <FieldBlock label="หน้าร้าน">
-                    <div className="flex items-center gap-2">
-                      <Checkbox
-                        id="hasPhysicalStore"
-                        checked={hasPhysicalStore}
-                        onCheckedChange={(v) => setHasPhysicalStore(!!v)}
+                {hasPhysicalStore && (
+                  <>
+                    <FieldBlock label="ที่อยู่ในการเข้ารับสินค้า" required>
+                      <Textarea
+                        rows={3}
+                        value={pickupAddress}
+                        onChange={(e) => setPickupAddress(e.target.value)}
+                        placeholder="บ้านเลขที่ / หมู่ / ตำบล / อำเภอ / จังหวัด / รหัสไปรษณีย์"
                       />
-                      <Label htmlFor="hasPhysicalStore">มีหน้าร้าน</Label>
-                    </div>
-                  </FieldBlock>
+                    </FieldBlock>
 
-                  <Separator />
+                    <Separator />
 
-                  {hasPhysicalStore && (
-                    <>
-                      <FieldBlock label="ที่อยู่ในการเข้ารับสินค้า" required>
-                        <Textarea
-                          rows={3}
-                          value={pickupAddress}
-                          onChange={(e) => setPickupAddress(e.target.value)}
-                          placeholder="บ้านเลขที่ / หมู่ / ตำบล / อำเภอ / จังหวัด / รหัสไปรษณีย์"
-                        />
-                      </FieldBlock>
-                      <Separator />
-                      <Mainmap
-                        onLocationChange={([lat, lng]) => {
-                          setLatitude(lat);
-                          setLongitude(lng);
-                        }}
-                      />
-                      <Separator />
-                      {/* เวลาเปิดปิด */}
-                      <div>
-                        {openingTimes.map(
-                          (time: OpeningTime, index: number) => (
-                            <div key={index} className="mb-4">
-                              <p>{`วัน ${daysOfWeek[time.weekday]}`}</p>
-                              <div className="flex gap-4">
-                                <div className="flex flex-col">
-                                  <Label className="text-sm">เวลาเปิด</Label>
-                                  <input
-                                    type="time"
-                                    value={time.openTime}
-                                    onChange={(e) =>
-                                      handleTimeChange(
-                                        index,
-                                        "openTime",
-                                        e.target.value,
-                                      )
-                                    }
-                                    className="rounded-md border border-gray-300 px-4 py-2"
-                                  />
-                                </div>
-                                <div className="flex flex-col">
-                                  <Label className="text-sm">เวลาปิด</Label>
-                                  <input
-                                    type="time"
-                                    value={time.closeTime}
-                                    onChange={(e) =>
-                                      handleTimeChange(
-                                        index,
-                                        "closeTime",
-                                        e.target.value,
-                                      )
-                                    }
-                                    className="rounded-md border border-gray-300 px-4 py-2"
-                                  />
-                                </div>
+                    <Mainmap
+                      onLocationChange={([lat, lng]) => {
+                        setLatitude(lat);
+                        setLongitude(lng);
+                      }}
+                    />
+
+                    <Separator />
+
+                    {/* เวลาเปิดปิด */}
+                    <div className="mb-4">
+                      <Label className="text-sm font-medium">
+                        วันและเวลาเปิด-ปิด
+                      </Label>
+                      <div className="mt-2 grid grid-cols-2 gap-4 md:grid-cols-4">
+                        {daysOfWeek.map((day, index) => (
+                          <div
+                            key={index}
+                            className="flex flex-col rounded-lg border border-gray-200 p-3 shadow-sm transition-shadow hover:shadow-md"
+                          >
+                            <p className="mb-2 text-sm font-semibold text-gray-700">
+                              {day}
+                            </p>
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-gray-500">
+                                  เปิด
+                                </span>
+                                <input
+                                  type="time"
+                                  value={openingTimes[index].openTime}
+                                  onChange={(e) =>
+                                    handleTimeChange(
+                                      index,
+                                      "openTime",
+                                      e.target.value,
+                                    )
+                                  }
+                                  className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm"
+                                  step={60} // 24 ชั่วโมง
+                                />
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-gray-500">
+                                  ปิด
+                                </span>
+                                <input
+                                  type="time"
+                                  value={openingTimes[index].closeTime} // ✅ ใช้ closeTime
+                                  onChange={(e) =>
+                                    handleTimeChange(
+                                      index,
+                                      "closeTime",
+                                      e.target.value,
+                                    )
+                                  }
+                                  className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm"
+                                  step={60} // 24 ชั่วโมง
+                                />
                               </div>
                             </div>
-                          ),
-                        )}
-                      </div>
-                      <Separator />
-                    </>
-                  )}
-
-                  {/* ราคา */}
-                  <FieldBlock label="ช่วงราคา (บาท)">
-                    <div className="flex gap-4">
-                      <div className="flex flex-col">
-                        <Label className="text-sm">ราคาต่ำสุด</Label>
-                        <Input
-                          type="number"
-                          min={0}
-                          value={minPrice}
-                          onChange={(e) =>
-                            setMinPrice(Number(e.target.value) || "")
-                          }
-                          placeholder="0"
-                        />
-                      </div>
-                      <div className="flex flex-col">
-                        <Label className="text-sm">ราคาสูงสุด</Label>
-                        <Input
-                          type="number"
-                          min={0}
-                          value={maxPrice}
-                          onChange={(e) =>
-                            setMaxPrice(Number(e.target.value) || "")
-                          }
-                          placeholder="0"
-                        />
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  </FieldBlock>
 
-                  <FieldBlock label="ช่องทางติดต่อ (Contact detail)" required>
-                    <Input
-                      value={contactDetail}
-                      onChange={(e) => setContactDetail(e.target.value)}
-                      maxLength={100}
-                      placeholder="เช่น เบอร์โทร, Line ID หรืออีเมล"
-                    />
-                  </FieldBlock>
+                    <Separator />
+                  </>
+                )}
 
-                  <Separator />
-
-                  {/* รูปภาพร้าน */}
-                  <div>
-                    <Label className="text-sm">
-                      อัปโหลดรูปภาพร้าน (สูงสุด 4 รูป, ขนาดไม่เกิน 8MB)
-                    </Label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleStoreFileChange}
-                      multiple
-                      className="mt-2"
-                    />
-                    <div className="mt-4 flex gap-2">
-                      {previewImages.map((img, index) => (
-                        <img
-                          key={index}
-                          src={img}
-                          alt={`uploaded-img-${index}`}
-                          className="h-32 w-32 rounded-md object-cover"
-                        />
-                      ))}
+                {/* ราคา */}
+                <FieldBlock label="ช่วงราคา (บาท)">
+                  <div className="flex gap-4">
+                    <div className="flex flex-col">
+                      <Label className="text-sm">ราคาต่ำสุด</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        value={minPrice}
+                        onChange={(e) =>
+                          setMinPrice(Number(e.target.value) || "")
+                        }
+                        placeholder="0"
+                      />
+                    </div>
+                    <div className="flex flex-col">
+                      <Label className="text-sm">ราคาสูงสุด</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        value={maxPrice}
+                        onChange={(e) =>
+                          setMaxPrice(Number(e.target.value) || "")
+                        }
+                        placeholder="0"
+                      />
                     </div>
                   </div>
+                </FieldBlock>
 
-                  <Separator />
+                {/* ช่องทางติดต่อ */}
+                <FieldBlock label="ช่องทางติดต่อ (Contact detail)" required>
+                  <Input
+                    value={contactDetail}
+                    onChange={(e) => setContactDetail(e.target.value)}
+                    maxLength={100}
+                    placeholder="เช่น เบอร์โทร, Line ID หรืออีเมล"
+                  />
+                </FieldBlock>
 
-                  {/* รูปเจ้าของร้าน */}
-                  <div>
-                    <Label className="text-sm">
-                      อัปโหลดรูปภาพเจ้าของร้าน (1 รูป, ขนาดไม่เกิน 8MB)
-                    </Label>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleProfileFileChange}
-                      className="mt-2"
-                    />
-                    <div className="mt-4 flex gap-2">
-                      {previewProfileImages.map((img, index) => (
-                        <img
-                          key={index}
-                          src={img}
-                          alt={`owner-profile-${index}`}
-                          className="h-32 w-32 rounded-full object-cover"
-                        />
-                      ))}
-                    </div>
+                <Separator />
+
+                {/* รูปภาพร้าน */}
+                <div>
+                  <Label className="text-sm">
+                    อัปโหลดรูปภาพร้าน (สูงสุด 4 รูป, ขนาดไม่เกิน 8MB)
+                  </Label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleStoreFileChange}
+                    multiple
+                    className="mt-2"
+                  />
+                  <div className="mt-4 flex gap-2">
+                    {previewImages.map((img, index) => (
+                      <img
+                        key={index}
+                        src={img}
+                        alt={`uploaded-img-${index}`}
+                        className="h-32 w-32 rounded-md object-cover"
+                      />
+                    ))}
                   </div>
-
-                  <Separator />
-                  {/* บริการที่มี */}
-                  <FieldBlock label="บริการที่มี">
-                    <div className="grid gap-2 sm:grid-cols-2">
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          id="delivery"
-                          checked={services.includes(1)}
-                          onCheckedChange={() => toggleService(1)}
-                        />
-                        <Label htmlFor="delivery">บริการส่ง (Delivery)</Label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          id="qr"
-                          checked={services.includes(2)}
-                          onCheckedChange={() => toggleService(2)}
-                        />
-                        <Label htmlFor="qr">จ่ายด้วย QR</Label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          id="wifi"
-                          checked={services.includes(3)}
-                          onCheckedChange={() => toggleService(3)}
-                        />
-                        <Label htmlFor="wifi">มี Wi-Fi</Label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Checkbox
-                          id="alcohol"
-                          checked={services.includes(4)}
-                          onCheckedChange={() => toggleService(4)}
-                        />
-                        <Label htmlFor="alcohol">มีเครื่องดื่มแอลกอฮอล์</Label>
-                      </div>
-                    </div>
-                  </FieldBlock>
                 </div>
+
+                <Separator />
+
+                {/* รูปเจ้าของร้าน */}
+                <div>
+                  <Label className="text-sm">
+                    อัปโหลดรูปภาพเจ้าของร้าน (1 รูป, ขนาดไม่เกิน 8MB)
+                  </Label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleProfileFileChange}
+                    className="mt-2"
+                  />
+                  <div className="mt-4 flex gap-2">
+                    {previewProfileImages.map((img, index) => (
+                      <img
+                        key={index}
+                        src={img}
+                        alt={`owner-profile-${index}`}
+                        className="h-32 w-32 rounded-full object-cover"
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* บริการที่มี */}
+                <FieldBlock label="บริการที่มี">
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="delivery"
+                        checked={services.includes(1)}
+                        onCheckedChange={() => toggleService(1)}
+                      />
+                      <Label htmlFor="delivery">บริการส่ง (Delivery)</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="qr"
+                        checked={services.includes(2)}
+                        onCheckedChange={() => toggleService(2)}
+                      />
+                      <Label htmlFor="qr">จ่ายด้วย QR</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="wifi"
+                        checked={services.includes(3)}
+                        onCheckedChange={() => toggleService(3)}
+                      />
+                      <Label htmlFor="wifi">มี Wi-Fi</Label>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="alcohol"
+                        checked={services.includes(4)}
+                        onCheckedChange={() => toggleService(4)}
+                      />
+                      <Label htmlFor="alcohol">มีเครื่องดื่มแอลกอฮอล์</Label>
+                    </div>
+                  </div>
+                </FieldBlock>
               </div>
             </div>
           </CardContent>

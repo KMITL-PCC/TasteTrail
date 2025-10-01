@@ -1,7 +1,6 @@
-// OtpForm.tsx
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import DOMPurify from "dompurify";
 
 interface OtpFormProps {
@@ -18,11 +17,10 @@ export default function OtpForm({
   setFormStep,
   email,
 }: OtpFormProps) {
-  const [otp, setOtp] = useState(["", "", "", "", ""]);
+  const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [countdown, setCountdown] = useState(30);
-  const inputRefs = useRef<Array<HTMLInputElement | null>>([]);
 
   // countdown
   useEffect(() => {
@@ -31,7 +29,7 @@ export default function OtpForm({
     return () => clearTimeout(timer);
   }, [countdown]);
 
-  // sanitize email for display (prevent XSS)
+  // sanitize email
   const safeEmail = email ? DOMPurify.sanitize(email) : "";
 
   const handleOtpSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -39,18 +37,9 @@ export default function OtpForm({
     setIsLoading(true);
     setMessage("");
 
-    const otpCode = otp.join("");
-    // final sanitize - should be only digits
-    const safeOtp = otpCode.replace(/[^0-9]/g, "");
-
+    const safeOtp = otp.replace(/[^0-9]/g, "");
     if (!/^\d{5}$/.test(safeOtp)) {
       setMessage("Please enter a valid 5-digit OTP.");
-      setIsLoading(false);
-      return;
-    }
-
-    if (!csrfToken) {
-      setMessage("Security token missing. Please refresh the page.");
       setIsLoading(false);
       return;
     }
@@ -68,78 +57,24 @@ export default function OtpForm({
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        // show server message but as text only
         setMessage(data?.message || "Invalid OTP. Please try again.");
         setIsLoading(false);
         return;
       }
 
       setMessage("OTP verified. Please set your new password.");
-      setIsLoading(false);
       setFormStep("resetPassword");
     } catch (err: any) {
-      setMessage(
-        err?.name === "AbortError"
-          ? "Request timed out."
-          : "Unable to connect to server.",
-      );
+      setMessage("Unable to connect to server.");
+    } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleOtpChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    index: number,
-  ) => {
-    // only digits, max length 1
-    const value = e.target.value.replace(/[^0-9]/g, "").slice(0, 1);
-    const updated = [...otp];
-    updated[index] = value;
-    setOtp(updated);
-
-    // move focus to next if entered
-    if (value && index < inputRefs.current.length - 1) {
-      inputRefs.current[index + 1]?.focus();
-    }
-  };
-
-  // prevent pasting non-digit content and handle paste of full OTP
-  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
-    e.preventDefault();
-    const text = e.clipboardData.getData("text"); // ✅ ใช้ event.clipboardData
-    const digits = text.replace(/[^0-9]/g, "").slice(0, 5);
-    if (!digits) return;
-
-    const newOtp = ["", "", "", "", ""];
-    for (let i = 0; i < digits.length; i++) newOtp[i] = digits[i];
-    setOtp(newOtp);
-
-    // focus after paste to next empty
-    const nextIndex = digits.length < 5 ? digits.length : 4;
-    setTimeout(() => inputRefs.current[nextIndex]?.focus(), 0);
-  };
-
-  const handleKeyDown = (
-    e: React.KeyboardEvent<HTMLInputElement>,
-    index: number,
-  ) => {
-    if (e.key === "Backspace" && otp[index] === "" && index > 0) {
-      inputRefs.current[index - 1]?.focus();
-    }
-    // block space
-    if (e.key === " ") e.preventDefault();
   };
 
   const handleResendOtp = async () => {
     if (countdown > 0) return;
     setIsLoading(true);
     setMessage("");
-
-    if (!csrfToken) {
-      setMessage("Security token missing. Please refresh the page.");
-      setIsLoading(false);
-      return;
-    }
 
     try {
       const res = await fetch(RESEND_OTP_ENDPOINT, {
@@ -149,25 +84,19 @@ export default function OtpForm({
           "Content-Type": "application/json",
           "X-CSRF-Token": csrfToken,
         },
-        // include email only if backend expects it; sending sanitized email
-        body: JSON.stringify({ email: email ? DOMPurify.sanitize(email) : "" }),
+        body: JSON.stringify({ email: safeEmail }),
       });
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
         setMessage(data?.message || "Failed to resend code.");
-        setIsLoading(false);
         return;
       }
 
       setMessage("A new OTP has been sent to your email.");
       setCountdown(30);
-    } catch (err: any) {
-      setMessage(
-        err?.name === "AbortError"
-          ? "Request timed out."
-          : "Unable to connect.",
-      );
+    } catch (err) {
+      setMessage("Unable to resend code.");
     } finally {
       setIsLoading(false);
     }
@@ -175,73 +104,60 @@ export default function OtpForm({
 
   return (
     <div className="w-full max-w-md">
-      <h1 className="text-center text-3xl font-bold text-gray-900">
-        Check Your Email
-      </h1>
-      <p className="mt-2 text-center text-sm text-gray-600">
-        We sent a reset link to{" "}
-        <span className="font-medium text-gray-800">
-          {/* safeEmail is sanitized (text) */}
-          {safeEmail || "your email"}
-        </span>
-        .<br />
-        Enter the 5-digit code from the email.
-      </p>
+      <div className="mb-6 text-center">
+        <h1 className="text-2xl font-bold text-gray-900">
+          Enter Verification Code
+        </h1>
+        <p className="mt-2 text-sm text-gray-600">
+          A 5-digit code was sent to{" "}
+          <span className="font-medium text-gray-800">{safeEmail}</span>
+        </p>
+      </div>
 
-      <form
-        onSubmit={handleOtpSubmit}
-        className="mt-6 space-y-6 text-center"
-        noValidate
-      >
-        <div className="flex justify-center gap-2">
-          {otp.map((digit, index) => (
-            <input
-              key={index}
-              id={`otp-${index}`}
-              ref={(el) => {
-                inputRefs.current[index] = el;
-              }}
-              type="tel"
-              inputMode="numeric"
-              pattern="\d*"
-              value={digit}
-              onChange={(e) => handleOtpChange(e, index)}
-              onPaste={handlePaste}
-              onKeyDown={(e) => handleKeyDown(e as any, index)}
-              maxLength={1}
-              className="h-12 w-12 rounded-md border border-gray-300 bg-white text-center text-xl font-semibold placeholder-gray-400 shadow-sm focus:border-green-500 focus:ring-1 focus:ring-green-500"
-              placeholder="-"
-              aria-label={`OTP digit ${index + 1}`}
-              autoComplete={index === 0 ? "one-time-code" : "off"}
-            />
-          ))}
+      <form onSubmit={handleOtpSubmit} className="space-y-6">
+        <div>
+          <input
+            id="otp"
+            name="otp"
+            type="text"
+            inputMode="numeric"
+            maxLength={5}
+            required
+            value={otp}
+            onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, ""))}
+            disabled={isLoading}
+            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-center text-lg tracking-[0.5em] placeholder-gray-400 shadow-sm transition focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none disabled:bg-gray-50"
+            placeholder="-----"
+          />
         </div>
 
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full justify-center rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-green-400"
+          className="w-full justify-center rounded-md border border-transparent bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:bg-green-400"
         >
-          {isLoading ? "Verifying..." : "Verify OTP"}
+          {isLoading ? "Verifying..." : "Verify Code"}
         </button>
       </form>
 
-      <div className="mt-4 text-center text-sm text-gray-600">
-        Didn't receive the code?{" "}
-        {countdown > 0 ? (
-          <span className="font-medium text-gray-400">
-            You can resend in {countdown}s
-          </span>
-        ) : (
-          <button
-            type="button"
-            onClick={handleResendOtp}
-            disabled={isLoading}
-            className="font-medium text-green-600 hover:text-green-500 focus:outline-none disabled:opacity-50"
-          >
-            Resend code
-          </button>
-        )}
+      <div className="mt-6 space-y-4 text-center text-sm">
+        <p className="text-gray-600">
+          Didn't receive the code?{" "}
+          {countdown > 0 ? (
+            <span className="font-medium text-gray-400">
+              You can resend in {countdown}s
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={handleResendOtp}
+              disabled={isLoading}
+              className="font-medium text-green-600 hover:text-green-500 focus:outline-none disabled:opacity-50"
+            >
+              Resend code
+            </button>
+          )}
+        </p>
       </div>
 
       {message && (

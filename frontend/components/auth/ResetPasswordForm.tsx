@@ -14,8 +14,6 @@ interface ResetPasswordFormProps {
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 const CSRF_TOKEN_ENDPOINT = `${BACKEND_URL}/api/csrf-token`;
 
-// Password schema: at least 8 chars, <=100, must include lower, upper, digit, special (selected set),
-// and explicitly forbid dangerous characters like < > " ' `
 const passwordSchema = z
   .string()
   .min(8, "Password must be at least 8 characters")
@@ -66,11 +64,9 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
     setIsLoading(true);
     setMessage("");
 
-    // sanitize inputs (trim + strip any HTML)
     const safeNew = DOMPurify.sanitize(newPassword.trim());
     const safeConfirm = DOMPurify.sanitize(confirmPassword.trim());
 
-    // basic quick checks
     if (!safeNew || safeNew.length < 8) {
       setMessage("Password must be at least 8 characters long.");
       setIsLoading(false);
@@ -82,11 +78,9 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
       return;
     }
 
-    // run full zod validation for better error messages
     try {
       passwordSchema.parse(safeNew);
     } catch (err: any) {
-      // zod error structure: err.errors is an array
       const first =
         Array.isArray(err?.errors) && err.errors.length > 0
           ? err.errors[0].message
@@ -102,14 +96,9 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
       return;
     }
 
-    // choose endpoint
-    const endpoint =
-      mode === "forgot"
-        ? `${BACKEND_URL}/auth/reset-password`
-        : `${BACKEND_URL}/auth/updatepass`;
+    const endpoint = `${BACKEND_URL}/auth/reset-password`;
 
     try {
-      // send sanitized new password
       const res = await fetch(endpoint, {
         method: "PATCH",
         headers: {
@@ -121,113 +110,69 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
       });
 
       const data = await res.json().catch(() => ({}));
-      console.log("Server response:", data);
-
       if (!res.ok) {
-        const serverMsg =
-          data?.message || `Failed to reset password (status ${res.status})`;
-        // sanitize server message before showing
-        setMessage(DOMPurify.sanitize(String(serverMsg)));
+        setMessage(
+          DOMPurify.sanitize(data?.message || `Failed to reset password`),
+        );
         setIsLoading(false);
         return;
       }
 
       setMessage("Password reset successful. Redirecting...");
-      setTimeout(() => {
-        router.push("/login");
-      }, 1500);
+      setTimeout(() => router.push("/login"), 1500);
     } catch (err: any) {
-      console.error("Error resetting password:", err);
-      const msg =
-        err?.message ||
-        "Failed to reset password. Please check your connection.";
-      setMessage(DOMPurify.sanitize(String(msg)));
+      setMessage(
+        DOMPurify.sanitize(err?.message || "Failed to reset password."),
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handlePasswordSubmit} className="space-y-6" noValidate>
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-green-600">
-          Set a New Password
-        </h1>
+    <div className="mx-auto w-full max-w-md">
+      <div className="mb-6 text-center">
+        <h1 className="text-2xl font-bold text-gray-900">Set New Password</h1>
         <p className="mt-2 text-sm text-gray-600">
-          Create a new password. Ensure it differs from previous ones for
-          security.
+          Please create a new password for your account.
         </p>
       </div>
 
-      <div>
-        <label
-          htmlFor="newPassword"
-          className="block text-sm font-medium text-gray-700"
-        >
-          New Password
-        </label>
-        <input
-          id="newPassword"
-          type="password"
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
-          required
-          aria-describedby="password-hint"
-          className="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-green-500 focus:outline-none"
-          placeholder="Enter new password"
-        />
-        <p id="password-hint" className="mt-1 text-xs text-gray-500">
-          At least 8 characters, include upper & lower case, a number and a
-          special character.
-        </p>
-      </div>
-
-      <div>
-        <label
-          htmlFor="confirmPassword"
-          className="block text-sm font-medium text-gray-700"
-        >
-          Confirm New Password
-        </label>
-        <input
-          id="confirmPassword"
-          type="password"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          required
-          className="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-green-500 focus:outline-none"
-          placeholder="Confirm new password"
-        />
-      </div>
-
-      <button
-        type="submit"
-        disabled={isLoading}
-        className="w-full rounded-md bg-green-600 px-4 py-2 text-white hover:bg-green-700 disabled:bg-green-400"
-      >
-        {isLoading ? "Saving..." : "Reset Password"}
-      </button>
-
-      {message && (
-        <div
-          className="text-center text-sm text-red-500"
-          role="status"
-          aria-live="polite"
-        >
-          {message}
+      <form onSubmit={handlePasswordSubmit} className="space-y-4">
+        <div>
+          <input
+            type="password"
+            placeholder="New Password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            disabled={isLoading}
+            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 placeholder-gray-400 shadow-sm transition focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none disabled:bg-gray-50"
+            required
+          />
         </div>
-      )}
-
-      <div className="mt-4 text-center">
+        <div>
+          <input
+            type="password"
+            placeholder="Confirm New Password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            disabled={isLoading}
+            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 placeholder-gray-400 shadow-sm transition focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none disabled:bg-gray-50"
+            required
+          />
+        </div>
         <button
-          type="button"
-          onClick={() => setFormStep("otp")}
-          className="text-sm text-blue-600 hover:text-blue-800"
+          type="submit"
+          disabled={isLoading}
+          className="w-full justify-center rounded-md border border-transparent bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:bg-green-400"
         >
-          ← Back to OTP
+          {isLoading ? "Saving..." : "Reset Password"}
         </button>
-      </div>
-    </form>
+        {message && (
+          <div className="text-center text-sm text-red-500">{message}</div>
+        )}
+      </form>
+    </div>
   );
 };
 
