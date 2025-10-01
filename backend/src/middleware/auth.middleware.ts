@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from "express";
+import { validationResult, body } from "express-validator";
 import passport from "../config/passport";
 import { Role, User } from "@prisma/client";
 
@@ -27,15 +28,13 @@ export function hasRole(role: Role) {
     if (user && user.role === role) {
       return next();
     }
-    res
-      .status(403)
-      .json({
-        message: "Forbidden: You do not have the necessary permissions.",
-      });
+    res.status(403).json({
+      message: "Forbidden: You do not have the necessary permissions.",
+    });
   };
 }
 
-export function isLogedIn(req: Request, res: Response, next: NextFunction) {
+export function isLoggedIn(req: Request, res: Response, next: NextFunction) {
   if (!req.isAuthenticated()) {
     return next();
   } else {
@@ -56,4 +55,61 @@ export function invalidCsrf(
   }
 
   next(err);
+}
+
+export class AuthValidation {
+  static validate(req: Request, res: Response, next: NextFunction) {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        errors: errors.array().map((err) => ({
+          field: err.type === "field" ? err.path : "unknown",
+          message: err.msg,
+        })),
+      });
+    }
+    next();
+  }
+
+  static validEmail(email: string) {
+    return [body(email).trim().notEmpty().isEmail().normalizeEmail()];
+  }
+
+  static otpValid(otp: string) {
+    return [
+      body(otp).trim().notEmpty().isLength({ min: 5, max: 5 }).isNumeric(),
+    ];
+  }
+
+  static validName(name: string) {
+    return [
+      body(name)
+        .trim()
+        .notEmpty()
+        .isLength({ min: 2, max: 50 })
+        .withMessage("Name must be between 2 and 50 characters")
+        .matches(/^[a-zA-Z\s]+$/)
+        .withMessage("Name must contain only letters and spaces"),
+    ];
+  }
+
+  static validPassword(password: string) {
+    return [
+      body(password)
+        .trim()
+        .notEmpty()
+        .isLength({ min: 8, max: 50 })
+        .withMessage("Password must be between 8 and 50 characters")
+        .matches(/[a-z]/)
+        .withMessage("Password must contain at least one lowercase letter")
+        .matches(/[A-Z]/)
+        .withMessage("Password must contain at least one uppercase letter")
+        .matches(/[0-9]/)
+        .withMessage("Password must contain at least one number")
+        .matches(/[\W_]/)
+        .withMessage("Password must contain at least one special character"),
+    ];
+  }
 }

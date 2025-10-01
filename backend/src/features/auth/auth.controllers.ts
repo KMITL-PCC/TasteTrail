@@ -12,14 +12,14 @@ export default {
   registerStep1_sendOtp: async (req: Request, res: Response) => {
     const { username, email, password } = req.body;
 
-    if (!password && !email && !username) {
-      return res.status(400).json({ message: "Missing user data" });
-    }
+    // if (!password && !email && !username) {
+    //   return res.status(400).json({ message: "Missing user data" });
+    // }
 
-    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    if (!isEmail) {
-      return res.status(400).json({ message: "email wrong format" });
-    }
+    // const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    // if (!isEmail) {
+    //   return res.status(400).json({ message: "email wrong format" });
+    // }
 
     try {
       const result = await authServices.checkUserNotExistence(username, email);
@@ -67,7 +67,7 @@ export default {
           "OTP sent to your email. Please verify to complete registration.",
       });
     } catch (err) {
-      console.error("ERRORR during user validate", err);
+      console.error("ERROR during user validate", err);
       res
         .status(500)
         .json({ message: "Internal server error during registration." });

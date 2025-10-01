@@ -1,8 +1,9 @@
 import { Router } from "express";
 import {
-  isLogedIn,
+  isLoggedIn,
   isAuthenticated,
   hasRole,
+  AuthValidation,
 } from "../../middleware/auth.middleware";
 import authControllers from "./auth.controllers";
 import passport from "../../config/passport";
@@ -14,32 +15,48 @@ const router = Router();
 router.post(
   "/register/send-otp",
   // rateLimit({ windowMs: 20 * 60 * 1000, max: 5 }),
-  isLogedIn,
+  isLoggedIn,
+  AuthValidation.validName("username"),
+  AuthValidation.validEmail("email"),
+  AuthValidation.validPassword("password"),
+  AuthValidation.validate,
   authControllers.registerStep1_sendOtp
 );
 
 router.post(
   "/register/verify",
   // rateLimit({ windowMs: 10 * 60 * 1000, max: 10 }),
+  isLoggedIn,
+  AuthValidation.otpValid("otp"),
+  AuthValidation.validate,
   authControllers.registerStep2_verifyOTPandCreateUser
 );
 
 router.post(
   "/login",
   // rateLimit({ windowMs: 20 * 60 * 1000, max: 5 }),
-  isLogedIn,
+  isLoggedIn,
+  AuthValidation.validName("loginform"),
+  AuthValidation.validPassword("password"),
+  AuthValidation.validate,
   authControllers.login
 );
 
 router.post(
   "/forgotPass",
   // rateLimit({ windowMs: 20 * 60 * 1000, max: 5 }), //5req : 20 minutes
+  isLoggedIn,
+  AuthValidation.validEmail("email"),
+  AuthValidation.validate,
   authControllers.forgotPass
 );
 
 router.post(
   "/verify-otp",
   // rateLimit({ windowMs: 10 * 60 * 1000, max: 10 }),
+  isLoggedIn,
+  AuthValidation.otpValid("otp"),
+  AuthValidation.validate,
   authControllers.OTPverify
 );
 
@@ -49,13 +66,26 @@ router.post(
   authControllers.resendOTP
 );
 
-router.patch("/reset-password", authControllers.updatePass);
+router.patch(
+  "/reset-password",
+  isLoggedIn,
+  AuthValidation.validPassword("newPassword"),
+  AuthValidation.validate,
+  authControllers.updatePass
+);
 
 router.post("/sendOTP", isAuthenticated, authControllers.sendOTP);
-router.patch("/updatepass", isAuthenticated, authControllers.updatePass);
+router.patch(
+  "/updatepass",
+  isAuthenticated,
+  AuthValidation.validPassword("newPassword"),
+  authControllers.updatePass
+);
 router.patch(
   "/updatepass-current",
   isAuthenticated,
+  AuthValidation.validPassword("currentPassword"),
+  AuthValidation.validPassword("newPassword"),
   authControllers.updatePassCurrent
 );
 
@@ -63,7 +93,7 @@ router.patch(
 router.get(
   "/google",
   // rateLimit({ windowMs: 20 * 60 * 1000, max: 5 }),
-  isLogedIn,
+  isLoggedIn,
   passport.authenticate("google", { scope: ["profile", "email"] }) // ขอสิทธิ์เข้าถึง profile และ email
 );
 
