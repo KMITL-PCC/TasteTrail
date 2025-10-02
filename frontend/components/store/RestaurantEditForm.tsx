@@ -314,13 +314,26 @@ export default function EditRestaurantPage() {
                 <FieldBlock label="ชื่อจริงและนามสกุล" required>
                   <Input
                     value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
+                    onChange={(e) => {
+                      const allowed = e.target.value.replace(
+                        /[^ก-ฮa-zA-Z0-9\s]/g,
+                        "",
+                      );
+                      // อนุญาตตัวอักษรไทย อังกฤษ ตัวเลข และเว้นวรรค
+                      setShopName(allowed);
+                    }}
                     maxLength={30}
                     placeholder="ชื่อจริง"
                   />
                   <Input
                     value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
+                    onChange={(e) => {
+                      const allowed = e.target.value.replace(
+                        /[^ก-ฮa-zA-Z0-9\s]/g,
+                        "",
+                      );
+                      setDescription(allowed);
+                    }}
                     maxLength={30}
                     placeholder="นามสกุลจริง"
                   />
@@ -332,7 +345,14 @@ export default function EditRestaurantPage() {
                 <FieldBlock label="ชื่อร้านค้า" required>
                   <Input
                     value={shopName}
-                    onChange={(e) => setShopName(e.target.value)}
+                    onChange={(e) => {
+                      const allowed = e.target.value.replace(
+                        /[^ก-ฮa-zA-Z0-9\s]/g,
+                        "",
+                      );
+                      // อนุญาตตัวอักษรไทย อังกฤษ ตัวเลข และเว้นวรรค
+                      setShopName(allowed);
+                    }}
                     maxLength={30}
                     placeholder="ชื่อร้านค้า"
                   />
@@ -345,7 +365,13 @@ export default function EditRestaurantPage() {
                   <Textarea
                     rows={3}
                     value={description}
-                    onChange={(e) => setDescription(e.target.value)}
+                    onChange={(e) => {
+                      const allowed = e.target.value.replace(
+                        /[^ก-ฮa-zA-Z0-9\s]/g,
+                        "",
+                      );
+                      setDescription(allowed);
+                    }}
                     placeholder="ใส่คำอธิบายสั้น ๆ ของร้านคุณ"
                   />
                 </FieldBlock>
@@ -372,7 +398,13 @@ export default function EditRestaurantPage() {
                       <Textarea
                         rows={3}
                         value={pickupAddress}
-                        onChange={(e) => setPickupAddress(e.target.value)}
+                        onChange={(e) => {
+                          const allowed = e.target.value.replace(
+                            /[^ก-ฮa-zA-Z0-9\s/.,-]/g,
+                            "",
+                          );
+                          setPickupAddress(allowed);
+                        }}
                         placeholder="บ้านเลขที่ / หมู่ / ตำบล / อำเภอ / จังหวัด / รหัสไปรษณีย์"
                       />
                     </FieldBlock>
@@ -542,9 +574,13 @@ export default function EditRestaurantPage() {
                 <FieldBlock label="ช่องทางติดต่อ (Contact detail)" required>
                   <Input
                     value={contactDetail}
-                    onChange={(e) => setContactDetail(e.target.value)}
+                    onChange={(e) => {
+                      const allowed = e.target.value.replace(/[^0-9]/g, "");
+                      // อนุญาตแค่ตัวเลข
+                      setContactDetail(allowed);
+                    }}
                     maxLength={100}
-                    placeholder="เช่น เบอร์โทร, Line ID หรืออีเมล"
+                    placeholder="เบอร์โทร"
                   />
                 </FieldBlock>
 

@@ -11,6 +11,40 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "../ui/textarea";
 import { toast } from "sonner";
 import dynamic from "next/dynamic";
+import { z } from "zod";
+import Image from "next/image";
+
+export const openingTimeSchema = z.object({
+  weekday: z.number().min(0).max(6),
+  openTime: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "เวลาเปิดไม่ถูกต้อง"),
+  closeTime: z
+    .string()
+    .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "เวลาปิดไม่ถูกต้อง"),
+});
+
+export const sellerInfoSchema = z.object({
+  firstName: z.string().min(1, "กรุณากรอกชื่อจริง").max(30),
+  lastName: z.string().min(1, "กรุณากรอกนามสกุล").max(30),
+  shopName: z.string().min(1, "กรุณากรอกชื่อร้าน").max(30),
+  description: z.string().max(300).optional(),
+  hasPhysicalStore: z.boolean(),
+  pickupAddress: z
+    .string()
+    .max(300, "ที่อยู่ยาวเกินไป")
+    .regex(
+      /^[\u0E00-\u0E7Fa-zA-Z0-9\s/.,-]*$/,
+      "ที่อยู่สามารถมีได้เฉพาะตัวอักษรไทย, อังกฤษ, ตัวเลข, และ / , . -",
+    ),
+
+  latitude: z.number().nullable(),
+  longitude: z.number().nullable(),
+  minPrice: z.number().min(0),
+  maxPrice: z.number().min(0),
+  contactDetail: z.string().min(1, "กรุณากรอกช่องทางติดต่อ").max(100),
+  openingTimes: z.array(openingTimeSchema).length(7),
+});
 
 const Mainmap = dynamic(() => import("../map/MainMap"), { ssr: false });
 
@@ -81,6 +115,42 @@ export default function SellerInfoWeb() {
   const [contactDetail, setContactDetail] = useState("");
 
   const [description, setDescription] = useState("");
+
+  const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
+
+  const validateForm = () => {
+    const data = {
+      firstName,
+      lastName,
+      shopName,
+      description,
+      hasPhysicalStore,
+      pickupAddress,
+      latitude,
+      longitude,
+      minPrice: typeof minPrice === "number" ? minPrice : 0,
+      maxPrice: typeof maxPrice === "number" ? maxPrice : 0,
+      contactDetail,
+      openingTimes,
+    };
+
+    const result = sellerInfoSchema.safeParse(data); // ✅ safeParse แนะนำ
+
+    if (!result.success) {
+      // ใช้ .issues แทน .errors
+      const fieldErrors: typeof errors = {};
+      result.error.issues.forEach((err) => {
+        const path = err.path.join("."); // nested path
+        fieldErrors[path] = err.message;
+      });
+      setErrors(fieldErrors);
+      toast.error("กรุณากรอกข้อมูลให้ถูกต้อง");
+      return false;
+    }
+
+    setErrors({});
+    return true;
+  };
 
   // โหลด CSRF token
   useEffect(() => {
@@ -176,20 +246,47 @@ export default function SellerInfoWeb() {
       return;
     }
 
+    // ✅ Validate ก่อนส่ง
+    const data = {
+      firstName,
+      lastName,
+      shopName,
+      description,
+      hasPhysicalStore,
+      pickupAddress,
+      latitude,
+      longitude,
+      minPrice: typeof minPrice === "number" ? minPrice : 0,
+      maxPrice: typeof maxPrice === "number" ? maxPrice : 0,
+      contactDetail,
+      openingTimes,
+    };
+
+    const result = sellerInfoSchema.safeParse(data);
+
+    if (!result.success) {
+      const fieldErrors: typeof errors = {};
+      result.error.issues.forEach((err) => {
+        const path = err.path.join(".");
+        fieldErrors[path] = err.message;
+      });
+      setErrors(fieldErrors);
+      toast.error("กรุณากรอกข้อมูลให้ถูกต้อง");
+      return;
+    }
+
+    setErrors({}); // เคลียร์ errors
+
     try {
       toast.info("กำลังบันทึกข้อมูล...");
 
       const form = new FormData();
-
-      // ✅ fullName
       form.append("fullname", JSON.stringify({ firstName, lastName }));
-
-      // ✅ information (เฉพาะข้อมูลร้าน)
       form.append(
         "information",
         JSON.stringify({
           name: shopName,
-          description: description, // ถ้ามี UI ให้ผู้ใช้กรอก เพิ่มตรงนี้
+          description,
           address: hasPhysicalStore ? pickupAddress : "",
           latitude: latitude ?? null,
           longitude: longitude ?? null,
@@ -197,8 +294,6 @@ export default function SellerInfoWeb() {
           contactDetail,
         }),
       );
-
-      // ✅ price แยก field ออกมา
       form.append(
         "price",
         JSON.stringify({
@@ -206,17 +301,9 @@ export default function SellerInfoWeb() {
           maxPrice: maxPrice || 0,
         }),
       );
-
-      // ✅ contactDetail แยกเป็น field ของมันเอง (string)
-      // form.append("contactDetail", contactDetail);
-
-      // ✅ openingTimes แยก field ออกมา
       form.append("time", JSON.stringify(openingTimes));
 
-      // ✅ รูปภาพ
       uploadedImages.forEach((file) => form.append("restaurantImages", file));
-
-      // ✅ รูปเจ้าของร้าน
       profileImages.forEach((file) => form.append("profileImage", file));
 
       const res = await fetch(SELLER_ENDPOINT, {
@@ -264,15 +351,27 @@ export default function SellerInfoWeb() {
                 <FieldBlock label="ชื่อจริงและนามสกุล" required>
                   <Input
                     value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
                     maxLength={30}
                     placeholder="ชื่อจริง"
+                    onChange={(e) => {
+                      const allowed = e.target.value.replace(
+                        /[^ก-ฮa-zA-Z]/g,
+                        "",
+                      ); // อนุญาตแค่ไทยและอังกฤษ
+                      setFirstName(allowed);
+                    }}
                   />
                   <Input
                     value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
                     maxLength={30}
                     placeholder="นามสกุลจริง"
+                    onChange={(e) => {
+                      const allowed = e.target.value.replace(
+                        /[^ก-ฮa-zA-Z]/g,
+                        "",
+                      ); // อนุญาตแค่ไทยและอังกฤษ
+                      setLastName(allowed);
+                    }}
                   />
                 </FieldBlock>
 
@@ -282,9 +381,16 @@ export default function SellerInfoWeb() {
                 <FieldBlock label="ชื่อร้านค้า" required>
                   <Input
                     value={shopName}
-                    onChange={(e) => setShopName(e.target.value)}
                     maxLength={30}
                     placeholder="ชื่อร้านค้า"
+                    onChange={(e) => {
+                      const allowed = e.target.value.replace(
+                        /[^ก-ฮa-zA-Z0-9\s]/g,
+                        "",
+                      );
+                      // อนุญาตตัวอักษรไทย อังกฤษ ตัวเลข และเว้นวรรค
+                      setShopName(allowed);
+                    }}
                   />
                 </FieldBlock>
 
@@ -293,7 +399,13 @@ export default function SellerInfoWeb() {
                   <Textarea
                     rows={3}
                     value={description}
-                    onChange={(e) => setDescription(e.target.value)}
+                    onChange={(e) => {
+                      const allowed = e.target.value.replace(
+                        /[^ก-ฮa-zA-Z0-9\s]/g,
+                        "",
+                      );
+                      setDescription(allowed);
+                    }}
                     placeholder="ใส่คำอธิบายสั้น ๆ ของร้านคุณ"
                   />
                 </FieldBlock>
@@ -317,10 +429,16 @@ export default function SellerInfoWeb() {
                 {hasPhysicalStore && (
                   <>
                     <FieldBlock label="ที่อยู่ในการเข้ารับสินค้า" required>
-                      <Textarea
+                      <textarea
                         rows={3}
                         value={pickupAddress}
-                        onChange={(e) => setPickupAddress(e.target.value)}
+                        onChange={(e) => {
+                          const allowed = e.target.value.replace(
+                            /[^ก-ฮa-zA-Z0-9\s/.,-]/g,
+                            "",
+                          );
+                          setPickupAddress(allowed);
+                        }}
                         placeholder="บ้านเลขที่ / หมู่ / ตำบล / อำเภอ / จังหวัด / รหัสไปรษณีย์"
                       />
                     </FieldBlock>
@@ -371,6 +489,8 @@ export default function SellerInfoWeb() {
                                   }
                                   className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm"
                                   step={60}
+                                  pattern="[0-2][0-9]:[0-5][0-9]"
+                                  title="เวลาแบบ 24 ชั่วโมง (HH:mm)"
                                 />
                               </div>
 
@@ -390,6 +510,8 @@ export default function SellerInfoWeb() {
                                   }
                                   className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm"
                                   step={60}
+                                  pattern="[0-2][0-9]:[0-5][0-9]"
+                                  title="เวลาแบบ 24 ชั่วโมง (HH:mm)"
                                 />
                               </div>
                             </div>
@@ -491,9 +613,13 @@ export default function SellerInfoWeb() {
                 <FieldBlock label="ช่องทางติดต่อ (Contact detail)" required>
                   <Input
                     value={contactDetail}
-                    onChange={(e) => setContactDetail(e.target.value)}
-                    maxLength={100}
-                    placeholder="เช่น เบอร์โทร, Line ID หรืออีเมล"
+                    maxLength={10} // เบอร์โทรไทย 10 หลัก
+                    placeholder="เบอร์โทร"
+                    onChange={(e) => {
+                      const allowed = e.target.value.replace(/[^0-9]/g, "");
+                      // อนุญาตแค่ตัวเลข
+                      setContactDetail(allowed);
+                    }}
                   />
                 </FieldBlock>
 
@@ -538,7 +664,7 @@ export default function SellerInfoWeb() {
                   />
                   <div className="mt-4 flex gap-2">
                     {previewProfileImages.map((img, index) => (
-                      <img
+                      <Image
                         key={index}
                         src={img}
                         alt={`owner-profile-${index}`}
