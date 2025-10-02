@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import { validationResult, body } from "express-validator";
 import passport from "../config/passport";
 import { Role, User } from "@prisma/client";
+import { HttpError } from "../utils/httpError.util";
 
 // --- Authentication Middleware ---
 // ตรวจสอบว่าผู้ใช้ล็อกอินอยู่หรือไม่

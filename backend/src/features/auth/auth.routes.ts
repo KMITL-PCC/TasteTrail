@@ -5,11 +5,16 @@ import {
   hasRole,
   AuthValidation,
 } from "../../middleware/auth.middleware";
-import authControllers from "./auth.controllers";
+import { AuthControllers } from "./auth.controllers";
+
 import passport from "../../config/passport";
 import rateLimit from "express-rate-limit";
+import { AuthServices } from "./auth.services";
+import prisma from "../../config/db.config";
 
 const router = Router();
+const services = new AuthServices(prisma);
+const authControllers = new AuthControllers(services);
 
 //local
 router.post(
@@ -54,7 +59,6 @@ router.post(
 router.post(
   "/verify-otp",
   // rateLimit({ windowMs: 10 * 60 * 1000, max: 10 }),
-  isLoggedIn,
   AuthValidation.otpValid("otp"),
   AuthValidation.validate,
   authControllers.OTPverify
@@ -79,6 +83,7 @@ router.patch(
   "/updatepass",
   isAuthenticated,
   AuthValidation.validPassword("newPassword"),
+  AuthValidation.validate,
   authControllers.updatePass
 );
 router.patch(
@@ -86,6 +91,7 @@ router.patch(
   isAuthenticated,
   AuthValidation.validPassword("currentPassword"),
   AuthValidation.validPassword("newPassword"),
+  AuthValidation.validate,
   authControllers.updatePassCurrent
 );
 
