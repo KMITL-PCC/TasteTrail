@@ -1,14 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { RestaurantProps } from "@/types";
+import { PopularRestaurant, Restaurant } from "@/types/restaurant";
+import { Button } from "@/components/ui/button";
 
 import FilterRestaurant from "@/components/restaurants/FilterRestaurant";
 import PrimaryRestaurantCard from "@/components/restaurants/PrimaryRestaurantCard.tsx";
 import RecommendFilterButton from "@/components/restaurants/RecommendFilterButton";
 import SecondaryRestaurantCard from "@/components/restaurants/SecondaryRestaurantCard";
 import Link from "next/link";
-import restaurantData from "@/mockdata/restaurants.json";
-import BreadcrumbComponent from "@/components/BreadcrumbCompoent";
+import BreadcrumbComponent from "@/components/BreadcrumbComponent";
 
 const getRestaurants = async (
   search: string,
@@ -20,13 +20,32 @@ const getRestaurants = async (
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_BACKEND_URL}/restaurant/get?search=${search || ""}&category=${categories || ""}&rating=${ratings || ""}&priceRate=${prices || ""}`,
     );
+
     if (!res.ok) {
+      console.error("Failed to fetch restaurants" + res.status);
       return { restaurant: [] };
     }
-    const data = await res.json();
-    return data;
+
+    return await res.json();
   } catch (error) {
     console.error("Error fetching restaurants:", error);
+    return { restaurant: [] };
+  }
+};
+
+const getPopularRestaurants = async () => {
+  try {
+    const res = await fetch(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/restaurant/popular`,
+    );
+
+    if (!res.ok) {
+      console.error("Failed to fetch popular restaurants" + res.status);
+      return { restaurant: [] };
+    }
+    return await res.json();
+  } catch (error) {
+    console.error("Error fetching popular restaurants:", error);
     return { restaurant: [] };
   }
 };
@@ -52,51 +71,38 @@ const RestaurantsPage = async ({
 
   console.log(restaurant);
 
-  return (
-    <div className="mx-auto flex max-w-[1300px] flex-col gap-2 p-4 pt-2 md:p-8 md:pt-2">
-      {/* Breadcrumb */}
-      <BreadcrumbComponent className="hidden md:block" />
-      <div className="flex w-full flex-col gap-4 md:flex-row">
-        {/* Filter */}
-        <div>
-          <FilterRestaurant />
-        </div>
+  const { popularRestaurants } = await getPopularRestaurants();
 
-        <div className="flex flex-1 flex-col gap-4">
+  return (
+    <div className="mx-auto flex w-full max-w-[1150px] flex-col gap-2 p-4 pt-0 md:flex-row md:p-8 md:pt-2 xl:px-16">
+      <div className="sticky top-19 z-10 flex max-h-[700px] flex-col gap-2 md:top-20">
+        {/* Breadcrumb */}
+        <BreadcrumbComponent className="hidden md:block" />
+        {/* Filter */}
+        <FilterRestaurant />
+      </div>
+
+      <div className="flex flex-col flex-1 gap-4 md:mt-7">
+        <div className="flex flex-col flex-1 gap-4">
           {/* Recommended Restaurants */}
-          <div>
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex gap-2">
-                  <RecommendFilterButton filter="popular" />
-                  {/* <RecommendFilterButton filter="new" /> */}
-                </CardTitle>
-              </CardHeader>
-              <Separator />
-              <CardContent className="grid grid-cols-3 gap-4">
-                {/* <Link href="/restaurants/1">
-                  <SecondaryRestaurantCard />
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex gap-2">
+                <RecommendFilterButton filter="popular" />
+              </CardTitle>
+            </CardHeader>
+            <Separator />
+            <CardContent className="grid grid-cols-2 gap-4 lg:grid-cols-3">
+              {popularRestaurants.map((restaurant: PopularRestaurant) => (
+                <Link
+                  href={`/restaurants/${restaurant.restaurant_id}`}
+                  key={restaurant.restaurant_id}
+                >
+                  <SecondaryRestaurantCard popularRestaurant={restaurant} />
                 </Link>
-                <Link href="/restaurants/2">
-                  <SecondaryRestaurantCard />
-                </Link>
-                <Link href="/restaurants/3">
-                  <SecondaryRestaurantCard className="hidden md:flex" />
-                </Link>
-                <Link href="/restaurants/4">
-                  <SecondaryRestaurantCard className="hidden lg:flex" />
-                </Link> */}
-                {restaurantData.slice(0, 3).map((restaurant) => (
-                  <Link
-                    href={`/restaurants/${restaurant.id}`}
-                    key={restaurant.id}
-                  >
-                    <SecondaryRestaurantCard restaurant={restaurant} />
-                  </Link>
-                ))}
-              </CardContent>
-            </Card>
-          </div>
+              ))}
+            </CardContent>
+          </Card>
 
           {/* Map */}
           {/* <div>
@@ -110,17 +116,20 @@ const RestaurantsPage = async ({
             </CardContent>
           </Card>
         </div> */}
+
           {/* Restaurants List*/}
           <div>
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg font-medium">
-                  Restaurants
+                  <Button className="cursor-default hover:bg-primary">
+                    Restaurants
+                  </Button>
                 </CardTitle>
               </CardHeader>
               <Separator />
               <CardContent className="grid gap-4">
-                {restaurant.map((restaurant: RestaurantProps) => (
+                {restaurant.map((restaurant: Restaurant) => (
                   <Link
                     href={`/restaurants/${restaurant.id}`}
                     key={restaurant.id}

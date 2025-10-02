@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import OtpForm from "./OtpForm";
-import ResetPasswordForm from "./ResetPasswordForm";
 import { toast } from "sonner";
 import { useUser } from "@/store/user-store";
+
+import OtpForm from "./OtpForm";
+import ResetPasswordForm from "./ResetPasswordForm";
 
 const backendURL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
@@ -67,7 +68,7 @@ export default function UpdateByOtpForm() {
         <button
           type="button"
           onClick={() => setFormStep("otp")}
-          className="mt-4 inline-block text-sm font-medium text-gray-600 hover:text-gray-900 hover:underline"
+          className="inline-block mt-4 text-sm font-medium text-gray-600 hover:text-gray-900 hover:underline"
         >
           ← Back to OTP
         </button>
@@ -79,7 +80,7 @@ export default function UpdateByOtpForm() {
   if (!user) return <div>Loading user data...</div>;
 
   return (
-    <div className="relative flex min-h-screen flex-col items-center justify-center bg-gray-50 p-10 pb-64 font-sans">
+    <div className="relative flex flex-col items-center justify-center min-h-screen p-10 pb-64 font-sans bg-gray-50">
       {csrfToken ? (
         <>
           {formStep === "otp" && user.email && (

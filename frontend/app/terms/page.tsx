@@ -2,11 +2,11 @@ import GoBackButton from "@/components/GoBackButton";
 
 const TermsPage = () => {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-4 sm:p-6 md:p-10">
+    <div className="flex flex-col items-center justify-center min-h-screen p-4 sm:p-6 md:p-10">
       <GoBackButton className="fixed top-28 left-6 md:top-24 md:left-4" />
 
-      <div className="relative w-full max-w-4xl rounded-lg bg-white p-16 py-12 shadow-lg">
-        <header className="mb-6 border-b border-gray-200 pb-4">
+      <div className="relative w-full max-w-4xl p-16 py-12 bg-white rounded-lg shadow-lg">
+        <header className="pb-4 mb-6 border-b border-gray-200">
           <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">
             Terms of Service
           </h1>
@@ -15,7 +15,7 @@ const TermsPage = () => {
           </p>
         </header>
 
-        <div className="prose max-w-none space-y-4 text-gray-700">
+        <div className="space-y-4 prose text-gray-700 max-w-none">
           <p>
             Welcome to our service! These Terms of Service (&quot;Terms&quot;)
             govern your use of our website, applications, and services

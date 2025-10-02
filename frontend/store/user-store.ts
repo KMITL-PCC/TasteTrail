@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type userInfoProps = {
+export type UserInfo = {
   username: string;
   email: string;
   role: string;
@@ -9,16 +9,16 @@ export type userInfoProps = {
 };
 
 type State = {
-  user: userInfoProps | null;
+  user: UserInfo | null;
 };
 
 type Actions = {
-  setUser: (user: userInfoProps) => void;
+  setUser: (user: UserInfo) => void;
   clearUser: () => void;
 };
 
 export const useUser = create<State & Actions>((set) => ({
   user: null,
-  setUser: (user: userInfoProps) => set({ user }),
+  setUser: (user: UserInfo) => set({ user }),
   clearUser: () => set({ user: null }),
 }));

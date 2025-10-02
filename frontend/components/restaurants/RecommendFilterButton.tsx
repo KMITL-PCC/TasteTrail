@@ -11,10 +11,12 @@ const FilterButton = ({ filter = "popular" }: { filter: string }) => {
 
   return (
     <Button
-      variant={`${searchParams.get("filter") === filter ? "default" : "outline"}`}
-      asChild
+      className="cursor-default hover:bg-primary"
+      // variant={`${searchParams.get("filter") === filter ? "default" : "outline"}`}
+      // asChild
     >
-      <Link href={`/restaurants?filter=${filter}`}>{text}</Link>
+      {/* <Link href={`/restaurants?filter=${filter}`}>{text}</Link> */}
+      {text}
     </Button>
   );
 };

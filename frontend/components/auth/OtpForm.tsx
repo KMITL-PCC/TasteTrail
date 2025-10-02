@@ -104,10 +104,10 @@ export default function OtpForm({
   return (
     <div className="w-full max-w-md">
       {/* Check your email */}
-      <h1 className="text-center text-3xl font-bold text-gray-900">
+      <h1 className="text-3xl font-bold text-center text-gray-900">
         Check Your Email
       </h1>
-      <p className="mt-2 text-center text-sm text-gray-600">
+      <p className="mt-2 text-sm text-center text-gray-600">
         We sent a reset link to{" "}
         <span className="font-medium text-gray-800">{email}</span>.<br />
         Enter the 5-digit code mentioned in the email.
@@ -124,7 +124,7 @@ export default function OtpForm({
               value={digit}
               onChange={(e) => handleOtpChange(e, index)}
               maxLength={1}
-              className="h-12 w-12 rounded-md border border-gray-300 bg-white text-center text-xl font-semibold placeholder-gray-400 shadow-sm focus:border-green-500 focus:ring-1 focus:ring-green-500"
+              className="w-12 h-12 text-xl font-semibold text-center placeholder-gray-400 bg-white border border-gray-300 rounded-md shadow-sm focus:border-green-500 focus:ring-1 focus:ring-green-500"
               placeholder="-"
             />
           ))}
@@ -133,14 +133,14 @@ export default function OtpForm({
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full justify-center rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-green-400"
+          className="justify-center w-full px-4 py-2 text-sm font-medium text-white transition bg-green-600 rounded-md shadow-sm hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-green-400"
         >
           {isLoading ? "Verifying..." : "Verify OTP"}
         </button>
       </form>
 
       {/* Resend OTP */}
-      <div className="mt-4 text-center text-sm text-gray-600">
+      <div className="mt-4 text-sm text-center text-gray-600">
         Didn't receive the code?{" "}
         {countdown > 0 ? (
           <span className="font-medium text-gray-400">
@@ -160,7 +160,7 @@ export default function OtpForm({
 
       {/* Message */}
       {message && (
-        <div className="mt-4 text-center text-sm text-red-500">{message}</div>
+        <div className="mt-4 text-sm text-center text-red-500">{message}</div>
       )}
     </div>
   );

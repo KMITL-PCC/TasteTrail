@@ -21,21 +21,18 @@ import {
   Share,
   CircleAlert,
   SquareCheck,
-  Edit,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { RestaurantInfoProps } from "@/types";
 import { ReviewSection } from "@/components/restaurant-detail/ReviewSection";
 
 import Image from "next/image";
 import RestaurantImagesCarousel from "@/components/restaurant-detail/RestaurantImagesCarousel";
 import Link from "next/link";
 import RestaurantStatus from "../../../components/restaurant-detail/RestaurantStatus";
-import restaurantData from "@/mockdata/restaurants-detail.json";
-import BreadcrumbComponent from "@/components/BreadcrumbCompoent";
+import BreadcrumbComponent from "@/components/BreadcrumbComponent";
 import EditRestaurantButton from "@/components/restaurant-detail/EditRestaurantButton";
 
-const getRestaurantById = async (id: string) => {
+export const getRestaurantById = async (id: string) => {
   try {
     const res = await fetch(
       `${process.env.NEXT_PUBLIC_BACKEND_URL}/restaurant/get/${id}`,
@@ -52,31 +49,26 @@ const getRestaurantById = async (id: string) => {
   }
 };
 
-const RestaurantDetailPage = async ({
+export const RestaurantDetailPage = async ({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) => {
   const { id } = await params;
-  const restaurantInfo: RestaurantInfoProps = restaurantData[parseInt(id) - 1];
 
-  // const { restaurantInfo } = await getRestaurantById(id);
+  const { restaurantInfo } = await getRestaurantById(id);
 
   console.log(restaurantInfo);
 
   return (
-    <div className="relative mx-auto flex max-w-[1150px] flex-col gap-4 pt-2 xl:px-14">
+    <div className="relative mx-auto flex max-w-[1150px] flex-col gap-4 pt-2 pb-4 md:pb-8 xl:px-16">
       <div className="flex flex-col gap-2">
         {/* Breadcrumb */}
 
         <BreadcrumbComponent restaurantName={restaurantInfo.name} />
 
         {/* Restaurant Images Carousel */}
-        {restaurantInfo.image.length > 0 ? (
-          <RestaurantImagesCarousel restaurantInfo={restaurantInfo} />
-        ) : (
-          <div>No Image</div>
-        )}
+        <RestaurantImagesCarousel restaurantInfo={restaurantInfo} />
       </div>
 
       {/* Restaurant Info */}
@@ -151,7 +143,12 @@ const RestaurantDetailPage = async ({
               </CardContent>
             </Card>
           )}
-          <ReviewSection />
+
+          <Card>
+            <CardContent>
+              <ReviewSection />
+            </CardContent>
+          </Card>
         </div>
 
         <div className="min-w-[300px]">
@@ -213,7 +210,7 @@ const RestaurantDetailPage = async ({
                 </Button>
               </DialogTrigger>
               <DialogContent>
-                <DialogHeader>
+                <DialogHeader className="gap-4">
                   <DialogTitle>ข้อมูลเพิ่มเติม</DialogTitle>
                   <Separator />
                   <div className="flex flex-col gap-2">
@@ -319,6 +316,9 @@ const RestaurantDetailPage = async ({
             </div>
           </div>
         )}
+
+        <Separator />
+
         <ReviewSection />
       </div>
     </div>

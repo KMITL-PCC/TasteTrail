@@ -1,4 +1,4 @@
-export interface RestaurantProps {
+export interface Restaurant {
   id: number;
   name: string;
   description?: string;
@@ -6,9 +6,18 @@ export interface RestaurantProps {
   totalReviews: number;
   categories: string[];
   images: string[];
+  status: string;
+}
+export interface PopularRestaurant {
+  avg_rating: string;
+  total_reviews: number;
+  image_url: string;
+  name: string;
+  popularity_score: string;
+  restaurant_id: string;
 }
 
-export type RestaurantInfoProps = {
+export type RestaurantInfo = {
   name: string;
   description: string;
   address: string;
