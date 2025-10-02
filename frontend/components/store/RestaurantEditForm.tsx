@@ -11,6 +11,7 @@ import { Textarea } from "../ui/textarea";
 import { toast } from "sonner";
 import dynamic from "next/dynamic";
 import { Separator } from "@radix-ui/react-separator";
+import Image from "next/image";
 
 const MainMap = dynamic(() => import("../map/MainMap"), { ssr: false });
 
@@ -139,9 +140,13 @@ export default function EditRestaurantPage() {
           wifi: 3,
           alcohol: 4,
         };
+
         setServices(
           (data.services ?? [])
-            .map((s: string) => serviceMap[s.toLowerCase()])
+            .map((s: string) => {
+              const key = s.toLowerCase().replace(/\s/g, "");
+              return serviceMap[key];
+            })
             .filter(Boolean),
         );
 
@@ -206,8 +211,11 @@ export default function EditRestaurantPage() {
     const files = e.target.files;
     if (!files) return;
     const selected = Array.from(files).slice(0, 4);
-    setUploadedImages(selected);
-    setPreviewImages(selected.map((f) => URL.createObjectURL(f)));
+
+    setUploadedImages((prev) => [...prev, ...selected].slice(0, 4));
+    setPreviewImages((prev) =>
+      [...prev, ...selected.map((f) => URL.createObjectURL(f))].slice(0, 4),
+    );
   };
 
   const handleProfileFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -544,30 +552,68 @@ export default function EditRestaurantPage() {
 
                 {/* รูปภาพร้าน */}
                 <FieldBlock label="รูปภาพร้าน (สูงสุด 4 รูป, ขนาดไม่เกิน 8MB)">
+                  {/* input หลักสำหรับเพิ่มรูปใหม่ */}
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={handleStoreFileChange}
                     multiple
-                    className="mt-2"
+                    className="hidden"
+                    id="store-input"
+                    onChange={handleStoreFileChange}
                   />
+
                   <div className="mt-4 flex gap-2">
                     {previewImages.map((img, i) => (
-                      <div key={i} className="relative">
+                      <div
+                        key={i}
+                        className="relative cursor-pointer"
+                        onClick={() =>
+                          document.getElementById(`replace-image-${i}`)?.click()
+                        }
+                      >
                         <img
                           src={img}
                           alt={`uploaded-img-${i}`}
                           className="h-32 w-32 rounded-md object-cover"
                         />
+
+                        {/* input สำหรับเปลี่ยนรูปเฉพาะ index */}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          id={`replace-image-${i}`}
+                          onChange={(e) => {
+                            if (e.target.files?.[0])
+                              handleUpdateImage(i, e.target.files[0]);
+                          }}
+                        />
+
+                        {/* ปุ่มลบรูป */}
                         <button
                           type="button"
-                          onClick={() => handleRemoveUpdateImage(i)}
+                          onClick={(e) => {
+                            e.stopPropagation(); // ป้องกันคลิกเปิดไฟล์
+                            handleRemoveUpdateImage(i);
+                          }}
                           className="absolute top-0 right-0 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs text-white"
                         >
                           ✕
                         </button>
                       </div>
                     ))}
+
+                    {/* ช่องเพิ่มรูปใหม่ ถ้ายังไม่ครบ 4 รูป */}
+                    {previewImages.length < 4 && (
+                      <div
+                        className="flex h-32 w-32 cursor-pointer items-center justify-center rounded-md bg-gray-200 text-gray-500"
+                        onClick={() =>
+                          document.getElementById("store-input")?.click()
+                        }
+                      >
+                        เพิ่มรูป
+                      </div>
+                    )}
                   </div>
                 </FieldBlock>
 
@@ -575,30 +621,52 @@ export default function EditRestaurantPage() {
 
                 {/* รูปเจ้าของร้าน */}
                 <FieldBlock label="รูปเจ้าของร้าน (1 รูป, ขนาดไม่เกิน 8MB)">
+                  {/* input hidden สำหรับเลือก/เปลี่ยนรูป */}
                   <input
                     type="file"
                     accept="image/*"
-                    onChange={handleProfileFileChange}
-                    className="mt-2"
+                    className="hidden"
+                    id="profile-input"
+                    onChange={(e) => {
+                      if (e.target.files?.[0])
+                        handleReplaceProfileImage(e.target.files[0]);
+                    }}
                   />
+
                   <div className="mt-4 flex gap-2">
                     {previewProfileImages.length > 0 ? (
-                      <div className="relative">
-                        <img
+                      <div
+                        className="relative cursor-pointer"
+                        onClick={() =>
+                          document.getElementById("profile-input")?.click()
+                        }
+                      >
+                        <Image
                           src={previewProfileImages[0]}
                           alt="owner-profile"
-                          className="h-32 w-32 rounded-full object-cover"
+                          width={128}
+                          height={128}
+                          className="rounded-full object-cover"
                         />
+                        {/* ปุ่มลบรูป */}
                         <button
                           type="button"
-                          onClick={handleRemoveProfileImage}
+                          onClick={(e) => {
+                            e.stopPropagation(); // ป้องกันคลิกเปิดไฟล์
+                            handleRemoveProfileImage();
+                          }}
                           className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs text-white"
                         >
                           ✕
                         </button>
                       </div>
                     ) : (
-                      <div className="flex h-32 w-32 items-center justify-center rounded-full bg-gray-200 text-gray-500">
+                      <div
+                        className="flex h-32 w-32 cursor-pointer items-center justify-center rounded-full bg-gray-200 text-gray-500"
+                        onClick={() =>
+                          document.getElementById("profile-input")?.click()
+                        }
+                      >
                         เพิ่มรูป
                       </div>
                     )}

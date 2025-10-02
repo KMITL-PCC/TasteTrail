@@ -78,6 +78,9 @@ export default function EditProfilePage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [savingPassword, setSavingPassword] = useState(false);
 
+  const isNewPasswordValid = passwordSchema.safeParse(newPassword).success;
+  const isConfirmValid = confirmPassword === newPassword;
+
   // === CSRF ===
   useEffect(() => {
     (async () => {
@@ -408,7 +411,9 @@ export default function EditProfilePage() {
                 <CardContent className="grid gap-4">
                   {/* Current Password */}
                   <div className="relative">
-                    <Label htmlFor="currentPassword">Current password</Label>
+                    <Label htmlFor="currentPassword" className="mb-2 block">
+                      Current password
+                    </Label>
                     <Input
                       id="currentPassword"
                       type={showCurrentPassword ? "text" : "password"}
@@ -437,7 +442,9 @@ export default function EditProfilePage() {
 
                   {/* New Password */}
                   <div className="relative">
-                    <Label htmlFor="newPassword">New password</Label>
+                    <Label htmlFor="newPassword" className="mb-2 block">
+                      New password
+                    </Label>
                     <Input
                       id="newPassword"
                       type={showNewPassword ? "text" : "password"}
@@ -445,7 +452,13 @@ export default function EditProfilePage() {
                       onChange={(e) =>
                         setNewPassword(sanitizePassword(e.target.value))
                       }
-                      className="h-11 rounded-md border-gray-300 pr-10 text-base focus:border-green-500 focus:ring-green-500"
+                      className={`h-11 rounded-md pr-10 text-base focus:ring-green-500 ${
+                        newPassword.length === 0
+                          ? "border-gray-300 focus:border-green-500"
+                          : isNewPasswordValid
+                            ? "border-green-500 focus:border-green-500"
+                            : "border-red-500 focus:border-red-500"
+                      }`}
                       autoComplete="new-password"
                     />
                     <button
@@ -516,7 +529,9 @@ export default function EditProfilePage() {
 
                   {/* Confirm Password */}
                   <div className="relative">
-                    <Label htmlFor="confirmPassword">Confirm password</Label>
+                    <Label htmlFor="confirmPassword" className="mb-2 block">
+                      Confirm password
+                    </Label>
                     <Input
                       id="confirmPassword"
                       type={showConfirmPassword ? "text" : "password"}
@@ -524,7 +539,13 @@ export default function EditProfilePage() {
                       onChange={(e) =>
                         setConfirmPassword(sanitizePassword(e.target.value))
                       }
-                      className="h-11 rounded-md border-gray-300 pr-10 text-base focus:border-green-500 focus:ring-green-500"
+                      className={`h-11 rounded-md pr-10 text-base focus:ring-green-500 ${
+                        confirmPassword.length === 0
+                          ? "border-gray-300 focus:border-green-500"
+                          : confirmPassword === newPassword
+                            ? "border-green-500 focus:border-green-500"
+                            : "border-red-500 focus:border-red-500"
+                      }`}
                       autoComplete="new-password"
                     />
                     <button
