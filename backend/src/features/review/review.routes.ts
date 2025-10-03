@@ -18,5 +18,6 @@ const reviewServices = new ReviewServices(prisma);
 const reviewControllers = new ReviewControllers(reviewServices);
 
 router.post("/create", upload.array("reviewImages"), reviewControllers.create);
+router.get("/get", reviewControllers.get);
 
 export default router;

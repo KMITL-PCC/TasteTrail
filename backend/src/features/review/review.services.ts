@@ -101,4 +101,35 @@ export class ReviewServices {
       }
     }
   }
+
+  async get(page: number, limit: number, restaurantId: any) {
+    const reviews = await this.prisma.$transaction(async (tx) => {
+      const review = await tx.review.findMany({
+        where: {
+          restaurantId,
+        },
+        select: {
+          id: true,
+          rating: true,
+          reviewText: true,
+          createdAt: true,
+          user: {
+            select: {
+              username: true,
+              profilePictureUrl: true,
+            },
+          },
+          images: {
+            select: {
+              imageUrl: true,
+            },
+          },
+        },
+      });
+
+      return review;
+    });
+
+    return reviews;
+  }
 }

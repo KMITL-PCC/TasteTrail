@@ -54,4 +54,32 @@ export class ReviewControllers {
       });
     }
   };
+
+  get = async (req: Request, res: Response) => {
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 20;
+    const restaurantId = req.query.restaurantId;
+    try {
+      const result = await this.services.get(page, limit, restaurantId);
+
+      res.status(200).json(...result);
+    } catch (error) {
+      console.error(
+        "Error during create review ERROR:",
+        error instanceof Error ? error.message : error
+      );
+
+      if (error instanceof HttpError) {
+        const payload: any = {
+          success: false,
+          code: error.code,
+          message: error.message,
+        };
+        return res.status(error.status).json(payload);
+      }
+      res.status(500).json({
+        message: "error during create review",
+      });
+    }
+  };
 }
