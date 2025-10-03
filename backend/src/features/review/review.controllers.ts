@@ -1,0 +1,57 @@
+import { ReviewServices } from "./review.services";
+import { Request, Response, NextFunction } from "express";
+import { User } from "@prisma/client";
+import { HttpError } from "../../utils/httpError.util";
+
+export class ReviewControllers {
+  private services: ReviewServices;
+  constructor(services: ReviewServices) {
+    this.services = services;
+  }
+
+  create = async (req: Request, res: Response) => {
+    /*
+        picture field : reviewImages
+        restaurantId: "string",
+        rating: 1-5,
+        review: "string", 
+        */
+    const user = req.user as User;
+    const userId = user.id;
+    const pictures = req.files as Express.Multer.File[];
+
+    console.log(req.body);
+    try {
+      const restaurantId = req.body.restaurantId;
+      const rating = parseInt(req.body.rating);
+      const review = req.body.review;
+
+      await this.services.create(
+        userId,
+        restaurantId,
+        rating,
+        review,
+        pictures
+      );
+
+      res.sendStatus(200);
+    } catch (error: unknown) {
+      console.error(
+        "Error during create review ERROR:",
+        error instanceof Error ? error.message : error
+      );
+
+      if (error instanceof HttpError) {
+        const payload: any = {
+          success: false,
+          code: error.code,
+          message: error.message,
+        };
+        return res.status(error.status).json(payload);
+      }
+      res.status(500).json({
+        message: "error during create review",
+      });
+    }
+  };
+}
