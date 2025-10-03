@@ -593,7 +593,7 @@ export default function EditProfilePage() {
 
                         toast.success("OTP sent successfully!");
                         router.push(
-                          `/updatebyotp?return=${encodeURIComponent("/editprofile?tab=password")}`,
+                          `/update-by-otp?return=${encodeURIComponent("/editprofile?tab=password")}`,
                         );
                       } catch (err) {
                         toast.error("Error sending OTP");

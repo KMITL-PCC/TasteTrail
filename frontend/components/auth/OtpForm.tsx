@@ -22,14 +22,13 @@ export default function OtpForm({
   const [message, setMessage] = useState("");
   const [countdown, setCountdown] = useState(30);
 
-  // countdown
+  // Countdown
   useEffect(() => {
     if (countdown <= 0) return;
     const timer = setTimeout(() => setCountdown((prev) => prev - 1), 1000);
     return () => clearTimeout(timer);
   }, [countdown]);
 
-  // sanitize email
   const safeEmail = email ? DOMPurify.sanitize(email) : "";
 
   const handleOtpSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -64,7 +63,7 @@ export default function OtpForm({
 
       setMessage("OTP verified. Please set your new password.");
       setFormStep("resetPassword");
-    } catch (err: any) {
+    } catch (err) {
       setMessage("Unable to connect to server.");
     } finally {
       setIsLoading(false);
@@ -103,71 +102,39 @@ export default function OtpForm({
   };
 
   return (
-    <div className="w-full max-w-md">
-      {/* Check your email */}
-      <h1 className="text-3xl font-bold text-center text-gray-900">
+    <div className="mx-auto w-full max-w-md">
+      <h1 className="text-center text-3xl font-bold text-gray-900">
         Check Your Email
       </h1>
-      <p className="mt-2 text-sm text-center text-gray-600">
-        We sent a reset link to{" "}
-        <span className="font-medium text-gray-800">{email}</span>.<br />
-        Enter the 5-digit code mentioned in the email.
+      <p className="mt-2 text-center text-sm text-gray-600">
+        We sent a reset code to{" "}
+        <span className="font-medium text-gray-800">{safeEmail}</span>. Enter
+        the 5-digit code below.
       </p>
 
-      {/* OTP Form */}
-      <form onSubmit={handleOtpSubmit} className="mt-6 space-y-6 text-center">
-        <div className="flex justify-center gap-2">
-          {otp.map((digit, index) => (
-            <input
-              key={index}
-              id={`otp-${index}`}
-              type="text"
-              value={digit}
-              onChange={(e) => handleOtpChange(e, index)}
-              maxLength={1}
-              className="w-12 h-12 text-xl font-semibold text-center placeholder-gray-400 bg-white border border-gray-300 rounded-md shadow-sm focus:border-green-500 focus:ring-1 focus:ring-green-500"
-              placeholder="-"
-            />
-          ))}
-      <div className="mb-6 text-center">
-        <h1 className="text-2xl font-bold text-gray-900">
-          Enter Verification Code
-        </h1>
-        <p className="mt-2 text-sm text-gray-600">
-          A 5-digit code was sent to{" "}
-          <span className="font-medium text-gray-800">{safeEmail}</span>
-        </p>
-      </div>
-
-      <form onSubmit={handleOtpSubmit} className="space-y-6">
-        <div>
-          <input
-            id="otp"
-            name="otp"
-            type="text"
-            inputMode="numeric"
-            maxLength={5}
-            required
-            value={otp}
-            onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, ""))}
-            disabled={isLoading}
-            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-center text-lg tracking-[0.5em] placeholder-gray-400 shadow-sm transition focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none disabled:bg-gray-50"
-            placeholder="-----"
-          />
-        </div>
+      <form onSubmit={handleOtpSubmit} className="mt-6 space-y-4">
+        <input
+          type="text"
+          inputMode="numeric"
+          maxLength={5}
+          required
+          value={otp}
+          onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, ""))}
+          disabled={isLoading}
+          placeholder="-----"
+          className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-center text-lg tracking-[0.5em] placeholder-gray-400 shadow-sm focus:border-green-500 focus:ring-1 focus:ring-green-500 disabled:bg-gray-50"
+        />
 
         <button
           type="submit"
           disabled={isLoading}
-          className="justify-center w-full px-4 py-2 text-sm font-medium text-white transition bg-green-600 rounded-md shadow-sm hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-green-400"
-          className="w-full justify-center rounded-md border border-transparent bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:bg-green-400"
+          className="w-full rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:outline-none disabled:cursor-not-allowed disabled:bg-green-400"
         >
           {isLoading ? "Verifying..." : "Verify Code"}
         </button>
       </form>
 
-      {/* Resend OTP */}
-      <div className="mt-4 text-sm text-center text-gray-600">
+      <div className="mt-4 text-center text-sm text-gray-600">
         Didn't receive the code?{" "}
         {countdown > 0 ? (
           <span className="font-medium text-gray-400">
@@ -183,28 +150,10 @@ export default function OtpForm({
             Resend code
           </button>
         )}
-      <div className="mt-6 space-y-4 text-center text-sm">
-        <p className="text-gray-600">
-          Didn't receive the code?{" "}
-          {countdown > 0 ? (
-            <span className="font-medium text-gray-400">
-              You can resend in {countdown}s
-            </span>
-          ) : (
-            <button
-              type="button"
-              onClick={handleResendOtp}
-              disabled={isLoading}
-              className="font-medium text-green-600 hover:text-green-500 focus:outline-none disabled:opacity-50"
-            >
-              Resend code
-            </button>
-          )}
-        </p>
       </div>
 
       {message && (
-        <div className="mt-4 text-sm text-center text-red-500">{message}</div>
+        <div className="mt-4 text-center text-sm text-red-500">{message}</div>
       )}
     </div>
   );
