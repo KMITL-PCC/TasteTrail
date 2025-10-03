@@ -15,6 +15,7 @@ import authen from "./src/features/auth/auth.routes";
 import { invalidCsrf } from "./src/middleware/auth.middleware";
 import restaurant from "./src/features/restaurant/restaurant.routes";
 import account from "./src/features/account/account.routes";
+import review from "./src/features/review/review.routes";
 
 dotenv.config();
 
@@ -72,6 +73,7 @@ app.use(invalidCsrf);
 app.use("/auth", authen);
 app.use("/restaurant", restaurant);
 app.use("/account", account);
+app.use("/review", review);
 
 app.get("/api/csrf-token", (req, res) => {
   res.json({ csrfToken: req.csrfToken() });

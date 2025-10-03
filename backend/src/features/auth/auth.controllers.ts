@@ -2,90 +2,74 @@ import { Request, Response, NextFunction } from "express";
 import bcrypt from "bcrypt";
 
 import passport from "../../config/passport";
-import authServices from "./auth.services";
+import { AuthServices } from "./auth.services";
 import { logoutAllDevices } from "../../model/redis.model";
 import { User } from "@prisma/client";
 import { session } from "passport";
+import { HttpError } from "../../utils/httpError.util";
 
-export default {
-  //send otp to create user email
-  registerStep1_sendOtp: async (req: Request, res: Response) => {
+export class AuthControllers {
+  private service: AuthServices;
+
+  constructor(service: AuthServices) {
+    this.service = service;
+  }
+
+  registerStep1_sendOtp = async (req: Request, res: Response) => {
     const { username, email, password } = req.body;
 
-    if (!password && !email && !username) {
-      return res.status(400).json({ message: "Missing user data" });
-    }
-
-    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    if (!isEmail) {
-      return res.status(400).json({ message: "email wrong format" });
-    }
-
     try {
-      const result = await authServices.checkUserNotExistence(username, email);
+      const result = await this.service.registerStep1_sendOtp(
+        username,
+        email,
+        password
+      );
 
-      if (result && !result.success && result.status) {
+      if (!result.success) {
         return res.status(result.status).json({ message: result.message });
       }
 
-      const { otp, expiresAt } = await authServices.sendVerificationOtp(email);
-
-      //hash password
-      const saltRounds = 10;
-      const passwordHash = await bcrypt.hash(password, saltRounds);
-
-      const otpHashed = await bcrypt.hash(otp, 5);
-
       const session = req.session as any;
-      // console.log(session)
       session.registerData = {
         username,
         email,
-        passwordHash,
-        otp: otpHashed,
-        expiresAt: expiresAt,
-        // expiresAt: expiresAt.toISOString()
+        passwordHash: result.data?.passwordHash,
       };
 
-      if (req.sessionID) {
-        console.log("Session ID:", req.sessionID);
-      }
+      session.otp = {
+        otp: result.data?.otpHashed,
+        expiresAt: result.data?.expiresAt,
+      };
 
-      // ตรวจสอบข้อมูลใน Session
-      if (req.session) {
-        console.log("Session Data:", req.session);
-      }
-      req.session.save((err) => {
-        if (err) {
-          console.error("Failed to save session:", err);
-          return res.status(500).send("Internal Server Error");
-        }
+      console.log(session);
+      await new Promise<void>((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) reject(err);
+          else resolve();
+        });
       });
 
       res.status(200).json({
         message:
           "OTP sent to your email. Please verify to complete registration.",
       });
-    } catch (err) {
-      console.error("ERRORR during user validate", err);
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error("ERROR during user validate", err.message);
+      } else {
+        console.error("ERROR during user validate", err);
+      }
       res
         .status(500)
         .json({ message: "Internal server error during registration." });
     }
-  },
+  };
 
-  // verify otp and create user to db
-  registerStep2_verifyOTPandCreateUser: async (req: Request, res: Response) => {
+  registerStep2_verifyOTPandCreateUser = async (
+    req: Request,
+    res: Response
+  ) => {
     const { otp } = req.body;
-
-    if (req.sessionID) {
-      console.log("Session ID:", req.sessionID);
-    }
-
-    // ตรวจสอบข้อมูลใน Session
-    if (req.session) {
-      console.log("Session Data:", req.session);
-    }
 
     if (!otp) {
       return res
@@ -94,35 +78,20 @@ export default {
     }
 
     const session = req.session as any;
-    if (!session || !session.registerData || !session.registerData.otp) {
+    if (!session || !session.registerData || !session.otp) {
       return res.status(401).json({
         message: "No pending registration. Please start registration again.",
       });
     }
-    const {
-      username,
-      email,
-      passwordHash,
-      otp: storedOtp,
-      expiresAt: storedExpiresAt,
-    } = session.registerData;
-
-    if (new Date() > new Date(storedExpiresAt)) {
-      delete session.registerData;
-      return res
-        .status(401)
-        .json({ message: "OTP has expired. Please request a new one." });
-    }
-
-    const verify = await bcrypt.compare(otp, storedOtp);
-    if (!verify) {
-      return res
-        .status(401)
-        .json({ message: "Invalid OTP. Please try again." });
-    }
 
     try {
-      const newUser = await authServices.create(username, email, passwordHash);
+      const { username, email, passwordHash } = session.registerData;
+
+      const { otp: storedOtp, expiresAt: storedExpiresAt } = session.otp;
+
+      await this.service.verifyOtp(otp, storedOtp, storedExpiresAt);
+
+      const newUser = await this.service.create(username, email, passwordHash);
 
       delete session.registrationData;
 
@@ -140,15 +109,32 @@ export default {
           user: newUser.username,
         });
       });
-    } catch (err) {
-      console.error("ERROR during user creation after OTP verification:", err);
+    } catch (err: unknown) {
+      if (err instanceof HttpError) {
+        const payload: any = {
+          success: false,
+          code: err.code,
+          message: err.message,
+        };
+        return res.status(err.status).json(payload);
+      } else if (err instanceof Error) {
+        console.error(
+          "ERROR during user creation after OTP verification:",
+          err.message
+        );
+      } else {
+        console.error(
+          "ERROR during user creation after OTP verification:",
+          err
+        );
+      }
       res
         .status(500)
         .json({ message: "Internal server error during registration." });
     }
-  },
+  };
 
-  login: async (req: Request, res: Response, next: NextFunction) => {
+  login = async (req: Request, res: Response, next: NextFunction) => {
     console.log("got req from log in");
     passport.authenticate(
       "local",
@@ -159,7 +145,6 @@ export default {
         }
         if (!user) {
           return res.status(401).json({ message: "login failed" });
-          console.log(info.message);
         }
 
         req.login(user, (err) => {
@@ -170,9 +155,9 @@ export default {
         });
       }
     )(req, res, next);
-  },
+  };
 
-  logout: async (req: Request, res: Response, next: NextFunction) => {
+  logout = async (req: Request, res: Response, next: NextFunction) => {
     req.logout((err: any) => {
       if (err) {
         console.error("Error during Passport logout:", err);
@@ -189,9 +174,9 @@ export default {
         res.status(200).json({ message: "Logged out successfully" });
       });
     });
-  },
+  };
 
-  forgotPass: async (req: Request, res: Response) => {
+  forgotPass = async (req: Request, res: Response) => {
     const { email } = req.body;
 
     if (!email) {
@@ -200,34 +185,14 @@ export default {
         .json({ message: "Email or Username are required." });
     }
 
-    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-    if (!isEmail) {
-      return res.status(400).json({ message: "email wrong format" });
-    }
-
     try {
-      //find user
-      //return success.true = not found return success false = found
-      const isDoentHaveUser = await authServices.checkUserNotExistence(
-        "",
-        email
-      );
-      if (isDoentHaveUser && isDoentHaveUser.success) {
-        return res.status(400).json({
-          message: "Can't find user or email pls try again",
+      const result = await this.service.forgotPass(email);
+
+      if (!result.success) {
+        return res.status(result.status).json({
+          message: result.message,
         });
       }
-
-      if (isDoentHaveUser && !isDoentHaveUser.isLocal) {
-        return res.status(400).json({
-          message: "Can't change password. You can only login by google",
-        });
-      }
-
-      //send otp
-      const { otp, expiresAt } = await authServices.sendVerificationOtp(email);
-      const saltRounds = 5;
-      const otpHashed = await bcrypt.hash(otp, saltRounds);
 
       const session = req.session as any;
       session.forgotData = {
@@ -235,15 +200,15 @@ export default {
       };
 
       session.otp = {
-        otp: otpHashed,
-        expiresAt: expiresAt.toISOString(),
+        otp: result.data?.otpHashed,
+        expiresAt: result.data?.expiresAt.toISOString(),
       };
 
-      req.session.save((err) => {
-        if (err) {
-          console.error("Failed to save session:", err);
-          return res.status(500).send("Internal Server Error");
-        }
+      await new Promise<void>((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) reject(err);
+          else resolve();
+        });
       });
 
       res.status(200).json({
@@ -262,9 +227,9 @@ export default {
         });
       }
     }
-  },
+  };
 
-  OTPverify: async (req: Request, res: Response) => {
+  OTPverify = async (req: Request, res: Response) => {
     const { otp } = req.body;
 
     if (!otp) {
@@ -282,49 +247,50 @@ export default {
 
     try {
       const { otp: storedOtp, expiresAt: storedExpiresAt } = session.otp;
-      console.log(session);
 
-      const verify = await bcrypt.compare(otp, storedOtp);
-
-      if (!verify) {
-        return res
-          .status(401)
-          .json({ message: "Invalid OTP. Please try again." });
-      }
-
-      const now = new Date();
-      if (now > new Date(storedExpiresAt)) {
-        delete session.otp;
-        return res
-          .status(401)
-          .json({ message: "OTP has expired. Please request a new one." });
-      }
+      await this.service.verifyOtp(otp, storedOtp, storedExpiresAt);
 
       delete session.otp;
 
+      const now = new Date();
       session.otp = {
         verify: true,
         expiresAt: new Date(now.getTime() + 5 * 60000).toISOString(),
       };
+
+      await new Promise<void>((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+
       res.status(200).json({
         message: "OTP verified",
       });
     } catch (error: unknown) {
-      if (error instanceof Error) {
+      if (error instanceof HttpError) {
+        const payload: any = {
+          success: false,
+          code: error.code,
+          message: error.message,
+        };
+        return res.status(error.status).json(payload);
+      } else if (error instanceof Error) {
         console.error("Error during verify OTP ERROR:", error.message);
-        return res.status(500).json({
-          message: "Error during verify OTP",
-        });
       } else {
         console.error("Error during verify OTP ERROR:", error);
-        return res.status(500).json({
-          message: "Error during verify OTP",
-        });
       }
-    }
-  },
 
-  resendOTP: async (req: Request, res: Response) => {
+      // delete session.otp;
+
+      res.status(500).json({
+        message: "Error during verify OTP",
+      });
+    }
+  };
+
+  resendOTP = async (req: Request, res: Response) => {
     const session = req.session as any;
 
     if (!session || !session.otp || !session.otp.otp) {
@@ -333,21 +299,22 @@ export default {
       });
     }
 
-    const { email } = session.forgotData || session.updateUserData;
-
     try {
-      const { otp, expiresAt } = await authServices.sendVerificationOtp(email);
+      const { email } =
+        session.forgotData || session.updateUserData || session.registerData;
+      const { otp, expiresAt } = await this.service.sendVerificationOtp(email);
 
       session.otp = {
         otp,
         expiresAt: expiresAt.toISOString(),
       };
+      console.log("Resend OTP Session:", session);
 
-      req.session.save((err) => {
-        if (err) {
-          console.error("Failed to save session:", err);
-          return res.status(500).send("Internal Server Error");
-        }
+      await new Promise<void>((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) reject(err);
+          else resolve();
+        });
       });
 
       res.status(200).json({
@@ -362,34 +329,34 @@ export default {
         return res.status(500).json({ message: "Error during send otp ERROR" });
       }
     }
-  },
+  };
 
-  sendOTP: async (req: Request, res: Response, next: NextFunction) => {
+  sendOTP = async (req: Request, res: Response, next: NextFunction) => {
     const user = req.user as User;
 
     const email = user.email;
 
     try {
-      const { otp, expiresAt } = await authServices.sendVerificationOtp(email);
+      const { otp, expiresAt } = await this.service.sendVerificationOtp(email);
 
       const session = req.session as any;
 
-      const otpHashed = await bcrypt.hash(otp, 5);
+      // const otpHashed = await bcrypt.hash(otp, 5);
 
       session.updateUserData = {
         email,
       };
 
       session.otp = {
-        otp: otpHashed,
+        otp: otp,
         expiresAt: expiresAt.toISOString(),
       };
 
-      req.session.save((err) => {
-        if (err) {
-          console.error("Failed to save session:", err);
-          return res.status(500).send("Internal Server Error");
-        }
+      await new Promise<void>((resolve, reject) => {
+        req.session.save((err) => {
+          if (err) reject(err);
+          else resolve();
+        });
       });
 
       res.status(200).json({
@@ -406,9 +373,9 @@ export default {
         message: "Error during update password",
       });
     }
-  },
+  };
 
-  updatePass: async (req: Request, res: Response) => {
+  updatePass = async (req: Request, res: Response) => {
     const newPassword = req.body.newPassword;
 
     if (!newPassword) {
@@ -416,21 +383,15 @@ export default {
     }
 
     const session = req.session as any;
-    console.log(session);
-    if (!session || !session.otp || !session.otp.verify) {
-      return res.status(401).json({
-        message: "No pending registration. Please start registration again.",
-      });
-    }
 
-    if (!(session.forgotData || session.updateUserData)) {
+    if (
+      !session ||
+      !session.otp ||
+      !session.otp.verify ||
+      !(session.forgotData || session.updateUserData)
+    ) {
       return res.status(401).json({
         message: "No pending registration. Please start registration again.",
-      });
-    }
-    if (!session.otp.verify) {
-      return res.status(401).json({
-        message: "You not verify access pls try again later",
       });
     }
 
@@ -442,10 +403,7 @@ export default {
       });
     }
     try {
-      const saltRounds = 10;
-      const passwordHash = await bcrypt.hash(newPassword, saltRounds);
-
-      const updatePass = await authServices.updatePassword(email, passwordHash);
+      const updatePass = await this.service.updatePassword(email, newPassword);
 
       // delete session.otp;
       // if (session.forgotData) {
@@ -468,9 +426,9 @@ export default {
         message: "Error during update password",
       });
     }
-  },
+  };
 
-  updatePassCurrent: async (req: Request, res: Response) => {
+  updatePassCurrent = async (req: Request, res: Response) => {
     const user = req.user as User;
 
     const email = user.email;
@@ -484,7 +442,7 @@ export default {
     }
 
     try {
-      const result = await authServices.updatePasswordByCurrent(
+      const result = await this.service.updatePasswordByCurrent(
         email,
         currentPassword,
         newPassword
@@ -511,9 +469,9 @@ export default {
         message: "Error during update password",
       });
     }
-  },
+  };
 
-  getUserData: async (req: Request, res: Response) => {
+  getUserData = async (req: Request, res: Response) => {
     const user = req.user as User | undefined;
 
     if (!user) {
@@ -523,7 +481,7 @@ export default {
     }
 
     try {
-      const restaurantId = await authServices.getRestaurantByOwnerId(user.id);
+      const restaurantId = await this.service.getRestaurantByOwnerId(user.id);
       res.status(200).json({
         user: {
           username: user.username,
@@ -544,5 +502,5 @@ export default {
         message: "Error during get user data",
       });
     }
-  },
-};
+  };
+}

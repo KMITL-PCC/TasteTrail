@@ -1,21 +1,24 @@
 {
   "compilerOptions": {
-    "target": "es2022",                  /* กำหนดเวอร์ชันของ JavaScript ที่จะคอมไพล์ไปเป็น (เช่น ES2022) */
-    "module": "commonjs",                /* กำหนดระบบโมดูล (สำหรับ Node.js มักใช้ commonjs) */
-    "outDir": "./dist",                  /* โฟลเดอร์ที่เก็บไฟล์ JavaScript ที่คอมไพล์แล้ว */
-    "rootDir": ".",                  /* โฟลเดอร์ที่มีไฟล์ TypeScript ต้นฉบับ */
-    "strict": true,                      /* เปิดใช้งาน Strict Type-Checking Options ทั้งหมด (แนะนำอย่างยิ่ง) */
-    "esModuleInterop": true,             /* ช่วยในการ import โมดูล ES (import * as React from 'react') */
-    "skipLibCheck": true,                /* ข้ามการตรวจสอบ Type ของไฟล์ Library (เพื่อความเร็ว) */
+    "target": "es2022" /* กำหนดเวอร์ชันของ JavaScript ที่จะคอมไพล์ไปเป็น (เช่น ES2022) */,
+    "module": "commonjs" /* กำหนดระบบโมดูล (สำหรับ Node.js มักใช้ commonjs) */,
+    "outDir": "./dist" /* โฟลเดอร์ที่เก็บไฟล์ JavaScript ที่คอมไพล์แล้ว */,
+    "rootDir": "." /* โฟลเดอร์ที่มีไฟล์ TypeScript ต้นฉบับ */,
+    "strict": true /* เปิดใช้งาน Strict Type-Checking Options ทั้งหมด (แนะนำอย่างยิ่ง) */,
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true /* ช่วยในการ import โมดูล ES (import * as React from 'react') */,
+    "skipLibCheck": true /* ข้ามการตรวจสอบ Type ของไฟล์ Library (เพื่อความเร็ว) */,
     // "forceConsistentCasingInFileNames": true, /* บังคับใช้การตั้งชื่อไฟล์ที่สอดคล้องกัน */
-    "resolveJsonModule": true,           /* อนุญาตการ import JSON files */
-    "sourceMap": true                    /* สร้าง Source Maps สำหรับ Debugging */
+    "resolveJsonModule": true /* อนุญาตการ import JSON files */,
+    "sourceMap": true /* สร้าง Source Maps สำหรับ Debugging */
   },
   "include": [
-    "src/**/*"                           /* ระบุไฟล์/โฟลเดอร์ที่จะให้ TypeScript คอมไพล์ */
-, "index.ts"  ],
+    "src/**/*" /* ระบุไฟล์/โฟลเดอร์ที่จะให้ TypeScript คอมไพล์ */,
+    "index.ts"
+  ],
   "exclude": [
-    "node_modules",                      /* ไม่ต้องคอมไพล์โฟลเดอร์ node_modules */
-    "**/*.spec.ts"                       /* ไม่ต้องคอมไพล์ไฟล์เทสต์ (ถ้ามี) */
+    "node_modules" /* ไม่ต้องคอมไพล์โฟลเดอร์ node_modules */,
+    "**/*.spec.ts" /* ไม่ต้องคอมไพล์ไฟล์เทสต์ (ถ้ามี) */
   ]
 }
