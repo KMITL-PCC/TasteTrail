@@ -357,7 +357,7 @@ export default function LoginForm() {
               Register
             </Link>
             <Link
-              href={`/forgotpassword?from=login&return=${encodeURIComponent("/login")}`}
+              href={`/forgot-password?from=login&return=${encodeURIComponent("/login")}`}
               className="font-semibold text-black hover:underline"
             >
               Forget password
