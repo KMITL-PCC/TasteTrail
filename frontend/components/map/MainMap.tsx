@@ -79,7 +79,7 @@ export default function MainMap({
   }
 
   return (
-    <div className="h-[50vh] rounded-md">
+    <div className="z-0 h-[50vh] rounded-md">
       <MapContainer
         center={initialPosition || DEFAULT_LOCATION}
         zoom={13}

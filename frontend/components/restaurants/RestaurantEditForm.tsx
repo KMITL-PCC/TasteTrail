@@ -11,6 +11,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
 import dynamic from "next/dynamic";
+import Image from "next/image";
+import { Separator } from "@radix-ui/react-dropdown-menu";
+import { useRouter } from "next/navigation";
 
 const MainMap = dynamic(() => import("../map/MainMap"), { ssr: false });
 
@@ -62,6 +65,8 @@ export default function EditRestaurantPage() {
     [],
   );
 
+  const router = useRouter();
+
   // ฟังก์ชันเปลี่ยนรูปตาม index
   const handleReplaceImage = (index: number, file: File) => {
     // update uploadedImages
@@ -94,6 +99,10 @@ export default function EditRestaurantPage() {
   };
 
   const [updateImages, setUpdateImages] = useState<number[]>([]);
+
+  const [serviceOptions, setServiceOptions] = useState<
+    { id: number; name: string }[]
+  >([]);
 
   // --- fetch data once on mount ---
   useEffect(() => {
@@ -270,6 +279,7 @@ export default function EditRestaurantPage() {
       }
 
       toast.success("บันทึกสำเร็จ");
+      router.back();
     } catch {
       toast.error("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้");
     }
@@ -278,274 +288,468 @@ export default function EditRestaurantPage() {
   if (isLoading) return <p className="p-4">กำลังโหลดข้อมูลร้าน...</p>;
 
   return (
-    <Card>
-      <CardContent className="p-6">
-        <div className="grid gap-6 md:grid-cols-12">
-          <div className="md:col-span-4">
-            <h2 className="text-base font-medium">รายละเอียดร้านค้า</h2>
-            <p className="text-sm text-muted-foreground">
-              กรอกข้อมูลร้านของคุณ
-            </p>
-          </div>
-          <div className="grid gap-6 md:col-span-8">
-            {/* ชื่อจริง / นามสกุล */}
-            <FieldBlock label="ชื่อจริงและนามสกุล" required>
-              <Input
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                placeholder="ชื่อจริง"
-              />
-              <Input
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                placeholder="นามสกุล"
-              />
-            </FieldBlock>
+    <div className="max-w-3xl px-4 mx-auto mt-6">
+      <Card>
+        <CardContent className="p-6">
+          <div className="grid grid-cols-1 gap-6">
+            {/* หัวข้ออยู่ด้านบน */}
+            <div className="mb-6">
+              <h2 className="text-base font-medium">รายละเอียดร้านค้า</h2>
+              <p className="text-sm text-muted-foreground">
+                กรอกข้อมูลพื้นฐานของร้านคุณให้ครบถ้วน
+              </p>
+            </div>
 
-            {/* ชื่อร้าน */}
-            <FieldBlock label="ชื่อร้านค้า" required>
-              <Input
-                value={shopName}
-                onChange={(e) => setShopName(e.target.value)}
-                placeholder="ชื่อร้าน"
-              />
-            </FieldBlock>
-
-            {/* คำอธิบาย */}
-            <FieldBlock label="คำอธิบายร้านค้า">
-              <Textarea
-                rows={3}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="คำอธิบายร้าน"
-              />
-            </FieldBlock>
-
-            {/* มีหน้าร้าน */}
-            <FieldBlock label="มีหน้าร้าน">
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  checked={hasPhysicalStore}
-                  onCheckedChange={(v) => setHasPhysicalStore(!!v)}
+            <div className="grid gap-6">
+              {/* ชื่อจริงและนามสกุล */}
+              <FieldBlock label="ชื่อจริงและนามสกุล" required>
+                <Input
+                  value={firstName}
+                  onChange={(e) => {
+                    const allowed = e.target.value.replace(
+                      /[^ก-ฮa-zA-Z0-9\s]/g,
+                      "",
+                    );
+                    // อนุญาตตัวอักษรไทย อังกฤษ ตัวเลข และเว้นวรรค
+                    setShopName(allowed);
+                  }}
+                  maxLength={30}
+                  placeholder="ชื่อจริง"
                 />
-                <Label>มีหน้าร้าน</Label>
-              </div>
-            </FieldBlock>
+                <Input
+                  value={lastName}
+                  onChange={(e) => {
+                    const allowed = e.target.value.replace(
+                      /[^ก-ฮa-zA-Z0-9\s]/g,
+                      "",
+                    );
+                    setDescription(allowed);
+                  }}
+                  maxLength={30}
+                  placeholder="นามสกุลจริง"
+                />
+              </FieldBlock>
 
-            {hasPhysicalStore && (
-              <>
-                <FieldBlock label="ที่อยู่">
-                  <Textarea
-                    rows={3}
-                    value={pickupAddress}
-                    onChange={(e) => setPickupAddress(e.target.value)}
+              <Separator />
+
+              {/* ชื่อร้าน */}
+              <FieldBlock label="ชื่อร้านค้า" required>
+                <Input
+                  value={shopName}
+                  onChange={(e) => {
+                    const allowed = e.target.value.replace(
+                      /[^ก-ฮa-zA-Z0-9\s]/g,
+                      "",
+                    );
+                    // อนุญาตตัวอักษรไทย อังกฤษ ตัวเลข และเว้นวรรค
+                    setShopName(allowed);
+                  }}
+                  maxLength={30}
+                  placeholder="ชื่อร้านค้า"
+                />
+              </FieldBlock>
+
+              <Separator />
+
+              {/* คำอธิบายร้าน */}
+              <FieldBlock label="คำอธิบายร้านค้า (Description)">
+                <Textarea
+                  rows={3}
+                  value={description}
+                  onChange={(e) => {
+                    const allowed = e.target.value.replace(
+                      /[^ก-ฮa-zA-Z0-9\s]/g,
+                      "",
+                    );
+                    setDescription(allowed);
+                  }}
+                  placeholder="ใส่คำอธิบายสั้น ๆ ของร้านคุณ"
+                />
+              </FieldBlock>
+
+              <Separator />
+
+              {/* หน้าร้าน */}
+              <FieldBlock label="หน้าร้าน">
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    id="hasPhysicalStore"
+                    checked={hasPhysicalStore}
+                    onCheckedChange={(v) => setHasPhysicalStore(!!v)}
                   />
-                </FieldBlock>
+                  <Label htmlFor="hasPhysicalStore">มีหน้าร้าน</Label>
+                </div>
+              </FieldBlock>
 
-                <FieldBlock label="ตำแหน่งบนแผนที่">
+              <Separator />
+
+              {hasPhysicalStore && (
+                <>
+                  <FieldBlock label="ที่อยู่ในการเข้ารับสินค้า" required>
+                    <Textarea
+                      rows={3}
+                      value={pickupAddress}
+                      onChange={(e) => {
+                        const allowed = e.target.value.replace(
+                          /[^ก-ฮa-zA-Z0-9\s/.,-]/g,
+                          "",
+                        );
+                        setPickupAddress(allowed);
+                      }}
+                      placeholder="บ้านเลขที่ / หมู่ / ตำบล / อำเภอ / จังหวัด / รหัสไปรษณีย์"
+                    />
+                  </FieldBlock>
+
+                  <Separator />
+
                   <MainMap
-                    initialPosition={
-                      latitude && longitude ? [latitude, longitude] : undefined
-                    }
                     onLocationChange={([lat, lng]) => {
                       setLatitude(lat);
                       setLongitude(lng);
                     }}
                   />
-                </FieldBlock>
 
-                {openingTimes.map((t, i) => (
-                  <FieldBlock
-                    key={i}
-                    label={`วัน ${daysOfWeek[t.weekday]} เปิด-ปิด`}
-                  >
-                    <div className="flex gap-4">
-                      <input
-                        type="time"
-                        value={t.openTime}
-                        onChange={(e) =>
-                          handleTimeChange(i, "openTime", e.target.value)
-                        }
-                        className="p-1 border rounded"
-                      />
-                      <input
-                        type="time"
-                        value={t.closeTime}
-                        onChange={(e) =>
-                          handleTimeChange(i, "closeTime", e.target.value)
-                        }
-                        className="p-1 border rounded"
-                      />
-                    </div>
-                  </FieldBlock>
-                ))}
-              </>
-            )}
+                  <Separator />
 
-            {/* ช่วงราคา */}
-            <FieldBlock label="ช่วงราคา">
-              <div className="flex gap-2">
-                <Input
-                  type="number"
-                  value={minPrice === "" ? "" : String(minPrice)}
-                  onChange={(e) =>
-                    setMinPrice(
-                      e.target.value === "" ? "" : Number(e.target.value),
-                    )
-                  }
-                  placeholder="ต่ำสุด"
-                />
-                <Input
-                  type="number"
-                  value={maxPrice === "" ? "" : String(maxPrice)}
-                  onChange={(e) =>
-                    setMaxPrice(
-                      e.target.value === "" ? "" : Number(e.target.value),
-                    )
-                  }
-                  placeholder="สูงสุด"
-                />
-              </div>
-            </FieldBlock>
-
-            {/* ช่องทางติดต่อ */}
-            <FieldBlock label="ช่องทางติดต่อ">
-              <Input
-                value={contactDetail}
-                onChange={(e) => setContactDetail(e.target.value)}
-                placeholder="เบอร์/Line"
-              />
-            </FieldBlock>
-
-            {/* รูปภาพร้าน */}
-            <FieldBlock label="รูปภาพร้าน">
-              <div className="flex flex-wrap gap-2 mt-2">
-                {previewImages.map((img, i) => (
-                  <div key={i} className="relative">
-                    <img
-                      src={previewImages[i]}
-                      className="object-cover w-32 h-32 rounded-md cursor-pointer"
-                      onClick={() => {
-                        const input = document.createElement("input");
-                        input.type = "file";
-                        input.accept = "image/*";
-                        input.onchange = (ev: any) => {
-                          if (!ev.target.files) return;
-                          const file = ev.target.files[0];
-                          handleUpdateImage(i, file);
-                        };
-                        input.click();
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveUpdateImage(i)}
-                      className="absolute top-0 right-0 flex items-center justify-center w-6 h-6 text-xs text-white bg-red-500 rounded-full"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ))}
-
-                {/* ปุ่มเพิ่มรูป ถ้ายังไม่เต็ม 4 รูป */}
-                {previewImages.length < 4 && (
-                  <div
-                    className="flex items-center justify-center w-32 h-32 text-gray-500 bg-gray-200 rounded-md cursor-pointer"
-                    onClick={() => {
-                      const input = document.createElement("input");
-                      input.type = "file";
-                      input.accept = "image/*";
-                      input.onchange = (ev: any) => {
-                        if (!ev.target.files) return;
-                        const file = ev.target.files[0];
-                        setUploadedImages((prev) => [...prev, file]);
-                        setPreviewImages((prev) => [
-                          ...prev,
-                          URL.createObjectURL(file),
-                        ]);
-                      };
-                      input.click();
-                    }}
-                  >
-                    เพิ่มรูป
-                  </div>
-                )}
-              </div>
-            </FieldBlock>
-
-            {/* รูปเจ้าของร้าน */}
-            <FieldBlock label="รูปเจ้าของร้าน">
-              <div className="flex gap-2 mt-2">
-                {previewProfileImages.length > 0 ? (
-                  <div className="relative">
-                    <img
-                      src={previewProfileImages[0]}
-                      className="object-cover w-32 h-32 rounded-full cursor-pointer"
-                      onClick={() => {
-                        const input = document.createElement("input");
-                        input.type = "file";
-                        input.accept = "image/*";
-                        input.onchange = (ev: any) => {
-                          if (!ev.target.files) return;
-                          handleReplaceProfileImage(ev.target.files[0]);
-                        };
-                        input.click();
-                      }}
-                    />
-                    <button
-                      type="button"
-                      onClick={handleRemoveProfileImage}
-                      className="absolute top-0 right-0 flex items-center justify-center w-6 h-6 text-xs text-white bg-red-500 rounded-full"
-                    >
-                      ✕
-                    </button>
-                  </div>
-                ) : (
-                  <div
-                    className="flex items-center justify-center w-32 h-32 text-gray-500 bg-gray-200 rounded-full cursor-pointer"
-                    onClick={() => {
-                      const input = document.createElement("input");
-                      input.type = "file";
-                      input.accept = "image/*";
-                      input.onchange = (ev: any) => {
-                        if (!ev.target.files) return;
-                        handleReplaceProfileImage(ev.target.files[0]);
-                      };
-                      input.click();
-                    }}
-                  >
-                    เพิ่มรูป
-                  </div>
-                )}
-              </div>
-            </FieldBlock>
-
-            {/* บริการ */}
-            <FieldBlock label="บริการ">
-              <div className="flex flex-wrap gap-4">
-                {[1, 2, 3, 4].map((id) => (
-                  <div key={id} className="flex items-center gap-2">
-                    <Checkbox
-                      checked={services.includes(id)}
-                      onCheckedChange={() => toggleService(id)}
-                    />
-                    <Label>
-                      {["Delivery", "QR", "Wi-Fi", "Alcohol"][id - 1]}
+                  {/* เวลาเปิดปิด */}
+                  <div className="mb-4">
+                    <Label className="text-sm font-medium">
+                      วันและเวลาเปิด-ปิด
                     </Label>
-                  </div>
-                ))}
-              </div>
-            </FieldBlock>
-          </div>
-        </div>
-      </CardContent>
 
-      <CardFooter className="flex justify-end">
-        <Button onClick={handleSave}>
-          <SaveIcon className="w-4 h-4 mr-2" /> บันทึก
-        </Button>
-      </CardFooter>
-    </Card>
+                    {/* แถวบน 4 วัน */}
+                    <div className="grid grid-cols-1 gap-4 mt-2 md:grid-cols-4">
+                      {daysOfWeek.slice(0, 4).map((day, index) => (
+                        <div
+                          key={index}
+                          className="flex flex-col p-3 transition-shadow border border-gray-200 rounded-lg shadow-sm hover:shadow-md"
+                        >
+                          <p className="mb-2 text-sm font-semibold text-gray-700">
+                            {day}
+                          </p>
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-gray-500">
+                                เปิด
+                              </span>
+                              <input
+                                type="time"
+                                value={openingTimes[index].openTime}
+                                onChange={(e) =>
+                                  handleTimeChange(
+                                    index,
+                                    "openTime",
+                                    e.target.value,
+                                  )
+                                }
+                                className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md"
+                                step={60}
+                              />
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-gray-500">ปิด</span>
+                              <input
+                                type="time"
+                                value={openingTimes[index].closeTime}
+                                onChange={(e) =>
+                                  handleTimeChange(
+                                    index,
+                                    "closeTime",
+                                    e.target.value,
+                                  )
+                                }
+                                className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md"
+                                step={60}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* แถวล่าง 3 วันตรงกลาง */}
+                    <div className="flex flex-col items-center gap-2 mt-2 md:flex-row md:justify-center md:gap-4">
+                      {daysOfWeek.slice(4).map((day, i) => {
+                        const index = i + 4;
+                        return (
+                          <div
+                            key={index}
+                            className="flex flex-col w-full p-3 transition-shadow border border-gray-200 rounded-lg shadow-sm hover:shadow-md md:w-40"
+                          >
+                            <p className="mb-2 text-sm font-semibold text-gray-700">
+                              {day}
+                            </p>
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-gray-500">
+                                  เปิด
+                                </span>
+                                <input
+                                  type="time"
+                                  value={openingTimes[index].openTime}
+                                  onChange={(e) =>
+                                    handleTimeChange(
+                                      index,
+                                      "openTime",
+                                      e.target.value,
+                                    )
+                                  }
+                                  className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md"
+                                  step={60}
+                                />
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs text-gray-500">
+                                  ปิด
+                                </span>
+                                <input
+                                  type="time"
+                                  value={openingTimes[index].closeTime}
+                                  onChange={(e) =>
+                                    handleTimeChange(
+                                      index,
+                                      "closeTime",
+                                      e.target.value,
+                                    )
+                                  }
+                                  className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md"
+                                  step={60}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <Separator />
+                </>
+              )}
+
+              {/* ราคา */}
+              <FieldBlock label="ช่วงราคา (บาท)">
+                <div className="flex gap-4">
+                  <div className="flex flex-col">
+                    <Label className="text-sm">ราคาต่ำสุด</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={minPrice}
+                      onChange={(e) =>
+                        setMinPrice(Number(e.target.value) || "")
+                      }
+                      placeholder="0"
+                    />
+                  </div>
+                  <div className="flex flex-col">
+                    <Label className="text-sm">ราคาสูงสุด</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={maxPrice}
+                      onChange={(e) =>
+                        setMaxPrice(Number(e.target.value) || "")
+                      }
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+              </FieldBlock>
+
+              <Separator />
+
+              {/* ช่องทางติดต่อ */}
+              <FieldBlock label="ช่องทางติดต่อ (Contact detail)" required>
+                <Input
+                  value={contactDetail}
+                  onChange={(e) => {
+                    const allowed = e.target.value.replace(/[^0-9]/g, "");
+                    // อนุญาตแค่ตัวเลข
+                    setContactDetail(allowed);
+                  }}
+                  maxLength={100}
+                  placeholder="เบอร์โทร"
+                />
+              </FieldBlock>
+
+              <Separator />
+
+              {/* รูปภาพร้าน */}
+              <FieldBlock label="รูปภาพร้าน (สูงสุด 4 รูป, ขนาดไม่เกิน 8MB)">
+                {/* input หลักสำหรับเพิ่มรูปใหม่ */}
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  id="store-input"
+                  onChange={handleStoreFileChange}
+                />
+
+                <div className="flex gap-2 mt-4">
+                  {previewImages.map((img, i) => (
+                    <div
+                      key={i}
+                      className="relative cursor-pointer"
+                      onClick={() =>
+                        document.getElementById(`replace-image-${i}`)?.click()
+                      }
+                    >
+                      <img
+                        src={img}
+                        alt={`uploaded-img-${i}`}
+                        className="object-cover w-32 h-32 rounded-md"
+                      />
+
+                      {/* input สำหรับเปลี่ยนรูปเฉพาะ index */}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        id={`replace-image-${i}`}
+                        onChange={(e) => {
+                          if (e.target.files?.[0])
+                            handleUpdateImage(i, e.target.files[0]);
+                        }}
+                      />
+
+                      {/* ปุ่มลบรูป */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation(); // ป้องกันคลิกเปิดไฟล์
+                          handleRemoveUpdateImage(i);
+                        }}
+                        className="absolute top-0 right-0 flex items-center justify-center w-6 h-6 text-xs text-white bg-red-500 rounded-full"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ))}
+
+                  {/* ช่องเพิ่มรูปใหม่ ถ้ายังไม่ครบ 4 รูป */}
+                  {previewImages.length < 4 && (
+                    <div
+                      className="flex items-center justify-center w-32 h-32 text-gray-500 bg-gray-200 rounded-md cursor-pointer"
+                      onClick={() =>
+                        document.getElementById("store-input")?.click()
+                      }
+                    >
+                      เพิ่มรูป
+                    </div>
+                  )}
+                </div>
+              </FieldBlock>
+
+              <Separator />
+
+              {/* รูปเจ้าของร้าน */}
+              <FieldBlock label="รูปเจ้าของร้าน (1 รูป, ขนาดไม่เกิน 8MB)">
+                {/* input hidden สำหรับเลือก/เปลี่ยนรูป */}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  id="profile-input"
+                  onChange={(e) => {
+                    if (e.target.files?.[0])
+                      handleReplaceProfileImage(e.target.files[0]);
+                  }}
+                />
+
+                <div className="flex gap-2 mt-4">
+                  {previewProfileImages.length > 0 ? (
+                    <div
+                      className="relative cursor-pointer"
+                      onClick={() =>
+                        document.getElementById("profile-input")?.click()
+                      }
+                    >
+                      <Image
+                        src={previewProfileImages[0]}
+                        alt="owner-profile"
+                        width={128}
+                        height={128}
+                        className="object-cover rounded-full"
+                      />
+                      {/* ปุ่มลบรูป */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation(); // ป้องกันคลิกเปิดไฟล์
+                          handleRemoveProfileImage();
+                        }}
+                        className="absolute flex items-center justify-center w-6 h-6 text-xs text-white bg-red-500 rounded-full top-1 right-1"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <div
+                      className="flex items-center justify-center w-32 h-32 text-gray-500 bg-gray-200 rounded-full cursor-pointer"
+                      onClick={() =>
+                        document.getElementById("profile-input")?.click()
+                      }
+                    >
+                      เพิ่มรูป
+                    </div>
+                  )}
+                </div>
+              </FieldBlock>
+
+              {/* บริการที่มี */}
+              <FieldBlock label="บริการที่มี">
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="delivery"
+                      checked={services.includes(1)}
+                      onCheckedChange={() => toggleService(1)}
+                    />
+                    <Label htmlFor="delivery">บริการส่ง (Delivery)</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="qr"
+                      checked={services.includes(2)}
+                      onCheckedChange={() => toggleService(2)}
+                    />
+                    <Label htmlFor="qr">จ่ายด้วย QR</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="wifi"
+                      checked={services.includes(3)}
+                      onCheckedChange={() => toggleService(3)}
+                    />
+                    <Label htmlFor="wifi">มี Wi-Fi</Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="alcohol"
+                      checked={services.includes(4)}
+                      onCheckedChange={() => toggleService(4)}
+                    />
+                    <Label htmlFor="alcohol">มีเครื่องดื่มแอลกอฮอล์</Label>
+                  </div>
+                </div>
+              </FieldBlock>
+            </div>
+          </div>
+        </CardContent>
+
+        <CardFooter className="flex justify-end p-4 border-t bg-gray-50">
+          <Button
+            className="bg-green-700 hover:bg-green-600"
+            onClick={handleSave}
+          >
+            <SaveIcon className="w-4 h-4 mr-2" />
+            บันทึกข้อมูล
+          </Button>
+        </CardFooter>
+      </Card>
+    </div>
   );
 }
 

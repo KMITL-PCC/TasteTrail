@@ -42,11 +42,12 @@ this is backend for review restaurant
   **Body:** `{ "otp": "string" }`
 
 - `POST /auth/resend-otp`
-  Resend OTP
+  Resend OTP.
 
--`PATCH /auth/reset-password`
-Reset password if forgot password.
-**Body:** `{ "newPassword": "string" }`
+- `PATCH /auth/reset-password`
+  Reset password if forgot password.
+
+  **Body:** `{ "newPassword": "string" }`
 
 - `PATCH /auth/updatepass`  
   Update password after OTP verify by user sign in  
