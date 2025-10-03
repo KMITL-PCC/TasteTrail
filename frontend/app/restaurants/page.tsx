@@ -75,7 +75,7 @@ const RestaurantsPage = async ({
 
   return (
     <div className="mx-auto flex w-full max-w-[1150px] flex-col gap-2 p-4 pt-0 md:flex-row md:p-8 md:pt-2 xl:px-16">
-      <div className="sticky top-19 z-10 flex max-h-[700px] flex-col gap-2 md:top-20">
+      <div className="sticky top-19 z-10 flex max-h-[700px] flex-col gap-2 md:top-22">
         {/* Breadcrumb */}
         <BreadcrumbComponent className="hidden md:block" />
         {/* Filter */}
