@@ -334,14 +334,14 @@ export default function SellerInfoWeb() {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="mx-auto mt-6 max-w-3xl px-4">
+      <div className="max-w-3xl px-4 mx-auto mt-6">
         <Card>
           <CardContent className="p-6">
             <div className="grid grid-cols-1 gap-6">
               {/* หัวข้ออยู่ด้านบน */}
               <div className="mb-6">
                 <h2 className="text-base font-medium">รายละเอียดร้านค้า</h2>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-sm text-muted-foreground">
                   กรอกข้อมูลพื้นฐานของร้านคุณให้ครบถ้วน
                 </p>
               </div>
@@ -445,7 +445,7 @@ export default function SellerInfoWeb() {
 
                     <Separator />
 
-                    <div className="relative h-64 w-full overflow-hidden rounded-lg">
+                    <div className="relative w-full h-64 overflow-hidden rounded-lg">
                       <Mainmap
                         onLocationChange={([lat, lng]) => {
                           setLatitude(lat);
@@ -463,11 +463,11 @@ export default function SellerInfoWeb() {
                       </Label>
 
                       {/* แถวบน 4 วัน */}
-                      <div className="mt-2 grid grid-cols-1 gap-4 md:grid-cols-4">
+                      <div className="grid grid-cols-1 gap-4 mt-2 md:grid-cols-4">
                         {daysOfWeek.slice(0, 4).map((day, index) => (
                           <div
                             key={index}
-                            className="flex flex-col rounded-lg border border-gray-200 p-3 shadow-sm transition-shadow hover:shadow-md"
+                            className="flex flex-col p-3 transition-shadow border border-gray-200 rounded-lg shadow-sm hover:shadow-md"
                           >
                             <p className="mb-2 text-sm font-semibold text-gray-700">
                               {day}
@@ -487,7 +487,7 @@ export default function SellerInfoWeb() {
                                       e.target.value,
                                     )
                                   }
-                                  className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm"
+                                  className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md"
                                   step={60}
                                   pattern="[0-2][0-9]:[0-5][0-9]"
                                   title="เวลาแบบ 24 ชั่วโมง (HH:mm)"
@@ -508,7 +508,7 @@ export default function SellerInfoWeb() {
                                       e.target.value,
                                     )
                                   }
-                                  className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm"
+                                  className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md"
                                   step={60}
                                   pattern="[0-2][0-9]:[0-5][0-9]"
                                   title="เวลาแบบ 24 ชั่วโมง (HH:mm)"
@@ -520,13 +520,13 @@ export default function SellerInfoWeb() {
                       </div>
 
                       {/* แถวล่าง 3 วันตรงกลาง */}
-                      <div className="mt-2 flex flex-col items-center gap-2 md:flex-row md:justify-center md:gap-4">
+                      <div className="flex flex-col items-center gap-2 mt-2 md:flex-row md:justify-center md:gap-4">
                         {daysOfWeek.slice(4).map((day, i) => {
                           const index = i + 4;
                           return (
                             <div
                               key={index}
-                              className="flex w-full flex-col rounded-lg border border-gray-200 p-3 shadow-sm transition-shadow hover:shadow-md md:w-40"
+                              className="flex flex-col w-full p-3 transition-shadow border border-gray-200 rounded-lg shadow-sm hover:shadow-md md:w-40"
                             >
                               <p className="mb-2 text-sm font-semibold text-gray-700">
                                 {day}
@@ -546,7 +546,7 @@ export default function SellerInfoWeb() {
                                         e.target.value,
                                       )
                                     }
-                                    className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm"
+                                    className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md"
                                     step={60}
                                   />
                                 </div>
@@ -564,7 +564,7 @@ export default function SellerInfoWeb() {
                                         e.target.value,
                                       )
                                     }
-                                    className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm"
+                                    className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md"
                                     step={60}
                                   />
                                 </div>
@@ -637,13 +637,13 @@ export default function SellerInfoWeb() {
                     multiple
                     className="mt-2"
                   />
-                  <div className="mt-4 flex gap-2">
+                  <div className="flex gap-2 mt-4">
                     {previewImages.map((img, index) => (
                       <img
                         key={index}
                         src={img}
                         alt={`uploaded-img-${index}`}
-                        className="h-32 w-32 rounded-md object-cover"
+                        className="object-cover w-32 h-32 rounded-md"
                       />
                     ))}
                   </div>
@@ -662,13 +662,15 @@ export default function SellerInfoWeb() {
                     onChange={handleProfileFileChange}
                     className="mt-2"
                   />
-                  <div className="mt-4 flex gap-2">
+                  <div className="flex gap-2 mt-4">
                     {previewProfileImages.map((img, index) => (
                       <Image
                         key={index}
                         src={img}
+                        width={100}
+                        height={100}
                         alt={`owner-profile-${index}`}
-                        className="h-32 w-32 rounded-full object-cover"
+                        className="object-cover w-32 h-32 rounded-full"
                       />
                     ))}
                   </div>
@@ -717,12 +719,12 @@ export default function SellerInfoWeb() {
             </div>
           </CardContent>
 
-          <CardFooter className="flex justify-end border-t bg-gray-50 p-4">
+          <CardFooter className="flex justify-end p-4 border-t bg-gray-50">
             <Button
               className="bg-green-700 hover:bg-green-600"
               onClick={handleSave}
             >
-              <SaveIcon className="mr-2 h-4 w-4" />
+              <SaveIcon className="w-4 h-4 mr-2" />
               บันทึกข้อมูล
             </Button>
           </CardFooter>

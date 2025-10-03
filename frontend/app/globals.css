@@ -209,7 +209,70 @@
     @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground bg-gray-50;
     letter-spacing: var(--tracking-normal);
+  }
+}
+
+/* Review Section Responsive Styles */
+@layer components {
+  /* Mobile breakpoint below 425px */
+  @media (max-width: 425px) {
+    .review-section-container {
+      @apply px-2;
+    }
+
+    .rating-breakdown-wrapper {
+      @apply gap-4 px-2;
+    }
+
+    .rating-score {
+      @apply text-3xl;
+    }
+
+    .filter-section-wrapper {
+      @apply flex-col items-start gap-3;
+    }
+
+    .filter-buttons-group {
+      @apply flex-wrap;
+    }
+
+    .sort-section {
+      @apply w-full justify-between;
+    }
+
+    .review-card-header {
+      @apply flex-col gap-2;
+    }
+
+    .review-user-stats {
+      @apply flex-wrap text-xs;
+    }
+
+    .review-actions {
+      @apply flex-wrap gap-2;
+    }
+
+    .review-action-button {
+      @apply px-1 text-xs;
+    }
+
+    .section-heading {
+      @apply text-lg;
+    }
+
+    .star-filter-button {
+      @apply h-7 px-2;
+    }
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
   }
 }
