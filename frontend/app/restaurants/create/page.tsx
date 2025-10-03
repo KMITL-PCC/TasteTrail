@@ -1,4 +1,7 @@
-const CreateRestaurantPage = () => {
-  return <div>CreateRestaurantPage</div>;
+import RestaurantcreateForm from "@/components/restaurants/RestaurantcreateForm";
+
+const Restaurantcreatepage = () => {
+  return <RestaurantcreateForm />;
 };
-export default CreateRestaurantPage;
+
+export default Restaurantcreatepage;

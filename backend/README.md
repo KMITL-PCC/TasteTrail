@@ -16,7 +16,7 @@ this is backend for review restaurant
 - `GET /api/csrf-token`
   Get csrf token for user before fetch PUT, POST, DELETE
 
-### Authen
+### Authentication
 
 - `POST /auth/register/send-otp`  
   Register step 1 send otp to gmail  
@@ -44,12 +44,80 @@ this is backend for review restaurant
 - `POST /auth/resend-otp`
   Resend OTP
 
+-`PATCH /auth/reset-password`
+Reset password if forgot password.
+**Body:** `{ "newPassword": "string" }`
+
 - `PATCH /auth/updatepass`  
-  Update password after OTP verification.  
+  Update password after OTP verify by user sign in  
   **Body:** `{ "newPassword": "string" }`
+
+- `PATCH /auth/updatepass-current`  
+  Update password using current password
+  **Body:** `{ "currentPassword" : "string", "newPassword": "string" }`
 
 - `GET /auth/google`
   Login with google account
 
 - `GET /auth/google/callback`
   Callback after google login
+
+- `GET /auth/me`
+  Get user information
+
+### Restaurant
+
+- `GET /restaurant/get`
+  Get many restaurant
+
+- `GET /restaurant/get/:id`
+  Get restaurant information
+
+- `GET /restaurant/popular`
+  Get top 3 popular restaurant
+
+### Account
+
+- `PUT account/updateProfile`
+  Update user profile (picture and username)  
+  **Body:** `{ "username": "string" }`  
+  **File:** `avatar` (image file)
+
+- `POST account/openRestaurant`
+  User open restaurant
+
+  **Body:**
+
+  ```json
+  {
+    "fullname": {
+      "firstName": "string",
+      "lastName": "string"
+    },
+    "information": {
+      "name": "string",
+      "description": "string",
+      "address": "string",
+      "latitude": "number",
+      "longitude": "number",
+      "services": [1, 2, 3, 4], //delivery,QR, WIFI, alcohol
+      "contactDetail": "string"
+    },
+    "price": {
+      "minPrice": "number",
+      "maxPrice": "number"
+    },
+    "time": [
+      {
+        "weekday": "number", //0 = sunday, 6 = saturday
+        "openTime": "string",
+        "closeTime": "string"
+      }
+    ]
+  }
+  ```
+
+  **File:**
+
+  - `profileImage` - Restaurant profile image (1 file max)
+  - `restaurantImages` - Restaurant gallery images (4 files max)

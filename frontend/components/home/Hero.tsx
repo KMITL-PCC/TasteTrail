@@ -14,13 +14,17 @@ export default function Hero() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center bg-white">
+    <div className="flex flex-col items-center">
       <main className="container mx-auto flex w-full flex-col items-center px-4 pt-5 pb-16 md:px-8">
-        <h1 className="font-Inter mb-8 text-center text-4xl text-black/50 sm:text-5xl md:mb-12 md:text-6xl">
+        {/* <h1 className="mt-20 mb-8 text-4xl text-center font-Inter text-black/50 sm:text-5xl md:mb-12 md:text-6xl">
           อยากกินอะไร เราหาให้
-        </h1>
+        </h1> */}
 
-        <div className="mx-auto w-full max-w-5xl">
+        <span className="text-primary pointer-events-none z-10 bg-clip-text pt-20 text-center text-7xl leading-none font-bold tracking-tighter whitespace-pre-wrap">
+          อยากกินอะไร เราหาให้
+        </span>
+
+        <div className="mx-auto mt-10 w-full max-w-5xl">
           {/* Desktop (5 คอลัมน์) */}
           <div
             className="hidden lg:grid lg:grid-cols-5 lg:gap-4"

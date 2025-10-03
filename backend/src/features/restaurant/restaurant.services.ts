@@ -1,6 +1,10 @@
-import { equal } from "assert";
+import { equal, rejects } from "assert";
+
+import cloudinary from "../../config/cloudinary.config";
 import prisma from "../../config/db.config";
 import { Restaurant } from "../../types/restaurant";
+import { error } from "console";
+import { get } from "http";
 
 const weekArrayFromat = (openninghour: Restaurant.time[]) => {
   const day = ["อาทิตย์", "จันทร์", "อังคาร", "พุธ", "พฤหัส", "ศุกร์", "เสาร์"];
@@ -10,15 +14,6 @@ const weekArrayFromat = (openninghour: Restaurant.time[]) => {
     day: `${firstday} - ${lastday}`,
     time: `${openninghour[0].openTime} - ${openninghour[0].closeTime}`,
   };
-};
-
-//
-const serviceArrayFormat = (services: Restaurant.service[]) => {
-  const servicesArray = [];
-  for (let i = 0; i < services.length; i++) {
-    servicesArray.push(services[i].service.service);
-  }
-  return servicesArray;
 };
 
 export default {
@@ -55,6 +50,7 @@ export default {
       }));
     }
 
+    console.log(JSON.stringify(whereClause, null, 2));
     //3. sort field
     const orderBy: any = {};
     const sortField = sortBy || "avgRating";
@@ -137,6 +133,7 @@ export default {
       };
     });
 
+    console.log(restaurant);
     return {
       restaurant: restaurant,
       totalPages: Math.ceil(total / limit),
@@ -148,46 +145,128 @@ export default {
   createRestaurant: async (
     information: Restaurant.information,
     price: Restaurant.price,
-    time: any
+    time: any,
+    pictures: Express.Multer.File[],
+    services: number[]
   ) => {
-    const availableTime: Restaurant.time[] = [];
-    const [start, stop] = time.weekday.split("-").map(Number);
+    //0. map open hour
+    // const availableTime: Restaurant.time[] = [];
+    // const [start, stop] = time.weekday.split("-").map(Number);
 
-    for (let i = start; i < stop + 1; i++) {
-      availableTime.push({
-        weekday: i,
-        openTime: time.openTime,
-        closeTime: time.closeTime,
-      });
-    }
+    // for (let i = start; i < stop + 1; i++) {
+    //   availableTime.push({
+    //     weekday: i,
+    //     openTime: time.openTime,
+    //     closeTime: time.closeTime,
+    //   });
+    // }
 
-    const restaurant = await prisma.$transaction(async (tx) => {
-      const newRestaurant = await tx.restaurant.create({
-        data: {
-          name: information.name,
-          description: information.description,
-          address: information.address,
-          minPrice: price.minPrice,
-          maxPrice: price.maxPrice,
-          contact: {
-            create: {
-              contactType: "Number",
-              contactDetail: "0807195642",
+    // const uploadedResults: { url: string; public_id: string }[] = [];
+
+    // //1. upload picture to cloud
+    // for (const pic of pictures) {
+    //   const result = await new Promise<any>((resolve, reject) => {
+    //     const stream = cloudinary.uploader.upload_stream(
+    //       { resource_type: "image" },
+    //       (error, result) => {
+    //         if (error) reject(error);
+    //         else resolve(result);
+    //       }
+    //     );
+    //     stream.end(pic.buffer);
+    //   });
+    //   uploadedResults.push({
+    //     url: result.secure_url,
+    //     public_id: result.public_id,
+    //   });
+    // }
+
+    const uploadPromises = pictures.map((pic) => {
+      return new Promise<{ url: string; public_id: string }>(
+        (resolve, reject) => {
+          const stream = cloudinary.uploader.upload_stream(
+            { resource_type: "image", folder: "restaurant_images" },
+            (error, result: any) => {
+              if (error) reject(error);
+              resolve({
+                url: result.secure_url,
+                public_id: result.public_id,
+              });
+            }
+          );
+          stream.end(pic.buffer);
+        }
+      );
+    });
+
+    const uploadedResults: { url: string; public_id: string }[] = [];
+
+    try {
+      uploadedResults.push(...(await Promise.all(uploadPromises)));
+      // console.log(uploadedResults);
+      const restaurant = await prisma.$transaction(async (tx) => {
+        //2. create restaurant
+        const newRestaurant = await tx.restaurant.create({
+          data: {
+            name: information.name,
+            description: information.description,
+            address: information.address,
+            minPrice: price.minPrice,
+            maxPrice: price.maxPrice,
+            contact: {
+              create: {
+                contactType: "phone",
+                contactDetail: information.contactDetail || "",
+              },
+            },
+            restaurantServices: {
+              create: services.map((s: number) => ({ serviceId: s })),
             },
           },
-        },
+        });
+
+        //3. create open hour time
+        await tx.openingHour.createMany({
+          // data: availableTime.map((t) => ({
+          //   weekday: t.weekday,
+          //   openTime: t.openTime,
+          //   closeTime: t.closeTime,
+          //   restaurantId: newRestaurant.id,
+          // })),
+          data: time.map((t: Restaurant.time) => ({
+            weekday: t.weekday,
+            openTime: t.openTime,
+            closeTime: t.closeTime,
+            restaurantId: newRestaurant.id,
+          })),
+        });
+
+        //4. save image url on db
+        await tx.restaurantImage.createMany({
+          data: uploadedResults.map((img) => ({
+            restaurantId: newRestaurant.id,
+            imageUrl: img.url,
+            publicId: img.public_id,
+          })),
+        });
+
+        return newRestaurant;
       });
 
-      await tx.openingHour.createMany({
-        data: availableTime.map((t) => ({
-          weekday: t.weekday,
-          openTime: t.openTime,
-          closeTime: t.closeTime,
-          restaurantId: newRestaurant.id,
-        })),
-      });
-    });
-    return;
+      return { success: true, id: restaurant.id };
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.log("Error during create restaurant ERROR:", error.message);
+      } else {
+        console.log("Error during create restaurant ERROR:", error);
+      }
+
+      for (const img of uploadedResults) {
+        await cloudinary.uploader.destroy(img.public_id);
+      }
+
+      return { success: false };
+    }
   },
 
   Information: async (id: string) => {
@@ -205,6 +284,11 @@ export default {
         longitude: true,
         minPrice: true,
         maxPrice: true,
+        images: {
+          select: {
+            imageUrl: true,
+          },
+        },
         openninghour: {
           take: 7,
           select: {
@@ -240,29 +324,60 @@ export default {
       information?.openninghour as Restaurant.time[]
     );
 
-    //3. map service
-    const services = serviceArrayFormat(
-      information.restaurantServices as Restaurant.service[]
-    );
-
     //map all data
     const restaurantInformation = {
       name: information.name,
-      desciption: information.description,
+      description: information.description,
       address: information.address,
       latitude: information.latitude,
-      logitude: information.longitude,
+      longitude: information.longitude,
       status: information.status,
       minPrice: information.minPrice,
       maxPrice: information.maxPrice,
+      image: information.images.map((image) => image.imageUrl),
       openingHour,
       contact: {
         contactType: information.contact[0].contactType,
         contactDetail: information.contact[0].contactDetail,
       },
-      services,
+      services: information.restaurantServices.map(
+        (service) => service.service.service
+      ),
     };
 
     return restaurantInformation;
+  },
+
+  getPopularRestaurants: async () => {
+    //query popular restaurant
+    const popularRestaurants = await prisma.$queryRaw<{
+      id: string;
+      name: string;
+      totalReviews: number;
+      avgRating: number;
+      imageUrl: string;
+    }>`
+      SELECT
+        r.restaurant_id, r.name, r.total_reviews, r.avg_rating, ri.image_url,
+        (r.avg_rating * 0.25 + r.total_reviews * 0.3 ) AS popularity_score
+      FROM
+        "Restaurant" r
+      LEFT JOIN LATERAL (
+        SELECT ri.image_url
+        FROM "RestaurantImage" ri
+        WHERE ri.restaurant_id = r.restaurant_id
+        ORDER BY ri.image_id ASC
+        LIMIT 1
+      ) ri
+      ON 
+        true
+      GROUP BY
+        r.restaurant_id, ri.image_url
+      ORDER BY
+        popularity_score DESC
+      LIMIT 3;
+    `;
+
+    return popularRestaurants;
   },
 };

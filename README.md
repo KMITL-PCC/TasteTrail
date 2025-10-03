@@ -64,6 +64,7 @@ npm run dev
 
 - Frontend: http://localhost:3000
 - Backend: http://localhost:3001
+- n8n : http://localhost:5678/
 
 ### Building for Production
 
@@ -100,6 +101,9 @@ cd backend
 docker build -t review-restaurant-backend .
 docker run -p 3000:3000 review-restaurant-backend
 ```
+
+### ollama 
+docker exec ollama ollama pull llama3.2 
 
 ## Sequence Diagram
 

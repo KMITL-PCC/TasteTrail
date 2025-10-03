@@ -5,6 +5,7 @@ import passport from "../../config/passport";
 import authServices from "./auth.services";
 import { logoutAllDevices } from "../../model/redis.model";
 import { User } from "@prisma/client";
+import { session } from "passport";
 
 export default {
   //send otp to create user email
@@ -15,12 +16,16 @@ export default {
       return res.status(400).json({ message: "Missing user data" });
     }
 
-    console.log(req.body);
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    if (!isEmail) {
+      return res.status(400).json({ message: "email wrong format" });
+    }
+
     try {
       const result = await authServices.checkUserNotExistence(username, email);
 
       if (result && !result.success && result.status) {
-        return res.status(result.status).json({ message: result.messeage });
+        return res.status(result.status).json({ message: result.message });
       }
 
       const { otp, expiresAt } = await authServices.sendVerificationOtp(email);
@@ -195,6 +200,11 @@ export default {
         .json({ message: "Email or Username are required." });
     }
 
+    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+    if (!isEmail) {
+      return res.status(400).json({ message: "email wrong format" });
+    }
+
     try {
       //find user
       //return success.true = not found return success false = found
@@ -323,7 +333,7 @@ export default {
       });
     }
 
-    const { email } = session.forgotData;
+    const { email } = session.forgotData || session.updateUserData;
 
     try {
       const { otp, expiresAt } = await authServices.sendVerificationOtp(email);
@@ -354,6 +364,50 @@ export default {
     }
   },
 
+  sendOTP: async (req: Request, res: Response, next: NextFunction) => {
+    const user = req.user as User;
+
+    const email = user.email;
+
+    try {
+      const { otp, expiresAt } = await authServices.sendVerificationOtp(email);
+
+      const session = req.session as any;
+
+      const otpHashed = await bcrypt.hash(otp, 5);
+
+      session.updateUserData = {
+        email,
+      };
+
+      session.otp = {
+        otp: otpHashed,
+        expiresAt: expiresAt.toISOString(),
+      };
+
+      req.session.save((err) => {
+        if (err) {
+          console.error("Failed to save session:", err);
+          return res.status(500).send("Internal Server Error");
+        }
+      });
+
+      res.status(200).json({
+        message: "send otp success",
+      });
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("Error during update password ERROR:", error.message);
+      } else {
+        console.error("Error during update password ERROR:", error);
+      }
+
+      res.status(500).json({
+        message: "Error during update password",
+      });
+    }
+  },
+
   updatePass: async (req: Request, res: Response) => {
     const newPassword = req.body.newPassword;
 
@@ -362,19 +416,25 @@ export default {
     }
 
     const session = req.session as any;
+    console.log(session);
     if (!session || !session.otp || !session.otp.verify) {
       return res.status(401).json({
         message: "No pending registration. Please start registration again.",
       });
     }
 
+    if (!(session.forgotData || session.updateUserData)) {
+      return res.status(401).json({
+        message: "No pending registration. Please start registration again.",
+      });
+    }
     if (!session.otp.verify) {
       return res.status(401).json({
         message: "You not verify access pls try again later",
       });
     }
 
-    const { email } = session.forgotData || session.userdata;
+    const { email } = session.forgotData || session.updateUserData;
 
     if (!email) {
       return res.status(401).json({
@@ -400,15 +460,56 @@ export default {
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.error("Error during update password ERROR:", error.message);
-        return res.status(500).json({
-          message: "Error during update password",
-        });
       } else {
         console.error("Error during update password ERROR:", error);
-        return res.status(500).json({
-          message: "Error during update password",
+      }
+
+      res.status(500).json({
+        message: "Error during update password",
+      });
+    }
+  },
+
+  updatePassCurrent: async (req: Request, res: Response) => {
+    const user = req.user as User;
+
+    const email = user.email;
+
+    const { currentPassword, newPassword } = req.body;
+
+    if (!currentPassword || !newPassword) {
+      res.status(400).json({
+        message: "Missing data",
+      });
+    }
+
+    try {
+      const result = await authServices.updatePasswordByCurrent(
+        email,
+        currentPassword,
+        newPassword
+      );
+
+      if (result && !result?.success) {
+        return res.status(result?.status).json({
+          message: result.message,
         });
       }
+
+      res.status(result.status).json({
+        message: result.message,
+      });
+      // res.sendStatus(200);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error("Error during update password ERROR:", error.message);
+      } else {
+        console.error("Error during update password ERROR:", error);
+      }
+
+      res.status(500).json({
+        message: "Error during update password",
+      });
     }
   },
 
@@ -421,13 +522,27 @@ export default {
       });
     }
 
-    res.status(200).json({
-      user: {
-        username: user.username,
-        email: user.email,
-        role: user.role,
-        profilePictureUrl: user.profilePictureUrl,
-      },
-    });
+    try {
+      const restaurantId = await authServices.getRestaurantByOwnerId(user.id);
+      res.status(200).json({
+        user: {
+          username: user.username,
+          email: user.email,
+          role: user.role,
+          profilePictureUrl: user.profilePictureUrl,
+          restaurantId: restaurantId || null,
+        },
+      });
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        console.error("Error during get user data ERROR:", err.message);
+      } else {
+        console.error("Error during get user data ERROR:", err);
+      }
+
+      res.status(500).json({
+        message: "Error during get user data",
+      });
+    }
   },
 };

@@ -18,13 +18,20 @@ services:
       GOOGLE_CALLBACK_URL: http://localhost:3001/auth/google/callback
       DATABASE_URL: postgres://admin:12345@db:5432/review_restaurant?schema=public
       REDIS_URL: redis://redis:6379
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
       PORT: 3001
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_started
-    command: sh -c "npx prisma migrate deploy && npm start"
+    command: >
+      sh -c "npx prisma migrate dev --name init && npm run seed && npm run dev"
 
   # frontend:
   #   build: ./frontend
@@ -36,16 +43,16 @@ services:
   # environment:
   #   REACT_APP_API_URL: http://backend:3000
 
-  frontend:
-    build: ./frontend
-    container_name: frontend
-    ports:
-      - "3000:3000"
-    environment:
-      NEXT_PUBLIC_BACKEND_URL: http://localhost:3001
-    networks:
-      - mern_network
-    restart: always
+  # frontend:
+  #   build: ./frontend
+  #   container_name: frontend
+  #   ports:
+  #     - "3000:3000"
+  #   environment:
+  #     NEXT_PUBLIC_BACKEND_URL: http://localhost:3001
+  #   networks:
+  #     - mern_network
+  #   restart: always
 
   redis:
     image: redis:7.0-alpine
@@ -78,6 +85,28 @@ services:
       timeout: 5s # Timeout 5 วินาที
       retries: 5 # ลอง 5 ครั้งก่อนประกาศว่าไม่ healthy
       start_period: 10s # รอ 10 วินาทีแรกก่อนเริ่ม Health Check
+  
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    ports:
+      - "5678:5678"
+    volumes:
+      - ./n8n/workflows:/home/node/.n8n
+    env_file: .env
+    networks:
+      - mern_network
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - mern_network
 
 networks:
   mern_network:
@@ -85,3 +114,5 @@ networks:
 volumes:
   postgres_data:
   redis_data:
+  ollama_data:
+  n8n_data:

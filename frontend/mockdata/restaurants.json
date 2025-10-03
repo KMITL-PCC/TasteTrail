@@ -1,0 +1,67 @@
+[
+  {
+    "id": 1,
+    "name": "ครัวคุณแม่",
+    "description": "อาหารไทยรสจัดจ้าน วัตถุดิบสดใหม่ เมนูแนะนำคือแกงเขียวหวานและผัดไทย",
+    "avgRating": 4.7,
+    "totalReviews": 128,
+    "categories": ["อาหารไทย", "อาหารทะเล", "อาหารญี่ปุ่น"],
+    "images": [
+      "https://source.unsplash.com/400x300/?thai-food",
+      "https://source.unsplash.com/400x300/?thai-food",
+      "https://source.unsplash.com/400x300/?thai-food"
+    ]
+  },
+  {
+    "id": 2,
+    "name": "Sushi World",
+    "description": "ซูชิระดับพรีเมียม เชฟญี่ปุ่นมากประสบการณ์ บรรยากาศร้านสบายๆ",
+    "avgRating": 4.5,
+    "totalReviews": 95,
+    "categories": ["อาหารญี่ปุ่น", "อาหารทะเล", "อาหารออสเตรเลีย"],
+    "images": [
+      "https://source.unsplash.com/400x300/?sushi",
+      "https://source.unsplash.com/400x300/?sushi",
+      "https://source.unsplash.com/400x300/?sushi"
+    ]
+  },
+  {
+    "id": 3,
+    "name": "Burger Kingz",
+    "description": "เบอร์เกอร์เนื้อแน่น ชีสเยิ้ม เฟรนช์ฟรายกรอบกำลังดี",
+    "avgRating": 4.2,
+    "totalReviews": 67,
+    "categories": ["อาหารญี่ปุ่น", "อาหารทะเล", "อาหารออสเตรเลีย"],
+    "images": [
+      "https://source.unsplash.com/400x300/?burger",
+      "https://source.unsplash.com/400x300/?burger",
+      "https://source.unsplash.com/400x300/?burger"
+    ]
+  },
+  {
+    "id": 4,
+    "name": "กาแฟบ้านสวน",
+    "description": "คาเฟ่เล็กๆ บรรยากาศธรรมชาติ กาแฟหอมละมุน เค้กโฮมเมดอร่อย",
+    "avgRating": 4.8,
+    "totalReviews": 153,
+    "categories": ["อาหารญี่ปุ่น", "อาหารทะเล", "อาหารออสเตรเลีย"],
+    "images": [
+      "https://source.unsplash.com/400x300/?coffee-shop",
+      "https://source.unsplash.com/400x300/?coffee-shop",
+      "https://source.unsplash.com/400x300/?coffee-shop"
+    ]
+  },
+  {
+    "id": 5,
+    "name": "พิซซ่าพาราไดซ์",
+    "description": "พิซซ่าเตาถ่าน แป้งบางกรอบ หน้าจัดเต็ม สไตล์อิตาเลียนแท้",
+    "avgRating": 4.6,
+    "totalReviews": 112,
+    "categories": ["อาหารญี่ปุ่น", "อาหารทะเล", "อาหารออสเตรเลีย"],
+    "images": [
+      "https://source.unsplash.com/400x300/?pizza",
+      "https://source.unsplash.com/400x300/?pizza",
+      "https://source.unsplash.com/400x300/?pizza"
+    ]
+  }
+]

@@ -1,12 +1,6 @@
-import CallToAction from "@/components/home/CallToAction";
-import Hero from "@/components/home/Hero";
+import HeroSection from "@/components/hero-section";
 
 const HomePage = async () => {
-  return (
-    <div>
-      <Hero />
-      <CallToAction />
-    </div>
-  );
+  return <HeroSection />;
 };
 export default HomePage;

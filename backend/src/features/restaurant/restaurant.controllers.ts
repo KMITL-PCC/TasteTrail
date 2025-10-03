@@ -2,6 +2,8 @@ import { Request, Response, NextFunction } from "express";
 
 import { Restaurant } from "../../types/restaurant";
 import restaurantServices from "./restaurant.services";
+import { User } from "@prisma/client";
+import { get } from "http";
 
 function validateNestedFields(obj: any, requiredFields: string[]): string[] {
   return requiredFields.filter((field) => !obj?.[field]);
@@ -9,13 +11,14 @@ function validateNestedFields(obj: any, requiredFields: string[]): string[] {
 
 export default {
   createRestaurant: async (req: Request, res: Response, next: NextFunction) => {
-    //     {
+    //info :     {
     // information: {
     //        "name",
     //       "description",
     //       "address",
     //       "latitude",
     //       "longitude",
+    //       "services": [1,2,3,4]
     // },
     // price: {
     //       "minPrice",
@@ -23,11 +26,13 @@ export default {
     // },
     // time : {
     //       "weekday",
-    //       "opentime",
-    //       "closetime"
+    //       "openTime",
+    //       "closeTime"
     // }
     // }
-    const { information, price, time } = req.body;
+    // const { information, price, time, services } = JSON.parse(req.body.info);
+    const { information, price, time, services } = req.body.info;
+    const pictures = req.files as Express.Multer.File[];
 
     const missingInfo = validateNestedFields(information, [
       "name",
@@ -43,11 +48,7 @@ export default {
       "closeTime",
     ]);
 
-    if (
-      missingInfo.length > 0 ||
-      missingPrice.length > 0 ||
-      missingTime.length > 0
-    ) {
+    if (!missingInfo || !missingPrice || !missingTime || !pictures) {
       return res.status(400).json({ message: "Missing data" });
     }
 
@@ -55,9 +56,16 @@ export default {
       const result = await restaurantServices.createRestaurant(
         information,
         price,
-        time
+        time,
+        pictures,
+        services
       );
 
+      if (result && result?.success === false) {
+        return res.status(500).json({
+          message: "Error during create restaurant",
+        });
+      }
       res.status(201).json({
         message: "create success",
       });
@@ -153,6 +161,33 @@ export default {
       }
       res.status(500).json({
         message: "Error during get restaurant infomation",
+      });
+    }
+  },
+
+  getPopularRestaurants: async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const popularRestaurants =
+        await restaurantServices.getPopularRestaurants();
+      res.status(200).json({
+        message: "ok",
+        popularRestaurants,
+      });
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        console.error(
+          "Error during get popular restaurants ERROR:",
+          error.message
+        );
+      } else {
+        console.error("Error during get popular restaurants ERROR:", error);
+      }
+      res.status(500).json({
+        message: "Error during get popular restaurants",
       });
     }
   },
