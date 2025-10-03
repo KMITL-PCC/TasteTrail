@@ -2,38 +2,18 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { useSearchParams, useRouter } from "next/navigation";
+import DOMPurify from "dompurify";
+import { Eye, EyeOff } from "lucide-react";
 
-const backendURL =
-  process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
+// The backend URL is correctly defined here and will be used throughout the component.
+const backendURL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
-// ปรับ endpoint ให้ตรงกับ back ของคุณ
-const CSRF_ENDPOINT = `${backendURL}/csrf-token`;
-const SEND_OTP_ENDPOINT = `${backendURL}/auth/forgotPass`;
-const VERIFY_OTP_ENDPOINT = `${backendURL}/auth/verify-otp`;
-const RESEND_OTP_ENDPOINT = `${backendURL}/auth/resend-otp`;
-const RESET_PASS_ENDPOINT = `${backendURL}/auth/reset-password`;
-
-export default function ForgotPasswordForm() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
-  // ✅ รับต้นทางและปลายทางจาก query
-  const fromParam = (searchParams.get("from") || "").toLowerCase(); // "edit" | "login" | ""
-  const returnParam = searchParams.get("return") || ""; // path ปลายทาง
-  const cameFromEdit =
-    fromParam === "edit" || returnParam.includes("/editprofile");
-  const cameFromLogin = fromParam === "login" || returnParam === "/login";
-
-  // คำนวณลิงก์ย้อนกลับ
-  const backToEditHref =
-    returnParam && cameFromEdit ? returnParam : "/editprofile?tab=password";
-  const backToLoginHref = returnParam && cameFromLogin ? returnParam : "/login";
-
+const ForgotPasswordForm = () => {
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState<"success" | "error">("error");
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const [formStep, setFormStep] = useState<"email" | "otp" | "resetPassword">(
     "email",
@@ -46,50 +26,65 @@ export default function ForgotPasswordForm() {
 
   const [csrfToken, setCsrfToken] = useState<string | null>(null);
 
-  // พรีฟิลด์ email จาก query (?email=...)
-  useEffect(() => {
-    const qEmail = searchParams.get("email");
-    if (qEmail) setEmail(qEmail);
-  }, [searchParams]);
+  const sanitizeInput = (value: string) => {
+    return DOMPurify.sanitize(value.trim(), {
+      ALLOWED_TAGS: [],
+      ALLOWED_ATTR: [],
+    });
+  };
 
-  // ซ่อนข้อความอัตโนมัติ
+  // Email ตรวจสอบเบื้องต้น
+  const isValidEmail = (email: string) =>
+    /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
+
+  // Password อย่างน้อย 8 ตัว มีทั้งตัวเล็ก ตัวใหญ่ และตัวเลข
+  const isStrongPassword = (pwd: string) =>
+    pwd.length >= 8 && /[A-Z]/.test(pwd) && /[a-z]/.test(pwd) && /\d/.test(pwd);
+
+  // Hide message after 3s
   useEffect(() => {
-    if (!message) return;
-    const timer = setTimeout(() => setMessage(""), 3000);
-    return () => clearTimeout(timer);
+    if (message) {
+      const timer = setTimeout(() => {
+        setMessage("");
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
   }, [message]);
 
-  // ดึง CSRF token
+  // Fetch CSRF token on mount
   useEffect(() => {
-    (async () => {
+    const fetchCsrfToken = async () => {
       try {
-        const res = await fetch(CSRF_ENDPOINT, { credentials: "include" });
-        if (!res.ok) throw new Error("Failed to fetch CSRF");
-        const data = await res.json();
-        setCsrfToken(data?.csrfToken || null);
-      } catch (err) {
-        console.error(err);
+        const response = await fetch(`${backendURL}/api/csrf-token`, {
+          credentials: "include",
+        });
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        const data = await response.json();
+        setCsrfToken(data.csrfToken);
+        console.log("CSRF Token fetched successfully.");
+      } catch (error) {
+        console.error("Failed to fetch CSRF token:", error);
         setMessage("Connection error. Please try again later.");
         setMessageType("error");
       }
-    })();
+    };
+    fetchCsrfToken();
   }, []);
 
-  // countdown resend
+  // Countdown
   useEffect(() => {
-    if (countdown <= 0) return;
-    const t = setTimeout(() => setCountdown((c) => c - 1), 1000);
-    return () => clearTimeout(t);
+    let timer: NodeJS.Timeout;
+    if (countdown > 0) {
+      timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+    }
+    return () => clearTimeout(timer);
   }, [countdown]);
 
-  const headersJson = (token: string | null) => ({
-    "Content-Type": "application/json",
-    "X-CSRF-Token": token || "",
-  });
-
-  // STEP 1: ส่งอีเมลเพื่อรับ OTP
-  const handleEmailSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  // Submit email
+  const handleEmailSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     setIsLoading(true);
 
     if (!csrfToken) {
@@ -98,7 +93,9 @@ export default function ForgotPasswordForm() {
       setIsLoading(false);
       return;
     }
-    if (!email || !/\S+@\S+\.\S+/.test(email)) {
+
+    const safeEmail = sanitizeInput(email);
+    if (!safeEmail || !isValidEmail(safeEmail)) {
       setMessage("Please enter a valid email address.");
       setMessageType("error");
       setIsLoading(false);
@@ -106,150 +103,190 @@ export default function ForgotPasswordForm() {
     }
 
     try {
-      const res = await fetch(SEND_OTP_ENDPOINT, {
+      const response = await fetch(`${backendURL}/auth/forgotPass`, {
         method: "POST",
         credentials: "include",
-        headers: headersJson(csrfToken),
-        body: JSON.stringify({ email }),
+        headers: {
+          "Content-Type": "application/json",
+          "CSRF-Token": csrfToken,
+        },
+        body: JSON.stringify({ email: safeEmail }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.message || "Failed to send code.");
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to send reset link.");
+      }
+
       setFormStep("otp");
-      setMessage(data?.message || `A 5-digit code has been sent to ${email}.`);
+      setMessage(
+        data.message || `A 5-digit code has been sent to ${safeEmail}.`,
+      );
       setMessageType("success");
       setCountdown(50);
-    } catch (err: any) {
-      setMessage(err?.message || "Failed to send code.");
+    } catch (error: any) {
+      setMessage(error.message || "An unexpected error occurred.");
       setMessageType("error");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // STEP 2: ยืนยัน OTP
-  const handleOtpSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  // Submit OTP
+  const handleOtpSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     setIsLoading(true);
 
-    if (!/^\d{5}$/.test(otp)) {
+    const safeOtp = sanitizeInput(otp);
+    if (!/^\d{5}$/.test(safeOtp)) {
       setMessage("Please enter a valid 5-digit OTP.");
       setMessageType("error");
       setIsLoading(false);
       return;
     }
 
-    try {
-      const res = await fetch(VERIFY_OTP_ENDPOINT, {
-        method: "POST",
-        credentials: "include",
-        headers: headersJson(csrfToken),
-        body: JSON.stringify({ email, otp }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.message || "Invalid OTP.");
-      setFormStep("resetPassword");
-      setMessage("OTP verified. Please set your new password.");
-      setMessageType("success");
-    } catch (err: any) {
-      setMessage(err?.message || "Invalid OTP. Please try again.");
-      setMessageType("error");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // STEP 3: ตั้งรหัสใหม่ → เสร็จแล้ว “กลับตามที่มา”
-  const handlePasswordSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsLoading(true);
-
-    if (!password || password !== confirmPassword || password.length < 8) {
-      setMessage("Passwords do not match or are too short (min 8 characters).");
+    if (!csrfToken) {
+      setMessage("Security token is missing. Please refresh the page.");
       setMessageType("error");
       setIsLoading(false);
       return;
     }
 
     try {
-      const res = await fetch(RESET_PASS_ENDPOINT, {
-        method: "PATCH",
-        credentials: "include",
-        headers: headersJson(csrfToken),
-        body: JSON.stringify({ email, newPassword: password }),
-      });
-      const data = await res.json();
-      if (!res.ok)
-        throw new Error(data?.message || "Failed to reset password.");
-
-      setMessage("Password has been reset successfully!");
-      setMessageType("success");
-
-      // ✅ เลือกกลับตามที่มา
-      const dest = cameFromEdit
-        ? backToEditHref
-        : cameFromLogin
-          ? backToLoginHref
-          : "/login"; // fallback
-
-      setTimeout(() => router.push(dest), 1000);
-    } catch (err: any) {
-      setMessage(err?.message || "Failed to reset password. Please try again.");
-      setMessageType("error");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleResendOtp = async () => {
-    if (countdown > 0) return;
-    setIsLoading(true);
-    setMessage("");
-    try {
-      const res = await fetch(RESEND_OTP_ENDPOINT, {
+      const response = await fetch(`${backendURL}/auth/verify-otp`, {
         method: "POST",
         credentials: "include",
-        headers: headersJson(csrfToken),
-        body: JSON.stringify({ email }),
+        headers: {
+          "Content-Type": "application/json",
+          "CSRF-Token": csrfToken,
+        },
+        body: JSON.stringify({ otp: safeOtp }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.message || "Failed to resend code.");
-      setMessage(data?.message || "A new code has been sent.");
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || "Invalid OTP.");
+      }
+
+      setFormStep("resetPassword");
+      setMessage("OTP verified. Please set your new password.");
       setMessageType("success");
-      setCountdown(50);
-    } catch (err: any) {
-      setMessage(err?.message || "Failed to resend code.");
+    } catch (error: any) {
+      setMessage(error.message || "Invalid OTP. Please try again.");
       setMessageType("error");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // ✅ ปุ่มย้อนกลับ “ปุ่มเดียวตามต้นทาง”
-  const BackLinks = () => {
-    if (cameFromEdit) {
-      return (
-        <button
-          type="button"
-          onClick={() => router.push(backToEditHref)}
-          className="mt-2 inline-block text-sm font-medium text-gray-600 hover:text-gray-900 hover:underline"
-        >
-          ← Back to Edit profile
-        </button>
+  // Submit new password
+  const handlePasswordSubmit = async (
+    event: React.FormEvent<HTMLFormElement>,
+  ) => {
+    event.preventDefault();
+    setIsLoading(true);
+
+    const safePassword = sanitizeInput(password);
+    const safeConfirmPassword = sanitizeInput(confirmPassword);
+
+    if (
+      !isStrongPassword(safePassword) ||
+      safePassword !== safeConfirmPassword
+    ) {
+      setMessage(
+        "Passwords must match and be at least 8 chars with uppercase, lowercase, and numbers.",
       );
+      setMessageType("error");
+      setIsLoading(false);
+      return;
     }
-    if (cameFromLogin) {
-      return (
-        <button
-          type="button"
-          onClick={() => router.push(backToLoginHref)}
-          className="mt-2 inline-block text-sm font-medium text-gray-600 hover:text-gray-900 hover:underline"
-        >
-          ← Back to Login
-        </button>
+
+    if (!csrfToken) {
+      setMessage("Security token is missing. Please refresh the page.");
+      setMessageType("error");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(`${backendURL}/auth/reset-password`, {
+        method: "PATCH",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "CSRF-Token": csrfToken,
+        },
+        body: JSON.stringify({ newPassword: safePassword }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to reset password.");
+      }
+
+      setMessage(
+        "Password has been reset successfully! Redirecting to login...",
       );
+      setMessageType("success");
+
+      setTimeout(() => {
+        window.location.href = "/login";
+      }, 2000);
+    } catch (error: any) {
+      setMessage(
+        error.message || "Failed to reset password. Please try again.",
+      );
+      setMessageType("error");
+    } finally {
+      setIsLoading(false);
     }
-    // ไม่รู้ว่ามาจากไหน → ไม่แสดงปุ่ม
-    return null;
+  };
+
+  // Resend OTP
+  const handleResendOtp = async () => {
+    if (countdown > 0) return;
+
+    setIsLoading(true);
+    setMessage("");
+    if (!csrfToken) {
+      setMessage("Security token is missing. Please refresh the page.");
+      setMessageType("error");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const response = await fetch(`${backendURL}/auth/resend-otp`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          "CSRF-Token": csrfToken,
+        },
+        body: JSON.stringify({ email }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to resend code.");
+      }
+
+      setMessage(data.message || "A new code has been sent.");
+      setMessageType("success");
+      setCountdown(50);
+    } catch (error: any) {
+      setMessage(error.message || "Failed to resend code.");
+      setMessageType("error");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Back to email step
+  const handleBackToEmail = () => {
+    setFormStep("email");
+    setMessage("");
+    setOtp("");
   };
 
   return (
@@ -257,11 +294,7 @@ export default function ForgotPasswordForm() {
       {/* Popup Message */}
       {message && (
         <div
-          className={`absolute top-20 rounded-md px-4 py-3 text-sm font-medium ${
-            messageType === "success"
-              ? "bg-green-100 text-green-800"
-              : "bg-red-100 text-red-800"
-          }`}
+          className={`absolute top-20 rounded-md px-4 py-3 text-sm font-medium ${messageType === "success" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
         >
           {message}
         </div>
@@ -275,7 +308,7 @@ export default function ForgotPasswordForm() {
               Forgot Password?
             </h1>
             <p className="mt-2 text-sm text-gray-600">
-              Enter your email to receive a reset code.
+              Enter your email to receive a reset link.
             </p>
           </div>
           <form onSubmit={handleEmailSubmit} className="space-y-6">
@@ -299,12 +332,19 @@ export default function ForgotPasswordForm() {
             <button
               type="submit"
               disabled={isLoading || !csrfToken}
-              className="w-full justify-center rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-green-400"
+              className="w-full justify-center rounded-md border border-transparent bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:bg-green-400"
             >
-              {isLoading ? "Sending..." : "Send Code"}
+              {isLoading ? "Sending..." : "Send Reset Link"}
             </button>
+
+            {/* Text link back to Login */}
             <div className="text-center">
-              <BackLinks />
+              <Link
+                href="/login"
+                className="inline-block text-sm font-medium text-gray-600 hover:text-gray-900 hover:underline"
+              >
+                ← Back to Login
+              </Link>
             </div>
           </form>
         </div>
@@ -344,18 +384,25 @@ export default function ForgotPasswordForm() {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full justify-center rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-green-400"
+              className="w-full justify-center rounded-md border border-transparent bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:bg-green-400"
             >
               {isLoading ? "Verifying..." : "Verify Code"}
             </button>
+
+            {/* Text link back to Login */}
             <div className="text-center">
-              <BackLinks />
+              <Link
+                href="/login"
+                className="inline-block text-sm font-medium text-gray-600 hover:text-gray-900 hover:underline"
+              >
+                ← Back to Login
+              </Link>
             </div>
           </form>
 
           <div className="mt-6 space-y-4 text-center text-sm">
             <p className="text-gray-600">
-              Didn&apos;t receive the code?{" "}
+              Didn't receive the code?{" "}
               {countdown > 0 ? (
                 <span className="font-medium text-gray-400">
                   You can resend in {countdown}s
@@ -371,10 +418,17 @@ export default function ForgotPasswordForm() {
                 </button>
               )}
             </p>
+            <button
+              onClick={handleBackToEmail}
+              className="font-medium text-gray-700 hover:text-gray-900"
+            >
+              &larr; Use a different email
+            </button>
           </div>
         </div>
       )}
 
+      {/* Reset Password Form */}
       {/* Reset Password Form */}
       {formStep === "resetPassword" && (
         <div className="w-full max-w-md">
@@ -387,51 +441,116 @@ export default function ForgotPasswordForm() {
             </p>
           </div>
           <form onSubmit={handlePasswordSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="password" className="sr-only">
-                New Password
-              </label>
+            {/* New Password */}
+            <div className="relative">
               <input
-                id="password"
-                name="password"
-                type="password"
-                required
+                type={showPassword ? "text" : "password"}
+                placeholder="New Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
                 className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 placeholder-gray-400 shadow-sm transition focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none disabled:bg-gray-50"
-                placeholder="New Password"
-              />
-            </div>
-            <div>
-              <label htmlFor="confirmPassword" className="sr-only">
-                Confirm New Password
-              </label>
-              <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
                 required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword((s) => !s)}
+                className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-1 text-gray-500 hover:text-gray-800 focus:outline-none"
+              >
+                {showPassword ? (
+                  <EyeOff className="h-5 w-5" />
+                ) : (
+                  <Eye className="h-5 w-5" />
+                )}
+              </button>
+            </div>
+
+            {/* Confirm Password */}
+            <div>
+              <input
+                type="password"
+                placeholder="Confirm New Password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 disabled={isLoading}
                 className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 placeholder-gray-400 shadow-sm transition focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none disabled:bg-gray-50"
-                placeholder="Confirm New Password"
+                required
               />
             </div>
+
+            {/* Password checklist */}
+            <div className="mt-2 grid grid-cols-1 gap-1 text-sm">
+              <div className="flex items-center gap-2">
+                <span
+                  className={`inline-block h-3 w-3 rounded-full ${
+                    password.length >= 8 ? "bg-green-500" : "bg-gray-300"
+                  }`}
+                />
+                <span className="text-xs text-gray-600">
+                  At least 8 characters
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span
+                  className={`inline-block h-3 w-3 rounded-full ${
+                    /[a-z]/.test(password) ? "bg-green-500" : "bg-gray-300"
+                  }`}
+                />
+                <span className="text-xs text-gray-600">Lowercase letter</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span
+                  className={`inline-block h-3 w-3 rounded-full ${
+                    /[A-Z]/.test(password) ? "bg-green-500" : "bg-gray-300"
+                  }`}
+                />
+                <span className="text-xs text-gray-600">Uppercase letter</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span
+                  className={`inline-block h-3 w-3 rounded-full ${
+                    /\d/.test(password) ? "bg-green-500" : "bg-gray-300"
+                  }`}
+                />
+                <span className="text-xs text-gray-600">Number</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span
+                  className={`inline-block h-3 w-3 rounded-full ${
+                    /[!@#$%^&*()_\-+=[\]{}|:;,.<>/?~]/.test(password)
+                      ? "bg-green-500"
+                      : "bg-gray-300"
+                  }`}
+                />
+                <span className="text-xs text-gray-600">
+                  Special character (!@#$...)
+                </span>
+              </div>
+            </div>
+
+            {/* Submit Button */}
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full justify-center rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-green-400"
+              className="w-full justify-center rounded-md border border-transparent bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:bg-green-400"
             >
               {isLoading ? "Saving..." : "Reset Password"}
             </button>
+
+            {/* Back to Login */}
             <div className="text-center">
-              <BackLinks />
+              <Link
+                href="/login"
+                className="inline-block text-sm font-medium text-gray-600 hover:text-gray-900 hover:underline"
+              >
+                ← Back to Login
+              </Link>
             </div>
           </form>
         </div>
       )}
     </div>
   );
-}
+};
+
+export default ForgotPasswordForm;

@@ -14,21 +14,25 @@ export default function Hero() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center bg-white">
-      <main className="container mx-auto flex w-full flex-col items-center px-4 pt-5 pb-16 md:px-8">
-        <h1 className="font-Inter mb-8 text-center text-4xl text-black/50 sm:text-5xl md:mb-12 md:text-6xl">
+    <div className="flex flex-col items-center">
+      <main className="container flex flex-col items-center w-full px-4 pt-5 pb-16 mx-auto md:px-8">
+        {/* <h1 className="mt-20 mb-8 text-4xl text-center font-Inter text-black/50 sm:text-5xl md:mb-12 md:text-6xl">
           อยากกินอะไร เราหาให้
-        </h1>
+        </h1> */}
 
-        <div className="mx-auto w-full max-w-5xl">
+        <span className="z-10 pt-20 font-bold leading-none tracking-tighter text-center whitespace-pre-wrap pointer-events-none text-primary bg-clip-text text-7xl">
+          อยากกินอะไร เราหาให้
+        </span>
+
+        <div className="w-full max-w-5xl mx-auto mt-10">
           {/* Desktop (5 คอลัมน์) */}
           <div
             className="hidden lg:grid lg:grid-cols-5 lg:gap-4"
             style={{ aspectRatio: "5 / 1.5" }}
           >
             {/* Box 1: 2 รูป */}
-            <div className="relative top-1/4 flex flex-col gap-4">
-              <div className="group relative h-40 w-full overflow-hidden rounded-2xl border-t-4 border-l-4 border-green-500">
+            <div className="relative flex flex-col gap-4 top-1/4">
+              <div className="relative w-full h-40 overflow-hidden border-t-4 border-l-4 border-green-500 group rounded-2xl">
                 <Image
                   src={imageUrls.img2}
                   alt="อาหารจานที่ 2"
@@ -38,7 +42,7 @@ export default function Hero() {
                   priority
                 />
               </div>
-              <div className="group relative h-20 w-full overflow-hidden rounded-2xl border-t-4 border-l-4 border-green-500">
+              <div className="relative w-full h-20 overflow-hidden border-t-4 border-l-4 border-green-500 group rounded-2xl">
                 <Image
                   src={imageUrls.img1}
                   alt="อาหารจานที่ 1"
@@ -50,8 +54,8 @@ export default function Hero() {
             </div>
 
             {/* Box 2 */}
-            <div className="group relative overflow-hidden rounded-2xl border-t-4 border-l-4 border-green-500">
-              <div className="relative h-full w-full">
+            <div className="relative overflow-hidden border-t-4 border-l-4 border-green-500 group rounded-2xl">
+              <div className="relative w-full h-full">
                 <Image
                   src={imageUrls.img3}
                   alt="อาหารจานที่ 3"
@@ -64,7 +68,7 @@ export default function Hero() {
 
             {/* Box 3 */}
             <div className="flex items-start justify-center">
-              <div className="group relative h-60 w-full overflow-hidden rounded-2xl border-t-4 border-l-4 border-green-500">
+              <div className="relative w-full overflow-hidden border-t-4 border-l-4 border-green-500 group h-60 rounded-2xl">
                 <Image
                   src={imageUrls.img4}
                   alt="อาหารจานที่ 4"
@@ -76,8 +80,8 @@ export default function Hero() {
             </div>
 
             {/* Box 4 */}
-            <div className="group relative overflow-hidden rounded-2xl border-t-4 border-l-4 border-green-500">
-              <div className="relative h-full w-full">
+            <div className="relative overflow-hidden border-t-4 border-l-4 border-green-500 group rounded-2xl">
+              <div className="relative w-full h-full">
                 <Image
                   src={imageUrls.img5}
                   alt="อาหารจานที่ 5"
@@ -89,8 +93,8 @@ export default function Hero() {
             </div>
 
             {/* Box 5: 2 รูป */}
-            <div className="relative top-1/4 flex flex-col gap-4">
-              <div className="group relative h-40 w-full overflow-hidden rounded-2xl border-t-4 border-l-4 border-green-500">
+            <div className="relative flex flex-col gap-4 top-1/4">
+              <div className="relative w-full h-40 overflow-hidden border-t-4 border-l-4 border-green-500 group rounded-2xl">
                 <Image
                   src={imageUrls.img7}
                   alt="อาหารจานที่ 7"
@@ -99,7 +103,7 @@ export default function Hero() {
                   sizes="(max-width: 1024px) 100vw, 20vw"
                 />
               </div>
-              <div className="group relative h-20 w-full overflow-hidden rounded-2xl border-t-4 border-l-4 border-green-500">
+              <div className="relative w-full h-20 overflow-hidden border-t-4 border-l-4 border-green-500 group rounded-2xl">
                 <Image
                   src={imageUrls.img6}
                   alt="อาหารจานที่ 6"
@@ -121,7 +125,7 @@ export default function Hero() {
             ].map((src, i) => (
               <div
                 key={src}
-                className="group relative aspect-square overflow-hidden rounded-2xl border-t-4 border-l-4 border-green-500"
+                className="relative overflow-hidden border-t-4 border-l-4 border-green-500 group aspect-square rounded-2xl"
               >
                 <Image
                   src={src}

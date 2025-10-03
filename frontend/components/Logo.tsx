@@ -21,7 +21,7 @@ const Logo = ({
         height={height}
         className={cn("rounded-full", className)}
       />
-      <span className="hidden text-xl font-semibold md:block">TasteTrail</span>
+      <span className="hidden text-xl font-medium md:block">TasteTrail</span>
     </Link>
   );
 };

@@ -118,11 +118,11 @@ const FilterRestaurant = () => {
 
   return (
     <>
-      <Card className="hidden w-50 md:flex lg:w-70">
+      <Card className="sticky hidden top-24 md:flex md:w-50 lg:w-60 lg:pl-4">
         <CardContent className="flex flex-col gap-4 px-0">
           {/* Category */}
           <div className="flex flex-col gap-3 px-3">
-            <h1 className="text-md font-semibold">Category</h1>
+            <h1 className="text-lg font-medium">Category</h1>
 
             {categoriesData.map((category) => (
               <div className="flex items-center gap-2" key={category.id}>
@@ -131,7 +131,9 @@ const FilterRestaurant = () => {
                   checked={selectedCategories.includes(category.id)}
                   onCheckedChange={() => handleCategoryChange(category.id)}
                 />
-                <Label htmlFor={category.id}>{category.name}</Label>
+                <Label htmlFor={category.id} className="font-normal">
+                  {category.name}
+                </Label>
               </div>
             ))}
           </div>
@@ -140,7 +142,7 @@ const FilterRestaurant = () => {
 
           {/* Rating */}
           <div className="flex flex-col gap-3 px-3">
-            <h1 className="text-md font-semibold">Rating</h1>
+            <h1 className="text-lg font-medium">Rating</h1>
 
             {ratingsData.map((rating) => (
               <div className="flex items-center gap-2" key={rating.id}>
@@ -149,7 +151,9 @@ const FilterRestaurant = () => {
                   checked={selectedRatings === rating.id}
                   onCheckedChange={() => handleRatingChange(rating.id)}
                 />
-                <Label htmlFor={rating.id}>{rating.name}</Label>
+                <Label htmlFor={rating.id} className="font-normal">
+                  {rating.name}
+                </Label>
               </div>
             ))}
           </div>
@@ -158,7 +162,7 @@ const FilterRestaurant = () => {
 
           {/* Price */}
           <div className="flex flex-col gap-3 px-3">
-            <h1 className="text-md font-semibold">Price</h1>
+            <h1 className="text-lg font-medium">Price</h1>
             {pricesData.map((price) => (
               <div className="flex items-center gap-2" key={price.id}>
                 <Checkbox
@@ -166,7 +170,9 @@ const FilterRestaurant = () => {
                   checked={selectedPrices === price.id}
                   onCheckedChange={() => handlePriceChange(price.id)}
                 />
-                <Label htmlFor={price.id}>{price.name}</Label>
+                <Label htmlFor={price.id} className="font-normal">
+                  {price.name}
+                </Label>
               </div>
             ))}
           </div>
@@ -183,7 +189,7 @@ const FilterRestaurant = () => {
         <SheetContent side="top" className="py-6">
           {/* Category */}
           <div className="flex flex-col gap-3 px-3">
-            <h1 className="text-md font-semibold">Category</h1>
+            <h1 className="text-lg font-medium">Category</h1>
             {categoriesData.map((category) => (
               <div className="flex items-center gap-2" key={category.id}>
                 <Checkbox
@@ -191,7 +197,12 @@ const FilterRestaurant = () => {
                   checked={selectedCategories.includes(category.id)}
                   onCheckedChange={() => handleCategoryChange(category.id)}
                 />
-                <Label htmlFor={`mobile-${category.id}`}>{category.name}</Label>
+                <Label
+                  htmlFor={`mobile-${category.id}`}
+                  className="font-normal"
+                >
+                  {category.name}
+                </Label>
               </div>
             ))}
           </div>
@@ -200,7 +211,7 @@ const FilterRestaurant = () => {
 
           {/* Rating */}
           <div className="flex flex-col gap-3 px-3">
-            <h1 className="text-md font-semibold">Rating</h1>
+            <h1 className="text-lg font-medium">Rating</h1>
             {ratingsData.map((rating) => (
               <div className="flex items-center gap-2" key={rating.id}>
                 <Checkbox
@@ -208,7 +219,9 @@ const FilterRestaurant = () => {
                   checked={selectedRatings === rating.id}
                   onCheckedChange={() => handleRatingChange(rating.id)}
                 />
-                <Label htmlFor={`mobile-${rating.id}`}>{rating.name}</Label>
+                <Label htmlFor={`mobile-${rating.id}`} className="font-normal">
+                  {rating.name}
+                </Label>
               </div>
             ))}
           </div>
@@ -217,7 +230,7 @@ const FilterRestaurant = () => {
 
           {/* Price */}
           <div className="flex flex-col gap-3 px-3">
-            <h1 className="text-md font-semibold">Price</h1>
+            <h1 className="text-lg font-medium">Price</h1>
             {pricesData.map((price) => (
               <div className="flex items-center gap-2" key={price.id}>
                 <Checkbox
@@ -225,7 +238,9 @@ const FilterRestaurant = () => {
                   checked={selectedPrices === price.id}
                   onCheckedChange={() => handlePriceChange(price.id)}
                 />
-                <Label htmlFor={`mobile-${price.id}`}>{price.name}</Label>
+                <Label htmlFor={`mobile-${price.id}`} className="font-normal">
+                  {price.name}
+                </Label>
               </div>
             ))}
           </div>

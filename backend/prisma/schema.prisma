@@ -15,21 +15,24 @@ datasource db {
 }
 
 model User {
-  id            String    @id @default(cuid()) @map("user_id") // ใช้ CUID ของ Prisma เพื่อสร้าง ID ที่ไม่ซ้ำกัน
-  username      String    @unique @db.VarChar(100)
-  email         String   @unique @db.VarChar(255) // เปลี่ยนเป็น optional ถ้าบางผู้ใช้อาจจะ login ด้วย Google และไม่มี email ในระบบคุณ
-  passwordHash  String?   @map("password_hash") @db.VarChar(255) // เป็น optional เพราะ Google Login ไม่ใช้ Password Hash
-  role          Role      @default(User)
-  profilePictureUrl String? @map("profile_picture_url") @db.VarChar(2048)
-  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6) // ใช้ Timestamptz สำหรับ UTC+0
-  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id                        String   @id @default(cuid()) @map("user_id") // ใช้ CUID ของ Prisma เพื่อสร้าง ID ที่ไม่ซ้ำกัน
+  username                  String   @unique @db.VarChar(100)
+  email                     String   @unique @db.VarChar(255) // เปลี่ยนเป็น optional ถ้าบางผู้ใช้อาจจะ login ด้วย Google และไม่มี email ในระบบคุณ
+  passwordHash              String?  @map("password_hash") @db.VarChar(255) // เป็น optional เพราะ Google Login ไม่ใช้ Password Hash
+  role                      Role     @default(User)
+  profilePictureUrl         String?  @map("profile_picture_url") @db.VarChar(2048)
+  profilePictureUrlPublicId String?  @map("public_id") @db.VarChar(100)
+  firstName                 String?  @map("first_name") @db.VarChar(50)
+  lastName                  String?  @map("last_name") @db.VarChar(50)
+  createdAt                 DateTime @default(now()) @map("created_at") @db.Timestamptz(6) // ใช้ Timestamptz สำหรับ UTC+0
+  updatedAt                 DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   // Relationships (Prisma จะสร้างความสัมพันธ์ให้)
-  ownedRestaurants Restaurant[] @relation("RestaurantOwner") // Restaurants ที่ User คนนี้เป็นเจ้าของ
+  ownedRestaurants Restaurant[]      @relation("RestaurantOwner") // Restaurants ที่ User คนนี้เป็นเจ้าของ
   reviews          Review[]
   chatParticipants ChatParticipant[]
-  chatMessages     ChatMessage[] @relation("Sender") // ผู้ส่งข้อความ
-  accounts  Account[]
+  chatMessages     ChatMessage[]     @relation("Sender") // ผู้ส่งข้อความ
+  accounts         Account[]
 }
 
 enum Role {
@@ -39,39 +42,40 @@ enum Role {
 }
 
 model Account {
-  id        Int    @id @default(autoincrement())
-  userId    String
-  provider  String
+  id         Int    @id @default(autoincrement())
+  userId     String
+  provider   String
   providerId String
-  user      User @relation(fields: [userId], references: [id])
+  user       User   @relation(fields: [userId], references: [id])
+
   @@unique([provider, providerId])
 }
 
 model Restaurant {
-  id            String    @id @default(cuid()) @map("restaurant_id") // ใช้ CUID
-  ownerId       String?   @map("owner_id") @db.VarChar(50) // owner_id เป็น null ได้
-  name          String    @db.VarChar(255)
-  description   String   @db.Text
-  address       String?    @db.VarChar(500)
+  id           String           @id @default(cuid()) @map("restaurant_id") // ใช้ CUID
+  ownerId      String?          @map("owner_id") @db.VarChar(50) // owner_id เป็น null ได้
+  name         String           @db.VarChar(255)
+  description  String           @db.Text
+  address      String?          @db.VarChar(500)
   // DECIMAL(10, 8) -> Decimal ใน Prisma
-  latitude      Decimal?
-  longitude     Decimal?
-  status        RestaurantStatus @default(Temporarily_Closed)
-  minPrice      Decimal   @map("min_price") @db.Decimal(5, 2)
-  maxPrice      Decimal   @map("max_price") @db.Decimal(5, 2)
-  avgRating     Decimal   @map("avg_rating") @default(0.0) @db.Decimal(3, 2)
-  totalReviews  Int       @map("total_reviews") @default(0)
+  latitude     Decimal?
+  longitude    Decimal?
+  status       RestaurantStatus @default(Temporarily_Closed)
+  minPrice     Decimal          @map("min_price") @db.Decimal(5, 2)
+  maxPrice     Decimal          @map("max_price") @db.Decimal(5, 2)
+  avgRating    Decimal          @default(0.0) @map("avg_rating") @db.Decimal(3, 2)
+  totalReviews Int              @default(0) @map("total_reviews")
 
-  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
   // Relationships
-  owner         User?     @relation("RestaurantOwner", fields: [ownerId], references: [id])
-  contact       Contact[]
-  images        RestaurantImage[]
-  categories    RestaurantCategory[]
-  reviews       Review[]
-  openninghour  OpeningHour[]
+  owner              User?                @relation("RestaurantOwner", fields: [ownerId], references: [id])
+  contact            Contact[]
+  images             RestaurantImage[]
+  categories         RestaurantCategory[]
+  reviews            Review[]
+  openninghour       OpeningHour[]
   restaurantServices RestaurantService[]
 }
 
@@ -82,27 +86,27 @@ enum RestaurantStatus {
 }
 
 model OpeningHour {
-  id            Int     @id @default(autoincrement())
-  restaurantId  String
-  weekday       Int     // 0=Sunday ... 6=Saturday and 7 = every day
-  openTime      String
-  closeTime     String
-  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
+  id           Int        @id @default(autoincrement())
+  restaurantId String
+  weekday      Int // 0=Sunday ... 6=Saturday and 7 = every day
+  openTime     String
+  closeTime    String
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
 }
 
 model Service {
-  id            Int     @id @default(autoincrement())
-  service       String  @db.VarChar(50)
+  id      Int    @id @default(autoincrement())
+  service String @db.VarChar(50)
 
   restaurantServices RestaurantService[]
 }
 
 model RestaurantService {
-  restaurantId  String @map("restaurant_id")
-  serviceId     Int
+  restaurantId String @map("restaurant_id")
+  serviceId    Int
 
-  restaurant  Restaurant @relation(fields: [restaurantId], references: [id])
-  service     Service @relation(fields: [serviceId], references: [id])
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  service    Service    @relation(fields: [serviceId], references: [id])
 
   @@id([restaurantId, serviceId])
   @@map("RestaurantService")
@@ -110,31 +114,32 @@ model RestaurantService {
 
 // --- Table: RestaurantImages ---
 model RestaurantImage {
-  id            Int      @id @default(autoincrement()) @map("image_id")
-  restaurantId  String   @map("restaurant_id") @db.VarChar(50)
-  imageUrl      String   @map("image_url") @db.VarChar(2048)
-  publicId      String?   @map("public_id") @db.VarChar(50)
-  description   String?  @db.VarChar(500)
-  uploadedAt    DateTime @default(now()) @map("uploaded_at") @db.Timestamptz(6)
+  id           Int      @id @default(autoincrement()) @map("image_id")
+  restaurantId String   @map("restaurant_id") @db.VarChar(50)
+  imageUrl     String   @map("image_url") @db.VarChar(2048)
+  publicId     String?  @map("public_id") @db.VarChar(50)
+  description  String?  @db.VarChar(500)
+  profilePic   Boolean? @default(false) @map("is_profile_pic")
+  uploadedAt   DateTime @default(now()) @map("uploaded_at") @db.Timestamptz(6)
 
-  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
 }
 
 // --- Table: Categories ---
 model Category {
-  id            Int      @id @default(autoincrement()) @map("category_id")
-  name          String   @unique @map("category_name") @db.VarChar(100)
+  id   Int    @id @default(autoincrement()) @map("category_id")
+  name String @unique @map("category_name") @db.VarChar(100)
 
-  restaurants   RestaurantCategory[]
+  restaurants RestaurantCategory[]
 }
 
 // --- Table: RestaurantCategories (Join Table) ---
 model RestaurantCategory {
-  restaurantId  String   @map("restaurant_id") @db.VarChar(50)
-  categoryId    Int      @map("category_id")
+  restaurantId String @map("restaurant_id") @db.VarChar(50)
+  categoryId   Int    @map("category_id")
 
-  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
-  category      Category   @relation(fields: [categoryId], references: [id])
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  category   Category   @relation(fields: [categoryId], references: [id])
 
   @@id([restaurantId, categoryId]) // Composite Primary Key
   @@map("RestaurantCategories") // ชื่อตารางใน DB
@@ -142,57 +147,57 @@ model RestaurantCategory {
 
 // --- Table: Reviews ---
 model Review {
-  id            Int      @id @default(autoincrement()) @map("review_id")
-  restaurantId  String   @map("restaurant_id") @db.VarChar(50)
-  userId        String   @map("user_id") @db.VarChar(50)
-  rating        Decimal  @db.Decimal(3, 2) // คะแนน 1.0 - 5.0
-  reviewText    String?  @map("review_text") @db.Text
-  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  id           Int      @id @default(autoincrement()) @map("review_id")
+  restaurantId String   @map("restaurant_id") @db.VarChar(50)
+  userId       String   @map("user_id") @db.VarChar(50)
+  rating       Decimal  @db.Decimal(3, 2) // คะแนน 1.0 - 5.0
+  reviewText   String?  @map("review_text") @db.Text
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
-  user          User     @relation(fields: [userId], references: [id])
-  images        ReviewImage[]
+  restaurant Restaurant    @relation(fields: [restaurantId], references: [id])
+  user       User          @relation(fields: [userId], references: [id])
+  images     ReviewImage[]
 }
 
 // --- Table: ReviewImages ---
 model ReviewImage {
-  id            Int      @id @default(autoincrement()) @map("review_image_id")
-  reviewId      Int      @map("review_id")
-  imageUrl      String   @map("image_url") @db.VarChar(2048)
-  uploadedAt    DateTime @default(now()) @map("uploaded_at") @db.Timestamptz(6)
+  id         Int      @id @default(autoincrement()) @map("review_image_id")
+  reviewId   Int      @map("review_id")
+  imageUrl   String   @map("image_url") @db.VarChar(2048)
+  uploadedAt DateTime @default(now()) @map("uploaded_at") @db.Timestamptz(6)
 
-  review        Review   @relation(fields: [reviewId], references: [id])
+  review Review @relation(fields: [reviewId], references: [id])
 }
 
 // --- Table: Contact ---
 model Contact {
-  id            Int      @id @default(autoincrement()) @map("contact_id")
+  id            Int    @id @default(autoincrement()) @map("contact_id")
   restaurantId  String
-  contactType   String   @map("contact_type") @db.VarChar(50)
-  contactDetail          String   @map("contact_detail") @db.VarChar(50) // ควรเปลี่ยนชื่อเป็น contactValue หรือ contactDetail
-  
-  restaurant    Restaurant @relation(fields: [restaurantId], references: [id])
+  contactType   String @map("contact_type") @db.VarChar(50)
+  contactDetail String @map("contact_detail") @db.VarChar(50) // ควรเปลี่ยนชื่อเป็น contactValue หรือ contactDetail
+
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
 }
 
 // --- Table: ChatRooms ---
 model ChatRoom {
-  id            String    @id @default(cuid()) @map("room_id") // ใช้ CUID
-  roomName      String?   @map("room_name") @db.VarChar(255)
-  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  id        String   @id @default(cuid()) @map("room_id") // ใช้ CUID
+  roomName  String?  @map("room_name") @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
 
-  participants  ChatParticipant[]
-  messages      ChatMessage[]
+  participants ChatParticipant[]
+  messages     ChatMessage[]
 }
 
 // --- Table: ChatParticipants ---
 model ChatParticipant {
-  roomId        String    @map("room_id") @db.VarChar(50)
-  userId        String    @map("user_id") @db.VarChar(50)
-  joinedAt      DateTime  @default(now()) @map("joined_at") @db.Timestamptz(6)
+  roomId   String   @map("room_id") @db.VarChar(50)
+  userId   String   @map("user_id") @db.VarChar(50)
+  joinedAt DateTime @default(now()) @map("joined_at") @db.Timestamptz(6)
 
-  room          ChatRoom  @relation(fields: [roomId], references: [id])
-  user          User      @relation(fields: [userId], references: [id])
+  room ChatRoom @relation(fields: [roomId], references: [id])
+  user User     @relation(fields: [userId], references: [id])
 
   @@id([roomId, userId]) // Composite Primary Key
   @@map("ChatParticipants") // ชื่อตารางใน DB
@@ -200,12 +205,12 @@ model ChatParticipant {
 
 // --- Table: ChatMessages ---
 model ChatMessage {
-  id            Int      @id @default(autoincrement()) @map("message_id")
-  roomId        String   @map("room_id") @db.VarChar(50)
-  senderId      String   @map("sender_id") @db.VarChar(50)
-  messageText   String   @map("message_text") @db.Text
-  sentAt        DateTime @default(now()) @map("sent_at") @db.Timestamptz(6)
+  id          Int      @id @default(autoincrement()) @map("message_id")
+  roomId      String   @map("room_id") @db.VarChar(50)
+  senderId    String   @map("sender_id") @db.VarChar(50)
+  messageText String   @map("message_text") @db.Text
+  sentAt      DateTime @default(now()) @map("sent_at") @db.Timestamptz(6)
 
-  room          ChatRoom  @relation(fields: [roomId], references: [id])
-  sender        User      @relation("Sender", fields: [senderId], references: [id]) // ระบุชื่อความสัมพันธ์เพื่อให้ไม่ชนกับ field `user` ใน ChatParticipant
+  room   ChatRoom @relation(fields: [roomId], references: [id])
+  sender User     @relation("Sender", fields: [senderId], references: [id]) // ระบุชื่อความสัมพันธ์เพื่อให้ไม่ชนกับ field `user` ใน ChatParticipant
 }
