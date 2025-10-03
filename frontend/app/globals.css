@@ -198,6 +198,12 @@
   --shadow-2xl: 0px 1px 3px 0px hsl(0 0% 0% / 0.43);
 }
 
+.react-medium-image-zoom__zoomed {
+  width: 300px !important;
+  height: 300px !important;
+  border-radius: 9999px !important;
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

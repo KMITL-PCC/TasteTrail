@@ -2,6 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { z } from "zod";
+import DOMPurify from "dompurify";
+import { Eye, EyeOff } from "lucide-react";
 
 interface ResetPasswordFormProps {
   setFormStep: (step: "otp" | "resetPassword") => void;
@@ -11,6 +14,22 @@ interface ResetPasswordFormProps {
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 const CSRF_TOKEN_ENDPOINT = `${BACKEND_URL}/api/csrf-token`;
+
+const passwordSchema = z
+  .string()
+  .min(8, "Password must be at least 8 characters")
+  .max(100, "Password too long")
+  .regex(/(?=.*[a-z])/, { message: "Password must include a lowercase letter" })
+  .regex(/(?=.*[A-Z])/, {
+    message: "Password must include an uppercase letter",
+  })
+  .regex(/(?=.*\d)/, { message: "Password must include a number" })
+  .regex(/(?=.*[!@#$%^&*()_\-+=[\]{}|:;,.<>/?~])/, {
+    message: "Password must include a special character",
+  })
+  .refine((val) => !/[<>"'`]/.test(val), {
+    message: "Password contains invalid characters (e.g. <, >, \", ', `).",
+  });
 
 const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
   setFormStep,
@@ -23,6 +42,7 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [csrfToken, setCsrfToken] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     const fetchCsrfToken = async () => {
@@ -41,19 +61,41 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
     fetchCsrfToken();
   }, []);
 
+  const checks = {
+    minLength: newPassword.length >= 8,
+    hasLower: /[a-z]/.test(newPassword),
+    hasUpper: /[A-Z]/.test(newPassword),
+    hasNumber: /\d/.test(newPassword),
+    hasSpecial: /[!@#$%^&*()_\-+=[\]{}|:;,.<>/?~]/.test(newPassword),
+  };
+
   const handlePasswordSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
     setMessage("");
 
-    if (!newPassword || newPassword.length < 8) {
+    const safeNew = DOMPurify.sanitize(newPassword.trim());
+    const safeConfirm = DOMPurify.sanitize(confirmPassword.trim());
+
+    if (!safeNew || safeNew.length < 8) {
       setMessage("Password must be at least 8 characters long.");
       setIsLoading(false);
       return;
     }
-
-    if (newPassword !== confirmPassword) {
+    if (safeNew !== safeConfirm) {
       setMessage("Passwords do not match.");
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      passwordSchema.parse(safeNew);
+    } catch (err: any) {
+      const first =
+        Array.isArray(err?.errors) && err.errors.length > 0
+          ? err.errors[0].message
+          : "Invalid password.";
+      setMessage(String(first));
       setIsLoading(false);
       return;
     }
@@ -64,112 +106,131 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
       return;
     }
 
-    // เลือก endpoint ตาม mode
-    const endpoint =
-      mode === "forgot"
-        ? `${BACKEND_URL}/auth/reset-password`
-        : `${BACKEND_URL}/auth/updatepass`;
-
     try {
-      const res = await fetch(endpoint, {
+      const res = await fetch(`${BACKEND_URL}/auth/reset-password`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
           "X-CSRF-Token": csrfToken,
         },
         credentials: "include",
-        body: JSON.stringify({ newPassword, email }),
+        body: JSON.stringify({ newPassword: safeNew, email }),
       });
 
-      const data = await res.json();
-      console.log("Server response:", data);
-
-      if (!res.ok)
-        throw new Error(data?.message || "Failed to reset password.");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMessage(
+          DOMPurify.sanitize(data?.message || `Failed to reset password`),
+        );
+        setIsLoading(false);
+        return;
+      }
 
       setMessage("Password reset successful. Redirecting...");
-
-      setTimeout(() => {
-        router.push("/login");
-      }, 1500);
+      setTimeout(() => router.push("/profile"), 1500);
     } catch (err: any) {
-      console.error("Error resetting password:", err);
-      setMessage(err?.message || "Failed to reset password.");
+      setMessage(
+        DOMPurify.sanitize(err?.message || "Failed to reset password."),
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handlePasswordSubmit} className="space-y-6">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-green-600">
-          Set a New Password
-        </h1>
+    <div className="mx-auto w-full max-w-md">
+      <div className="mb-6 text-center">
+        <h1 className="text-2xl font-bold text-gray-900">Set New Password</h1>
         <p className="mt-2 text-sm text-gray-600">
-          Create a new password. Ensure it differs from previous ones for
-          security.
+          Please create a new password for your account.
         </p>
       </div>
 
-      <div>
-        <label
-          htmlFor="newPassword"
-          className="block text-sm font-medium text-gray-700"
-        >
-          New Password
-        </label>
-        <input
-          id="newPassword"
-          type="password"
-          value={newPassword}
-          onChange={(e) => setNewPassword(e.target.value)}
-          required
-          className="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-green-500 focus:outline-none"
-          placeholder="Enter new password"
-        />
-      </div>
+      <form onSubmit={handlePasswordSubmit} className="space-y-4">
+        <div className="relative">
+          <input
+            type={showPassword ? "text" : "password"}
+            placeholder="New Password"
+            value={newPassword}
+            onChange={(e) => setNewPassword(e.target.value)}
+            disabled={isLoading}
+            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 placeholder-gray-400 shadow-sm transition focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none disabled:bg-gray-50"
+            required
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword((s) => !s)}
+            className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-1 text-gray-500 hover:text-gray-800 focus:outline-none"
+          >
+            {showPassword ? (
+              <EyeOff className="h-5 w-5" />
+            ) : (
+              <Eye className="h-5 w-5" />
+            )}
+          </button>
+        </div>
 
-      <div>
-        <label
-          htmlFor="confirmPassword"
-          className="block text-sm font-medium text-gray-700"
-        >
-          Confirm New Password
-        </label>
-        <input
-          id="confirmPassword"
-          type="password"
-          value={confirmPassword}
-          onChange={(e) => setConfirmPassword(e.target.value)}
-          required
-          className="w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:ring-2 focus:ring-green-500 focus:outline-none"
-          placeholder="Confirm new password"
-        />
-      </div>
+        <div>
+          <input
+            type="password"
+            placeholder="Confirm New Password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            disabled={isLoading}
+            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 placeholder-gray-400 shadow-sm transition focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none disabled:bg-gray-50"
+            required
+          />
+        </div>
 
-      <button
-        type="submit"
-        disabled={isLoading}
-        className="w-full rounded-md bg-green-600 px-4 py-2 text-white hover:bg-green-700 disabled:bg-green-400"
-      >
-        {isLoading ? "Saving..." : "Reset Password"}
-      </button>
+        {/* Password checklist */}
+        <div className="mt-2 grid grid-cols-1 gap-1 text-sm">
+          <div className="flex items-center gap-2">
+            <span
+              className={`inline-block h-3 w-3 rounded-full ${checks.minLength ? "bg-green-500" : "bg-gray-300"}`}
+            />
+            <span className="text-xs text-gray-600">At least 8 characters</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span
+              className={`inline-block h-3 w-3 rounded-full ${checks.hasLower ? "bg-green-500" : "bg-gray-300"}`}
+            />
+            <span className="text-xs text-gray-600">Lowercase letter</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span
+              className={`inline-block h-3 w-3 rounded-full ${checks.hasUpper ? "bg-green-500" : "bg-gray-300"}`}
+            />
+            <span className="text-xs text-gray-600">Uppercase letter</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span
+              className={`inline-block h-3 w-3 rounded-full ${checks.hasNumber ? "bg-green-500" : "bg-gray-300"}`}
+            />
+            <span className="text-xs text-gray-600">Number</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span
+              className={`inline-block h-3 w-3 rounded-full ${checks.hasSpecial ? "bg-green-500" : "bg-gray-300"}`}
+            />
+            <span className="text-xs text-gray-600">
+              Special character (!@#$...)
+            </span>
+          </div>
+        </div>
 
-      {message && (
-        <div className="text-center text-sm text-red-500">{message}</div>
-      )}
-
-      <div className="mt-4 text-center">
         <button
-          type="button"
-          onClick={() => setFormStep("otp")}
-          className="text-sm text-blue-600 hover:text-blue-800"
+          type="submit"
+          disabled={isLoading}
+          className="w-full justify-center rounded-md border border-transparent bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:bg-green-400"
         >
-          ← Back to OTP
+          {isLoading ? "Saving..." : "Reset Password"}
         </button>
-      </div>
-    </form>
+
+        {message && (
+          <div className="text-center text-sm text-green-500">{message}</div>
+        )}
+      </form>
+    </div>
   );
 };
 
