@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, memo, useRef } from "react";
+import { useState, useEffect, memo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm, useFormContext } from "react-hook-form";
@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Eye, EyeOff } from "lucide-react";
 
 /* ---------------- UI: Google Icon ---------------- */
 const GoogleIcon = () => (
@@ -76,6 +77,9 @@ const otpFormSchema = z.object({
     .length(5, { message: "OTP must be exactly 5 digits." })
     .regex(/^\d{5}$/, { message: "OTP must contain only digits." }),
 });
+
+const [showPassword, setShowPassword] = useState(false);
+const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
 /* ---------------- Utils ---------------- */
 async function parseErr(res: Response) {
@@ -287,9 +291,20 @@ export default function RegisterForm() {
         });
       } else {
         const errorData = await parseErr(response);
-        toast.error("Registration Failed", {
-          description: errorData.message || `HTTP ${response.status}`,
-        });
+        const message = errorData.message || `HTTP ${response.status}`;
+
+        // map error message ไปยัง field ที่เกี่ยวข้อง
+        if (message.toLowerCase().includes("email")) {
+          registerForm.setError("email", { message });
+        } else if (message.toLowerCase().includes("username")) {
+          registerForm.setError("username", { message });
+        } else if (message.toLowerCase().includes("password")) {
+          registerForm.setError("password", { message });
+        } else {
+          // ถ้าไม่รู้ว่า error มาจาก field ไหน แสดง global toast แทน
+          toast.error("Registration Failed", { description: message });
+        }
+
         console.log("[send-otp error]", response.status, errorData);
       }
     } catch (error: any) {
@@ -464,8 +479,8 @@ export default function RegisterForm() {
   );
 
   const RegisterMainForm = () => (
-    <div className="flex min-h-screen flex-col bg-white p-10 md:p-10">
-      <div className="flex flex-grow items-start justify-center">
+    <div className="flex flex-col">
+      <div className="flex items-start justify-center">
         <div className="w-full max-w-sm space-y-8">
           <div className="text-center">
             <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">
@@ -490,7 +505,7 @@ export default function RegisterForm() {
                       <Input
                         placeholder="Choose a username"
                         {...field}
-                        className="h-11 rounded-md border-gray-300 text-base focus:border-green-500 focus:ring-green-500 sm:h-12"
+                        className="focus:border-primary focus:ring-primary h-11 rounded-md border-gray-300 text-base sm:h-12"
                         onKeyDown={(e) => {
                           if (e.key === " ") e.preventDefault();
                         }}
@@ -523,7 +538,7 @@ export default function RegisterForm() {
                         type="email"
                         placeholder="Enter your email"
                         {...field}
-                        className="h-11 rounded-md border-gray-300 text-base focus:border-green-500 focus:ring-green-500 sm:h-12"
+                        className="focus:border-primary focus:ring-primary h-11 rounded-md border-gray-300 text-base sm:h-12"
                         autoComplete="email"
                       />
                     </FormControl>
@@ -541,13 +556,26 @@ export default function RegisterForm() {
                       Password
                     </FormLabel>
                     <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="Create a password"
-                        {...field}
-                        className="h-11 rounded-md border-gray-300 text-base focus:border-green-500 focus:ring-green-500 sm:h-12"
-                        autoComplete="new-password"
-                      />
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Create a password"
+                          {...field}
+                          className="focus:border-primary focus:ring-primary h-11 rounded-md border-gray-300 pr-10 text-base sm:h-12"
+                          autoComplete="new-password"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword((prev) => !prev)}
+                          className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        >
+                          {showPassword ? (
+                            <EyeOff size={20} />
+                          ) : (
+                            <Eye size={20} />
+                          )}
+                        </button>
+                      </div>
                     </FormControl>
                     <FormMessage className="text-sm text-red-500" />
                   </FormItem>
@@ -563,13 +591,28 @@ export default function RegisterForm() {
                       Confirm Password
                     </FormLabel>
                     <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="Confirm your password"
-                        {...field}
-                        className="h-11 rounded-md border-gray-300 text-base focus:border-green-500 focus:ring-green-500 sm:h-12"
-                        autoComplete="new-password"
-                      />
+                      <div className="relative">
+                        <Input
+                          type={showConfirmPassword ? "text" : "password"}
+                          placeholder="Confirm your password"
+                          {...field}
+                          className="focus:border-primary focus:ring-primary h-11 rounded-md border-gray-300 pr-10 text-base sm:h-12"
+                          autoComplete="new-password"
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setShowConfirmPassword((prev) => !prev)
+                          }
+                          className="absolute top-1/2 right-3 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                        >
+                          {showConfirmPassword ? (
+                            <EyeOff size={20} />
+                          ) : (
+                            <Eye size={20} />
+                          )}
+                        </button>
+                      </div>
                     </FormControl>
                     <FormMessage className="text-sm text-red-500" />
                   </FormItem>
@@ -588,18 +631,18 @@ export default function RegisterForm() {
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
-                      <FormLabel className="text-sm font-normal whitespace-nowrap text-green-500">
+                      <FormLabel className="text-primary text-sm font-normal whitespace-nowrap">
                         I agree to the{" "}
                         <a
                           href="/terms"
-                          className="underline hover:text-green-600"
+                          className="hover:text-primary underline"
                         >
                           Terms of Service
                         </a>{" "}
                         and{" "}
                         <a
                           href="/privacy"
-                          className="underline hover:text-green-600"
+                          className="hover:text-primary underline"
                         >
                           Privacy Policy
                         </a>
@@ -617,7 +660,7 @@ export default function RegisterForm() {
                   !registerForm.formState.isValid ||
                   !csrfToken /* กันตอน token ยังไม่พร้อม */
                 }
-                className="h-12 w-full rounded-md bg-green-500 text-lg font-semibold text-white shadow-md transition-colors duration-200 hover:bg-green-600 disabled:cursor-not-allowed disabled:bg-gray-400 sm:h-14"
+                className="bg-primary hover:bg-primary h-12 w-full rounded-md text-lg font-semibold text-white shadow-md transition-colors duration-200 disabled:cursor-not-allowed disabled:bg-gray-400 sm:h-14"
               >
                 Register
               </Button>
@@ -645,7 +688,7 @@ export default function RegisterForm() {
               Already have an account?{" "}
               <a
                 href="/login"
-                className="font-semibold text-green-600 hover:underline"
+                className="text-primary font-semibold hover:underline"
               >
                 Login
               </a>
@@ -658,10 +701,8 @@ export default function RegisterForm() {
 
   /* ---------------- Render ---------------- */
   return (
-    <div className="flex min-h-screen flex-col bg-white p-4 sm:p-6 md:p-10">
-      <div className="flex flex-grow items-center justify-center">
-        {showOtpForm ? <OtpVerificationForm /> : <RegisterMainForm />}
-      </div>
+    <div className="flex flex-1 flex-col items-center justify-center p-10">
+      {showOtpForm ? <OtpVerificationForm /> : <RegisterMainForm />}
     </div>
   );
 }

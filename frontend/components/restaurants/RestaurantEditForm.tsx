@@ -742,7 +742,14 @@ export default function EditRestaurantPage() {
             </div>
           </CardContent>
 
-          <CardFooter className="flex justify-end border-t bg-gray-50 p-4">
+          <CardFooter className="flex justify-end gap-2 border-t bg-gray-50 p-4">
+            <Button
+              variant="outline"
+              className="border-gray-300 text-gray-700 hover:bg-gray-100"
+              onClick={() => router.back()} // ✅ ปุ่มยกเลิก
+            >
+              ยกเลิก
+            </Button>
             <Button
               className="bg-green-700 hover:bg-green-600"
               onClick={handleSave}

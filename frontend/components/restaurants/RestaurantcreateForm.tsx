@@ -13,6 +13,7 @@ import { toast } from "sonner";
 import dynamic from "next/dynamic";
 import { z } from "zod";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 export const openingTimeSchema = z.object({
   weekday: z.number().min(0).max(6),
@@ -71,6 +72,7 @@ export default function SellerInfoWeb() {
   const [shopName, setShopName] = useState("");
   const [hasPhysicalStore, setHasPhysicalStore] = useState(true);
   const [pickupAddress, setPickupAddress] = useState("");
+  const router = useRouter();
 
   type OpeningTime = {
     weekday: number;
@@ -334,14 +336,14 @@ export default function SellerInfoWeb() {
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-3xl px-4 mx-auto mt-6">
+      <div className="mx-auto mt-6 max-w-3xl px-4">
         <Card>
           <CardContent className="p-6">
             <div className="grid grid-cols-1 gap-6">
               {/* หัวข้ออยู่ด้านบน */}
               <div className="mb-6">
                 <h2 className="text-base font-medium">รายละเอียดร้านค้า</h2>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   กรอกข้อมูลพื้นฐานของร้านคุณให้ครบถ้วน
                 </p>
               </div>
@@ -445,7 +447,7 @@ export default function SellerInfoWeb() {
 
                     <Separator />
 
-                    <div className="relative w-full h-64 overflow-hidden rounded-lg">
+                    <div className="relative h-64 w-full overflow-hidden rounded-lg">
                       <Mainmap
                         onLocationChange={([lat, lng]) => {
                           setLatitude(lat);
@@ -463,11 +465,11 @@ export default function SellerInfoWeb() {
                       </Label>
 
                       {/* แถวบน 4 วัน */}
-                      <div className="grid grid-cols-1 gap-4 mt-2 md:grid-cols-4">
+                      <div className="mt-2 grid grid-cols-1 gap-4 md:grid-cols-4">
                         {daysOfWeek.slice(0, 4).map((day, index) => (
                           <div
                             key={index}
-                            className="flex flex-col p-3 transition-shadow border border-gray-200 rounded-lg shadow-sm hover:shadow-md"
+                            className="flex flex-col rounded-lg border border-gray-200 p-3 shadow-sm transition-shadow hover:shadow-md"
                           >
                             <p className="mb-2 text-sm font-semibold text-gray-700">
                               {day}
@@ -487,7 +489,7 @@ export default function SellerInfoWeb() {
                                       e.target.value,
                                     )
                                   }
-                                  className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md"
+                                  className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm"
                                   step={60}
                                   pattern="[0-2][0-9]:[0-5][0-9]"
                                   title="เวลาแบบ 24 ชั่วโมง (HH:mm)"
@@ -508,7 +510,7 @@ export default function SellerInfoWeb() {
                                       e.target.value,
                                     )
                                   }
-                                  className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md"
+                                  className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm"
                                   step={60}
                                   pattern="[0-2][0-9]:[0-5][0-9]"
                                   title="เวลาแบบ 24 ชั่วโมง (HH:mm)"
@@ -520,13 +522,13 @@ export default function SellerInfoWeb() {
                       </div>
 
                       {/* แถวล่าง 3 วันตรงกลาง */}
-                      <div className="flex flex-col items-center gap-2 mt-2 md:flex-row md:justify-center md:gap-4">
+                      <div className="mt-2 flex flex-col items-center gap-2 md:flex-row md:justify-center md:gap-4">
                         {daysOfWeek.slice(4).map((day, i) => {
                           const index = i + 4;
                           return (
                             <div
                               key={index}
-                              className="flex flex-col w-full p-3 transition-shadow border border-gray-200 rounded-lg shadow-sm hover:shadow-md md:w-40"
+                              className="flex w-full flex-col rounded-lg border border-gray-200 p-3 shadow-sm transition-shadow hover:shadow-md md:w-40"
                             >
                               <p className="mb-2 text-sm font-semibold text-gray-700">
                                 {day}
@@ -546,7 +548,7 @@ export default function SellerInfoWeb() {
                                         e.target.value,
                                       )
                                     }
-                                    className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md"
+                                    className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm"
                                     step={60}
                                   />
                                 </div>
@@ -564,7 +566,7 @@ export default function SellerInfoWeb() {
                                         e.target.value,
                                       )
                                     }
-                                    className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md"
+                                    className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm"
                                     step={60}
                                   />
                                 </div>
@@ -630,20 +632,27 @@ export default function SellerInfoWeb() {
                   <Label className="text-sm">
                     อัปโหลดรูปภาพร้าน (สูงสุด 4 รูป, ขนาดไม่เกิน 8MB)
                   </Label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleStoreFileChange}
-                    multiple
-                    className="mt-2"
-                  />
-                  <div className="flex gap-2 mt-4">
+                  <div className="mt-2 flex items-center gap-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleStoreFileChange}
+                      multiple
+                      className="rounded border border-gray-300 px-2 py-1"
+                    />
+                    <span className="text-sm text-gray-500">
+                      {uploadedImages.length > 0
+                        ? `${uploadedImages.length} ไฟล์ถูกเลือก`
+                        : "No file chosen"}
+                    </span>
+                  </div>
+                  <div className="mt-4 flex gap-2">
                     {previewImages.map((img, index) => (
                       <img
                         key={index}
                         src={img}
                         alt={`uploaded-img-${index}`}
-                        className="object-cover w-32 h-32 rounded-md"
+                        className="h-32 w-32 rounded-md object-cover"
                       />
                     ))}
                   </div>
@@ -652,25 +661,30 @@ export default function SellerInfoWeb() {
                 <Separator />
 
                 {/* รูปเจ้าของร้าน */}
-                <div>
+                <div className="mt-4">
                   <Label className="text-sm">
-                    อัปโหลดรูปภาพเจ้าของร้าน (1 รูป, ขนาดไม่เกิน 8MB)
+                    อัปโหลดรูปเจ้าของร้าน (1 รูป, ขนาดไม่เกิน 8MB)
                   </Label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleProfileFileChange}
-                    className="mt-2"
-                  />
-                  <div className="flex gap-2 mt-4">
+                  <div className="mt-2 flex items-center gap-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleProfileFileChange}
+                      className="rounded border border-gray-300 px-2 py-1"
+                    />
+                    <span className="text-sm text-gray-500">
+                      {profileImages.length > 0
+                        ? `${profileImages.length} ไฟล์ถูกเลือก`
+                        : "No file chosen"}
+                    </span>
+                  </div>
+                  <div className="mt-4 flex gap-2">
                     {previewProfileImages.map((img, index) => (
-                      <Image
+                      <img
                         key={index}
                         src={img}
-                        width={100}
-                        height={100}
                         alt={`owner-profile-${index}`}
-                        className="object-cover w-32 h-32 rounded-full"
+                        className="h-32 w-32 rounded-full object-cover"
                       />
                     ))}
                   </div>
@@ -719,12 +733,19 @@ export default function SellerInfoWeb() {
             </div>
           </CardContent>
 
-          <CardFooter className="flex justify-end p-4 border-t bg-gray-50">
+          <CardFooter className="flex justify-end gap-2 border-t bg-gray-50 p-4">
+            <Button
+              variant="outline"
+              className="border-gray-300 text-gray-700 hover:bg-gray-100"
+              onClick={() => router.back()} // ✅ ปุ่มยกเลิก
+            >
+              ยกเลิก
+            </Button>
             <Button
               className="bg-green-700 hover:bg-green-600"
               onClick={handleSave}
             >
-              <SaveIcon className="w-4 h-4 mr-2" />
+              <SaveIcon className="mr-2 h-4 w-4" />
               บันทึกข้อมูล
             </Button>
           </CardFooter>

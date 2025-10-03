@@ -63,7 +63,9 @@ export default function MainMap({
   initialPosition,
   onLocationChange,
 }: MainMapProps) {
-  const DEFAULT_LOCATION: [number, number] = [13, 100];
+  const DEFAULT_LOCATION: [number, number] = [
+    10.724484933110002, 99.37435541163748,
+  ];
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
@@ -79,7 +81,7 @@ export default function MainMap({
   }
 
   return (
-    <div className="h-[50vh] rounded-md">
+    <div className="z-50 h-[50vh] rounded-md">
       <MapContainer
         center={initialPosition || DEFAULT_LOCATION}
         zoom={13}

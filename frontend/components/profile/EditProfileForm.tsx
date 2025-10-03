@@ -410,158 +410,165 @@ export default function EditProfilePage() {
                 </CardHeader>
                 <CardContent className="grid gap-4">
                   {/* Current Password */}
-                  <div className="relative">
+                  <div>
                     <Label htmlFor="currentPassword" className="mb-2 block">
                       Current password
                     </Label>
-                    <Input
-                      id="currentPassword"
-                      type={showCurrentPassword ? "text" : "password"}
-                      value={currentPassword}
-                      onChange={(e) =>
-                        setCurrentPassword(sanitizePassword(e.target.value))
-                      }
-                      className="h-11 rounded-md border-gray-300 pr-10 text-base focus:border-green-500 focus:ring-green-500"
-                      autoComplete="current-password"
-                    />
-                    <button
-                      type="button"
-                      aria-label={
-                        showCurrentPassword ? "Hide password" : "Show password"
-                      }
-                      onClick={() => setShowCurrentPassword((prev) => !prev)}
-                      className="absolute top-1/2 right-2 -translate-y-1/2 p-1 text-gray-500 hover:text-gray-800 focus:outline-none"
-                    >
-                      {showCurrentPassword ? (
-                        <EyeOff className="h-5 w-5" />
-                      ) : (
-                        <Eye className="h-5 w-5" />
-                      )}
-                    </button>
+                    <div className="flex items-center rounded-md border focus-within:ring-2 focus-within:ring-green-500">
+                      <Input
+                        id="currentPassword"
+                        type={showCurrentPassword ? "text" : "password"}
+                        value={currentPassword}
+                        onChange={(e) =>
+                          setCurrentPassword(sanitizePassword(e.target.value))
+                        }
+                        className="h-11 flex-1 border-0 focus:ring-0"
+                        autoComplete="current-password"
+                      />
+                      <button
+                        type="button"
+                        aria-label={
+                          showCurrentPassword
+                            ? "Hide password"
+                            : "Show password"
+                        }
+                        onClick={() => setShowCurrentPassword((prev) => !prev)}
+                        className="px-3 text-gray-500 hover:text-gray-800 focus:outline-none"
+                      >
+                        {showCurrentPassword ? (
+                          <EyeOff className="h-5 w-5" />
+                        ) : (
+                          <Eye className="h-5 w-5" />
+                        )}
+                      </button>
+                    </div>
                   </div>
 
                   {/* New Password */}
-                  <div className="relative">
+                  <div>
                     <Label htmlFor="newPassword" className="mb-2 block">
                       New password
                     </Label>
-                    <Input
-                      id="newPassword"
-                      type={showNewPassword ? "text" : "password"}
-                      value={newPassword}
-                      onChange={(e) =>
-                        setNewPassword(sanitizePassword(e.target.value))
-                      }
-                      className={`h-11 rounded-md pr-10 text-base focus:ring-green-500 ${
+                    <div
+                      className={`flex items-center rounded-md focus-within:ring-2 focus-within:ring-green-500 ${
                         newPassword.length === 0
-                          ? "border-gray-300 focus:border-green-500"
+                          ? "border border-gray-300"
                           : isNewPasswordValid
-                            ? "border-green-500 focus:border-green-500"
-                            : "border-red-500 focus:border-red-500"
+                            ? "border border-green-500"
+                            : "border border-red-500"
                       }`}
-                      autoComplete="new-password"
-                    />
-                    <button
-                      type="button"
-                      aria-label={
-                        showNewPassword ? "Hide password" : "Show password"
-                      }
-                      onClick={() => setShowNewPassword((prev) => !prev)}
-                      className="absolute top-1/2 right-2 -translate-y-1/2 p-1 text-gray-500 hover:text-gray-800 focus:outline-none"
                     >
-                      {showNewPassword ? (
-                        <EyeOff className="h-5 w-5" />
-                      ) : (
-                        <Eye className="h-5 w-5" />
-                      )}
-                    </button>
+                      <Input
+                        id="newPassword"
+                        type={showNewPassword ? "text" : "password"}
+                        value={newPassword}
+                        onChange={(e) =>
+                          setNewPassword(sanitizePassword(e.target.value))
+                        }
+                        className="h-11 flex-1 border-0 focus:ring-0"
+                        autoComplete="new-password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowNewPassword((prev) => !prev)}
+                        className="px-3 text-gray-500 hover:text-gray-800 focus:outline-none"
+                      >
+                        {showNewPassword ? (
+                          <EyeOff className="h-5 w-5" />
+                        ) : (
+                          <Eye className="h-5 w-5" />
+                        )}
+                      </button>
+                    </div>
+
+                    {/* Password strength checklist */}
+                    {newPassword.length > 0 && (
+                      <ul className="mt-2 space-y-1 text-sm">
+                        <li
+                          className={
+                            /[a-z]/.test(newPassword)
+                              ? "text-green-600"
+                              : "text-gray-500"
+                          }
+                        >
+                          • Lowercase letter
+                        </li>
+                        <li
+                          className={
+                            /[A-Z]/.test(newPassword)
+                              ? "text-green-600"
+                              : "text-gray-500"
+                          }
+                        >
+                          • Uppercase letter
+                        </li>
+                        <li
+                          className={
+                            /\d/.test(newPassword)
+                              ? "text-green-600"
+                              : "text-gray-500"
+                          }
+                        >
+                          • Number
+                        </li>
+                        <li
+                          className={
+                            /[!@#$%^&*()\-+=.?]/.test(newPassword)
+                              ? "text-green-600"
+                              : "text-gray-500"
+                          }
+                        >
+                          • Special character (!@#$%^&*()-+=.?)
+                        </li>
+                        <li
+                          className={
+                            newPassword.length >= 6
+                              ? "text-green-600"
+                              : "text-gray-500"
+                          }
+                        >
+                          • At least 6 characters
+                        </li>
+                      </ul>
+                    )}
                   </div>
-                  {/* ✅ Password strength checklist */}
-                  {newPassword.length > 0 && (
-                    <ul className="mt-2 space-y-1 text-sm">
-                      <li
-                        className={
-                          /[a-z]/.test(newPassword)
-                            ? "text-green-600"
-                            : "text-gray-500"
-                        }
-                      >
-                        • At least one lowercase letter
-                      </li>
-                      <li
-                        className={
-                          /[A-Z]/.test(newPassword)
-                            ? "text-green-600"
-                            : "text-gray-500"
-                        }
-                      >
-                        • At least one uppercase letter
-                      </li>
-                      <li
-                        className={
-                          /\d/.test(newPassword)
-                            ? "text-green-600"
-                            : "text-gray-500"
-                        }
-                      >
-                        • At least one number
-                      </li>
-                      <li
-                        className={
-                          /[!@#$%^&*()\-+=.?]/.test(newPassword)
-                            ? "text-green-600"
-                            : "text-gray-500"
-                        }
-                      >
-                        • At least one special character (!@#$%^&*()-+=.?)
-                      </li>
-                      <li
-                        className={
-                          newPassword.length >= 8
-                            ? "text-green-600"
-                            : "text-gray-500"
-                        }
-                      >
-                        • Minimum 8 characters
-                      </li>
-                    </ul>
-                  )}
 
                   {/* Confirm Password */}
-                  <div className="relative">
+                  <div>
                     <Label htmlFor="confirmPassword" className="mb-2 block">
                       Confirm password
                     </Label>
-                    <Input
-                      id="confirmPassword"
-                      type={showConfirmPassword ? "text" : "password"}
-                      value={confirmPassword}
-                      onChange={(e) =>
-                        setConfirmPassword(sanitizePassword(e.target.value))
-                      }
-                      className={`h-11 rounded-md pr-10 text-base focus:ring-green-500 ${
+                    <div
+                      className={`flex items-center rounded-md focus-within:ring-2 focus-within:ring-green-500 ${
                         confirmPassword.length === 0
-                          ? "border-gray-300 focus:border-green-500"
+                          ? "border border-gray-300"
                           : confirmPassword === newPassword
-                            ? "border-green-500 focus:border-green-500"
-                            : "border-red-500 focus:border-red-500"
+                            ? "border border-green-500"
+                            : "border border-red-500"
                       }`}
-                      autoComplete="new-password"
-                    />
-                    <button
-                      type="button"
-                      aria-label={
-                        showConfirmPassword ? "Hide password" : "Show password"
-                      }
-                      onClick={() => setShowConfirmPassword((prev) => !prev)}
-                      className="absolute top-1/2 right-2 -translate-y-1/2 p-1 text-gray-500 hover:text-gray-800 focus:outline-none"
                     >
-                      {showConfirmPassword ? (
-                        <EyeOff className="h-5 w-5" />
-                      ) : (
-                        <Eye className="h-5 w-5" />
-                      )}
-                    </button>
+                      <Input
+                        id="confirmPassword"
+                        type={showConfirmPassword ? "text" : "password"}
+                        value={confirmPassword}
+                        onChange={(e) =>
+                          setConfirmPassword(sanitizePassword(e.target.value))
+                        }
+                        className="h-11 flex-1 border-0 focus:ring-0"
+                        autoComplete="new-password"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowConfirmPassword((prev) => !prev)}
+                        className="px-3 text-gray-500 hover:text-gray-800 focus:outline-none"
+                      >
+                        {showConfirmPassword ? (
+                          <EyeOff className="h-5 w-5" />
+                        ) : (
+                          <Eye className="h-5 w-5" />
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </CardContent>
 

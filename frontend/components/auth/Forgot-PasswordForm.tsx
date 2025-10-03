@@ -26,6 +26,8 @@ const ForgotPasswordForm = () => {
 
   const [csrfToken, setCsrfToken] = useState<string | null>(null);
 
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const sanitizeInput = (value: string) => {
     return DOMPurify.sanitize(value.trim(), {
       ALLOWED_TAGS: [],
@@ -33,13 +35,25 @@ const ForgotPasswordForm = () => {
     });
   };
 
+  const checkPasswordRules = (pwd: string) => {
+    return {
+      hasLength: pwd.length >= 8,
+      hasLower: /[a-z]/.test(pwd),
+      hasUpper: /[A-Z]/.test(pwd),
+      hasNumber: /\d/.test(pwd),
+      hasSpecial: /[!@#$%^&*(),.?":{}|<>]/.test(pwd),
+    };
+  };
+
+  const rules = checkPasswordRules(password);
+
   // Email ตรวจสอบเบื้องต้น
   const isValidEmail = (email: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
 
   // Password อย่างน้อย 8 ตัว มีทั้งตัวเล็ก ตัวใหญ่ และตัวเลข
   const isStrongPassword = (pwd: string) =>
-    pwd.length >= 8 && /[A-Z]/.test(pwd) && /[a-z]/.test(pwd) && /\d/.test(pwd);
+    pwd.length >= 6 && /[A-Z]/.test(pwd) && /[a-z]/.test(pwd) && /\d/.test(pwd);
 
   // Hide message after 3s
   useEffect(() => {
@@ -429,7 +443,6 @@ const ForgotPasswordForm = () => {
       )}
 
       {/* Reset Password Form */}
-      {/* Reset Password Form */}
       {formStep === "resetPassword" && (
         <div className="w-full max-w-md">
           <div className="mb-6 text-center">
@@ -466,9 +479,9 @@ const ForgotPasswordForm = () => {
             </div>
 
             {/* Confirm Password */}
-            <div>
+            <div className="relative">
               <input
-                type="password"
+                type={showConfirmPassword ? "text" : "password"}
                 placeholder="Confirm New Password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -476,56 +489,39 @@ const ForgotPasswordForm = () => {
                 className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 placeholder-gray-400 shadow-sm transition focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none disabled:bg-gray-50"
                 required
               />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword((s) => !s)}
+                className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-1 text-gray-500 hover:text-gray-800 focus:outline-none"
+              >
+                {showConfirmPassword ? (
+                  <EyeOff className="h-5 w-5" />
+                ) : (
+                  <Eye className="h-5 w-5" />
+                )}
+              </button>
             </div>
 
             {/* Password checklist */}
-            <div className="mt-2 grid grid-cols-1 gap-1 text-sm">
-              <div className="flex items-center gap-2">
-                <span
-                  className={`inline-block h-3 w-3 rounded-full ${
-                    password.length >= 8 ? "bg-green-500" : "bg-gray-300"
-                  }`}
-                />
-                <span className="text-xs text-gray-600">
-                  At least 8 characters
-                </span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span
-                  className={`inline-block h-3 w-3 rounded-full ${
-                    /[a-z]/.test(password) ? "bg-green-500" : "bg-gray-300"
-                  }`}
-                />
-                <span className="text-xs text-gray-600">Lowercase letter</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span
-                  className={`inline-block h-3 w-3 rounded-full ${
-                    /[A-Z]/.test(password) ? "bg-green-500" : "bg-gray-300"
-                  }`}
-                />
-                <span className="text-xs text-gray-600">Uppercase letter</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span
-                  className={`inline-block h-3 w-3 rounded-full ${
-                    /\d/.test(password) ? "bg-green-500" : "bg-gray-300"
-                  }`}
-                />
-                <span className="text-xs text-gray-600">Number</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span
-                  className={`inline-block h-3 w-3 rounded-full ${
-                    /[!@#$%^&*()_\-+=[\]{}|:;,.<>/?~]/.test(password)
-                      ? "bg-green-500"
-                      : "bg-gray-300"
-                  }`}
-                />
-                <span className="text-xs text-gray-600">
-                  Special character (!@#$...)
-                </span>
-              </div>
+            <div className="mt-2 grid grid-cols-1 gap-2 text-sm">
+              {[
+                { label: "At least 6 characters", check: rules.hasLength },
+                { label: "Lowercase letter", check: rules.hasLower },
+                { label: "Uppercase letter", check: rules.hasUpper },
+                { label: "Number", check: rules.hasNumber },
+                { label: "Special character", check: rules.hasSpecial },
+              ].map((item) => (
+                <div key={item.label} className="flex items-center gap-2">
+                  <span
+                    className={`inline-block h-3 w-3 rounded-full ${
+                      item.check ? "bg-green-500" : "bg-gray-300"
+                    }`}
+                  />
+                  <p className={item.check ? "text-green-600" : "text-red-600"}>
+                    {item.label}
+                  </p>
+                </div>
+              ))}
             </div>
 
             {/* Submit Button */}
