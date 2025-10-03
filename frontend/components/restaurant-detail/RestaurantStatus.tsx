@@ -9,19 +9,16 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
-import { RestaurantInfoProps } from "@/types";
+import { RestaurantInfo } from "@/types/restaurant";
 import { useUser } from "@/store/user-store";
 import { usePathname, useRouter } from "next/navigation";
 
-const RestaurantStatus = ({
-  status,
-}: {
-  status: RestaurantInfoProps["status"];
-}) => {
+const RestaurantStatus = ({ status }: { status: RestaurantInfo["status"] }) => {
   const [restaurantStatus, setRestaurantStatus] = useState(status);
   const [csrfToken, setCsrfToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { user } = useUser();
+
   const router = useRouter();
   const pathname = usePathname();
   const id = pathname.split("/")[2];
@@ -125,9 +122,11 @@ const RestaurantStatus = ({
       )}
     >
       <span>
-        {restaurantStatus === "Temporarily_Closed"
-          ? "Temporarily Closed"
-          : restaurantStatus}
+        {restaurantStatus === "Open"
+          ? "เปิด"
+          : restaurantStatus === "Closed"
+            ? "ปิด"
+            : "ปิดชั่วคลาว"}
       </span>
     </div>
   );

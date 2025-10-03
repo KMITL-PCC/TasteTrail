@@ -6,17 +6,17 @@ import { Checkbox } from "../ui/checkbox";
 import { Separator } from "../ui/separator";
 import { ChevronDown } from "lucide-react";
 import { Button } from "../ui/button";
-import { Sheet, SheetTrigger, SheetContent } from "../ui/sheet";
+import { Sheet, SheetTrigger, SheetContent, SheetTitle } from "../ui/sheet";
 import { useEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 
-type FilterProps = {
+type Filter = {
   categoriesData: { id: string; name: string }[];
   ratingsData: { id: string; name: string }[];
   pricesData: { id: string; name: string }[];
 };
 
-const filters: FilterProps = {
+const filters: Filter = {
   categoriesData: [
     { id: "ร้านอาหารตามสั่ง", name: "ร้านอาหารตามสั่ง" },
     { id: "ร้านก๋วยเตี๋ยว", name: "ร้านก๋วยเตี๋ยว" },
@@ -118,7 +118,7 @@ const FilterRestaurant = () => {
 
   return (
     <>
-      <Card className="sticky hidden top-24 md:flex md:w-50 lg:w-60 lg:pl-4">
+      <Card className="hidden md:flex md:w-50 lg:w-60 lg:pl-4">
         <CardContent className="flex flex-col gap-4 px-0">
           {/* Category */}
           <div className="flex flex-col gap-3 px-3">
@@ -186,6 +186,7 @@ const FilterRestaurant = () => {
             ร้านอาหาร <ChevronDown />
           </Button>
         </SheetTrigger>
+        <SheetTitle className="sr-only">Filter</SheetTitle>
         <SheetContent side="top" className="py-6">
           {/* Category */}
           <div className="flex flex-col gap-3 px-3">

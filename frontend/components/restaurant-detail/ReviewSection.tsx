@@ -57,7 +57,7 @@ const reviews = [
     views: 31,
     menuItem: "ไข่ขิน (Scrambled eggs)",
     content:
-      "อยากจะบอกว่ามันดีมากเลย ราคาสบายกระเป๋า บรรยากาศดีครบจบในร้านเดียวเลย อำนต่อ",
+      "อยากจะบอกว่ามันดีมากเลย ราคาสบายกระเป๋า บรรยากาศดีครบจบในร้านเดียวเลย",
     likes: 0,
     comments: 0,
   },
@@ -118,9 +118,9 @@ function StarRating({
 
 function RatingBreakdown() {
   return (
-    <div className="flex items-center gap-8 px-16">
+    <div className="flex items-center gap-8 px-16 rating-breakdown-wrapper">
       <div className="text-center">
-        <div className="mb-1 text-5xl text-foreground">
+        <div className="mb-1 text-5xl text-foreground rating-score">
           {reviewData.averageRating}
         </div>
         <div className="text-sm text-muted-foreground">
@@ -128,7 +128,7 @@ function RatingBreakdown() {
         </div>
       </div>
 
-      <div className="flex-1 space-y-2">
+      <div className="flex-1 w-full space-y-2">
         {reviewData.ratingBreakdown.map((item) => (
           <div key={item.stars} className="flex items-center gap-2">
             <div className="flex">
@@ -168,8 +168,10 @@ function RankingSection() {
 function RateThisPlace() {
   return (
     <Card className="my-6">
-      <CardContent className="flex flex-col items-center p-6 text-center">
-        <h3 className="mb-4 text-lg font-medium">ให้คะแนนร้านนี้</h3>
+      <CardContent className="flex flex-col items-center p-6 text-center max-[425px]:p-4">
+        <h3 className="mb-4 text-lg font-medium max-[425px]:mb-3 max-[425px]:text-base">
+          ให้คะแนนร้านนี้
+        </h3>
         <StarRating rating={0} size="lg" interactive />
       </CardContent>
     </Card>
@@ -186,15 +188,15 @@ function FilterSection() {
   ];
 
   return (
-    <div className="flex flex-wrap items-center gap-4 py-4">
+    <div className="flex flex-wrap items-center gap-4 py-4 filter-section-wrapper">
       <span className="font-medium">ตัวกรอง</span>
-      <div className="flex gap-2">
+      <div className="flex gap-2 filter-buttons-group">
         {filterOptions.map((option) => (
           <Button
             key={option.stars}
             variant="outline"
             size="sm"
-            className="h-8 px-3 bg-transparent"
+            className="h-8 px-3 bg-transparent star-filter-button"
           >
             <div className="flex items-center gap-1">
               {[...Array(option.stars)].map((_, i) => (
@@ -205,7 +207,7 @@ function FilterSection() {
         ))}
       </div>
 
-      <div className="flex items-center gap-2 ml-auto">
+      <div className="flex items-center gap-2 ml-auto sort-section">
         <span className="text-sm">เรียงตาม</span>
         <Select defaultValue="popular">
           <SelectTrigger className="w-32">
@@ -226,115 +228,129 @@ function FilterSection() {
 
 function ReviewCard({ review }: { review: (typeof reviews)[0] }) {
   return (
-    <Card className="mb-4">
-      <CardContent className="p-6">
-        <div className="flex items-start gap-3">
-          <Avatar className="w-12 h-12">
-            <AvatarImage
-              src={review.user.avatar || "/placeholder.svg"}
-              alt={review.user.name}
-            />
-            <AvatarFallback>{review.user.name[0]}</AvatarFallback>
-          </Avatar>
+    <div className="flex items-start gap-3 max-[425px]:gap-2">
+      <Avatar className="h-12 w-12 max-[425px]:h-10 max-[425px]:w-10">
+        <AvatarImage
+          src={review.user.avatar || "/placeholder.svg"}
+          alt={review.user.name}
+        />
+        <AvatarFallback>{review.user.name[0]}</AvatarFallback>
+      </Avatar>
 
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <h4 className="font-semibold">{review.user.name}</h4>
-            </div>
-
-            <div className="flex items-center gap-4 mb-3 text-sm text-muted-foreground">
-              <span className="flex items-center gap-1">
-                <span>👥</span> {review.user.followers}
-              </span>
-              <span className="flex items-center gap-1">
-                <span>⭐</span> {review.user.reviews}
-              </span>
-              <span className="flex items-center gap-1">
-                <span>📷</span> {review.user.photos}
-              </span>
-              {review.user.isVerified && (
-                <Badge
-                  variant="secondary"
-                  className="text-xs text-green-700 bg-green-100"
-                >
-                  ยืนยันตัวตนแล้ว
-                </Badge>
-              )}
-            </div>
-
-            {!review.isHidden && (
-              <>
-                <div className="flex items-center gap-2 mb-2">
-                  <StarRating rating={review.rating} size="sm" />
-                  <span className="text-sm text-muted-foreground">
-                    {review.date}
-                  </span>
-                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                    <Eye className="w-3 h-3" />
-                    <span>ดูแล้ว {review.views}</span>
-                  </div>
-                </div>
-
-                {review.menuItem && (
-                  <p className="mb-2 font-medium">
-                    เมนูเด็ด: {review.menuItem}
-                  </p>
-                )}
-
-                <p className="mb-4 leading-relaxed text-foreground">
-                  {review.content}
-                </p>
-
-                <div className="flex items-center gap-6">
-                  <Button variant="ghost" size="sm" className="h-8 px-2">
-                    <ThumbsUp className="w-4 h-4 mr-1" />
-                    {review.likes} Like
-                  </Button>
-                  <Button variant="ghost" size="sm" className="h-8 px-2">
-                    <MessageCircle className="w-4 h-4 mr-1" />
-                    {review.comments} Comment
-                  </Button>
-                  <Button variant="ghost" size="sm" className="h-8 px-2">
-                    <Share className="w-4 h-4 mr-1" />
-                    Share
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-8 h-8 p-0 ml-auto"
-                  >
-                    <MoreHorizontal className="w-4 h-4" />
-                  </Button>
-                </div>
-              </>
-            )}
-
-            {review.isHidden && (
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Info className="w-4 h-4" />
-                <span className="text-sm">{review.content}</span>
-                <Button
-                  variant="link"
-                  size="sm"
-                  className="h-auto p-0 text-blue-600"
-                >
-                  กดเพื่อแสดงรีวิว
-                </Button>
-              </div>
-            )}
-          </div>
+      <div className="flex-1">
+        <div className="flex items-center gap-2 mb-2">
+          <h4 className="font-semibold max-[425px]:text-sm">
+            {review.user.name}
+          </h4>
         </div>
-      </CardContent>
-    </Card>
+
+        <div className="text-muted-foreground review-user-stats mb-3 flex items-center gap-4 text-sm max-[425px]:gap-2">
+          <span className="flex items-center gap-1">
+            <span>👥</span> {review.user.followers}
+          </span>
+          <span className="flex items-center gap-1">
+            <span>⭐</span> {review.user.reviews}
+          </span>
+          <span className="flex items-center gap-1">
+            <span>📷</span> {review.user.photos}
+          </span>
+          {review.user.isVerified && (
+            <Badge
+              variant="secondary"
+              className="bg-green-100 text-xs text-green-700 max-[425px]:text-[10px]"
+            >
+              ยืนยันตัวตนแล้ว
+            </Badge>
+          )}
+        </div>
+
+        {!review.isHidden && (
+          <>
+            <div className="mb-2 flex items-center gap-2 max-[425px]:flex-wrap">
+              <StarRating rating={review.rating} size="sm" />
+              <span className="text-muted-foreground text-sm max-[425px]:text-xs">
+                {review.date}
+              </span>
+              <div className="text-muted-foreground flex items-center gap-1 text-sm max-[425px]:text-xs">
+                <Eye className="w-3 h-3" />
+                <span>ดูแล้ว {review.views}</span>
+              </div>
+            </div>
+
+            {review.menuItem && (
+              <p className="mb-2 font-medium max-[425px]:text-sm">
+                เมนูเด็ด: {review.menuItem}
+              </p>
+            )}
+
+            <p className="text-foreground mb-4 leading-relaxed max-[425px]:text-sm">
+              {review.content}
+            </p>
+
+            <div className="review-actions flex items-center gap-6 max-[425px]:gap-1">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 px-2 review-action-button"
+              >
+                <ThumbsUp className="mr-1 h-4 w-4 max-[425px]:h-3 max-[425px]:w-3" />
+                <span className="max-[425px]:text-xs">{review.likes} Like</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 px-2 review-action-button"
+              >
+                <MessageCircle className="mr-1 h-4 w-4 max-[425px]:h-3 max-[425px]:w-3" />
+                <span className="max-[425px]:text-xs">
+                  {review.comments} Comment
+                </span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 px-2 review-action-button"
+              >
+                <Share className="mr-1 h-4 w-4 max-[425px]:h-3 max-[425px]:w-3" />
+                <span className="max-[425px]:text-xs">Share</span>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="ml-auto h-8 w-8 p-0 max-[425px]:h-7 max-[425px]:w-7"
+              >
+                <MoreHorizontal className="h-4 w-4 max-[425px]:h-3 max-[425px]:w-3" />
+              </Button>
+            </div>
+          </>
+        )}
+
+        {review.isHidden && (
+          <div className="text-muted-foreground flex items-center gap-2 max-[425px]:flex-col max-[425px]:items-start">
+            <Info className="w-4 h-4" />
+            <span className="text-sm max-[425px]:text-xs">
+              {review.content}
+            </span>
+            <Button
+              variant="link"
+              size="sm"
+              className="h-auto p-0 text-blue-600 max-[425px]:text-xs"
+            >
+              กดเพื่อแสดงรีวิว
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
   );
 }
 
 export function ReviewSection() {
   return (
-    <div className="max-w-4xl gap-4 px-4 mx-auto">
+    <div className="max-w-4xl gap-4 mx-auto review-section-container">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="mb-4 text-xl">
+        <h1 className="mb-4 text-xl section-heading">
           {reviewData.totalReviews} รีวิว{" "}
           <span className="text-muted-foreground">
             ({reviewData.totalRatings} เรตติ้ง)

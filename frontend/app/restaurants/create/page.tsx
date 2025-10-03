@@ -1,4 +1,4 @@
-import RestaurantcreateForm from "@/components/store/RestaurantcreateForm";
+import RestaurantcreateForm from "@/components/restaurants/RestaurantcreateForm";
 
 const Restaurantcreatepage = () => {
   return <RestaurantcreateForm />;

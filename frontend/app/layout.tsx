@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import { Toaster } from "@/components/ui/sonner";
 import { Outfit, Kanit } from "next/font/google";
 
-import Header from "@/components/header/Header";
-import Footer from "@/components/footer/Footer";
-
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import "./globals.css";
+import FeedbackButton from "@/components/FeedbackButton";
 
 export const metadata: Metadata = {
   title: "TasteTrail",
@@ -36,8 +36,9 @@ export default function RootLayout({
         className={`flex min-h-svh w-full flex-col ${outfit.variable} ${kanit.variable}`}
       >
         <Header />
-        <main className="flex-1 bg-gray-50">{children}</main>
+        <main className="flex flex-col flex-1">{children}</main>
         <Footer />
+        <FeedbackButton />
 
         <Toaster />
       </body>

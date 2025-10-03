@@ -1,7 +1,8 @@
+import { cn } from "@/lib/utils";
+
 import Image from "next/image";
 import Link from "next/link";
 import logo from "@/public/logo.svg";
-import { cn } from "@/lib/utils";
 
 const Logo = ({
   width,
