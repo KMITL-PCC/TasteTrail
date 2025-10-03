@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState, FormEvent } from "react";
+import DOMPurify from "dompurify";
 
 interface EmailFormProps {
   csrfToken: string;
@@ -9,6 +10,17 @@ interface EmailFormProps {
   setEmail: (email: string) => void;
   onSubmit: (email: string) => void;
 }
+
+// ฟังก์ชัน sanitize input (กัน XSS)
+const sanitizeInput = (value: string) =>
+  DOMPurify.sanitize(value.trim(), {
+    ALLOWED_TAGS: [],
+    ALLOWED_ATTR: [],
+  });
+
+// ฟังก์ชัน validate email format
+const isValidEmail = (email: string) =>
+  /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
 
 const EmailForm: React.FC<EmailFormProps> = ({
   setFormStep,
@@ -20,13 +32,16 @@ const EmailForm: React.FC<EmailFormProps> = ({
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!localEmail || !/\S+@\S+\.\S+/.test(localEmail)) {
+    // sanitize email
+    const safeEmail = sanitizeInput(localEmail);
+
+    if (!safeEmail || !isValidEmail(safeEmail)) {
       alert("Please enter a valid email address.");
       return;
     }
 
-    setEmail(localEmail);
-    onSubmit(localEmail);
+    setEmail(safeEmail); // เก็บค่า email แบบ sanitize แล้ว
+    onSubmit(safeEmail); // ส่งค่าไป backend
     setFormStep("otp");
   };
 

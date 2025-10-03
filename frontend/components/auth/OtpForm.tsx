@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import DOMPurify from "dompurify";
 
 interface OtpFormProps {
   csrfToken: string;
   setFormStep: (step: "otp" | "resetPassword") => void;
-  email: string | null; // เปลี่ยนจาก string เป็น string | null
+  email: string | null;
 }
 
 const VERIFY_OTP_ENDPOINT = `${process.env.NEXT_PUBLIC_BACKEND_URL}/auth/verify-otp`;
@@ -16,24 +17,28 @@ export default function OtpForm({
   setFormStep,
   email,
 }: OtpFormProps) {
-  const [otp, setOtp] = useState(["", "", "", "", ""]);
+  const [otp, setOtp] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [countdown, setCountdown] = useState(30);
 
-  // Countdown for resend OTP
+  // countdown
   useEffect(() => {
     if (countdown <= 0) return;
     const timer = setTimeout(() => setCountdown((prev) => prev - 1), 1000);
     return () => clearTimeout(timer);
   }, [countdown]);
 
+  // sanitize email
+  const safeEmail = email ? DOMPurify.sanitize(email) : "";
+
   const handleOtpSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
+    setMessage("");
 
-    const otpCode = otp.join("");
-    if (!/^\d{5}$/.test(otpCode)) {
+    const safeOtp = otp.replace(/[^0-9]/g, "");
+    if (!/^\d{5}$/.test(safeOtp)) {
       setMessage("Please enter a valid 5-digit OTP.");
       setIsLoading(false);
       return;
@@ -47,39 +52,30 @@ export default function OtpForm({
           "Content-Type": "application/json",
           "X-CSRF-Token": csrfToken,
         },
-        body: JSON.stringify({ otp: otpCode }),
+        body: JSON.stringify({ otp: safeOtp }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.message || "Invalid OTP.");
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMessage(data?.message || "Invalid OTP. Please try again.");
+        setIsLoading(false);
+        return;
+      }
+
       setMessage("OTP verified. Please set your new password.");
-      setFormStep("resetPassword"); // เปลี่ยนไปที่ขั้นตอน resetPassword
+      setFormStep("resetPassword");
     } catch (err: any) {
-      setMessage(err?.message || "Invalid OTP. Please try again.");
+      setMessage("Unable to connect to server.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleOtpChange = (
-    e: React.ChangeEvent<HTMLInputElement>,
-    index: number,
-  ) => {
-    const value = e.target.value.replace(/[^0-9]/g, "");
-    const updatedOtp = [...otp];
-    updatedOtp[index] = value;
-    setOtp(updatedOtp);
-
-    // Automatically move to next input field when a digit is entered
-    if (value && index < 4) {
-      const nextInput = document.getElementById(`otp-${index + 1}`);
-      nextInput?.focus();
-    }
-  };
-
   const handleResendOtp = async () => {
-    if (countdown > 0) return; // Wait until countdown reaches 0
+    if (countdown > 0) return;
     setIsLoading(true);
     setMessage("");
+
     try {
       const res = await fetch(RESEND_OTP_ENDPOINT, {
         method: "POST",
@@ -88,14 +84,19 @@ export default function OtpForm({
           "Content-Type": "application/json",
           "X-CSRF-Token": csrfToken,
         },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ email: safeEmail }),
       });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.message || "Failed to resend code.");
+
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setMessage(data?.message || "Failed to resend code.");
+        return;
+      }
+
       setMessage("A new OTP has been sent to your email.");
       setCountdown(30);
-    } catch (err: any) {
-      setMessage(err?.message || "Failed to resend OTP.");
+    } catch (err) {
+      setMessage("Unable to resend code.");
     } finally {
       setIsLoading(false);
     }
@@ -103,62 +104,62 @@ export default function OtpForm({
 
   return (
     <div className="w-full max-w-md">
-      {/* Check your email */}
-      <h1 className="text-center text-3xl font-bold text-gray-900">
-        Check Your Email
-      </h1>
-      <p className="mt-2 text-center text-sm text-gray-600">
-        We sent a reset link to{" "}
-        <span className="font-medium text-gray-800">{email}</span>.<br />
-        Enter the 5-digit code mentioned in the email.
-      </p>
+      <div className="mb-6 text-center">
+        <h1 className="text-2xl font-bold text-gray-900">
+          Enter Verification Code
+        </h1>
+        <p className="mt-2 text-sm text-gray-600">
+          A 5-digit code was sent to{" "}
+          <span className="font-medium text-gray-800">{safeEmail}</span>
+        </p>
+      </div>
 
-      {/* OTP Form */}
-      <form onSubmit={handleOtpSubmit} className="mt-6 space-y-6 text-center">
-        <div className="flex justify-center gap-2">
-          {otp.map((digit, index) => (
-            <input
-              key={index}
-              id={`otp-${index}`}
-              type="text"
-              value={digit}
-              onChange={(e) => handleOtpChange(e, index)}
-              maxLength={1}
-              className="h-12 w-12 rounded-md border border-gray-300 bg-white text-center text-xl font-semibold placeholder-gray-400 shadow-sm focus:border-green-500 focus:ring-1 focus:ring-green-500"
-              placeholder="-"
-            />
-          ))}
+      <form onSubmit={handleOtpSubmit} className="space-y-6">
+        <div>
+          <input
+            id="otp"
+            name="otp"
+            type="text"
+            inputMode="numeric"
+            maxLength={5}
+            required
+            value={otp}
+            onChange={(e) => setOtp(e.target.value.replace(/[^0-9]/g, ""))}
+            disabled={isLoading}
+            className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-center text-lg tracking-[0.5em] placeholder-gray-400 shadow-sm transition focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none disabled:bg-gray-50"
+            placeholder="-----"
+          />
         </div>
 
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full justify-center rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:bg-green-400"
+          className="w-full justify-center rounded-md border border-transparent bg-green-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 focus:outline-none disabled:cursor-not-allowed disabled:bg-green-400"
         >
-          {isLoading ? "Verifying..." : "Verify OTP"}
+          {isLoading ? "Verifying..." : "Verify Code"}
         </button>
       </form>
 
-      {/* Resend OTP */}
-      <div className="mt-4 text-center text-sm text-gray-600">
-        Didn't receive the code?{" "}
-        {countdown > 0 ? (
-          <span className="font-medium text-gray-400">
-            You can resend in {countdown}s
-          </span>
-        ) : (
-          <button
-            type="button"
-            onClick={handleResendOtp}
-            disabled={isLoading}
-            className="font-medium text-green-600 hover:text-green-500 focus:outline-none disabled:opacity-50"
-          >
-            Resend code
-          </button>
-        )}
+      <div className="mt-6 space-y-4 text-center text-sm">
+        <p className="text-gray-600">
+          Didn't receive the code?{" "}
+          {countdown > 0 ? (
+            <span className="font-medium text-gray-400">
+              You can resend in {countdown}s
+            </span>
+          ) : (
+            <button
+              type="button"
+              onClick={handleResendOtp}
+              disabled={isLoading}
+              className="font-medium text-green-600 hover:text-green-500 focus:outline-none disabled:opacity-50"
+            >
+              Resend code
+            </button>
+          )}
+        </p>
       </div>
 
-      {/* Message */}
       {message && (
         <div className="mt-4 text-center text-sm text-red-500">{message}</div>
       )}

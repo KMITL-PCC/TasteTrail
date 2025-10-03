@@ -6,6 +6,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useUser } from "@/store/user-store";
+import { ImageZoom } from "@/components/ui/shadcn-io/image-zoom";
+import Zoom from "react-medium-image-zoom";
+import "react-medium-image-zoom/dist/styles.css"; // ต้อง import style
 
 const backendURL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
@@ -39,17 +42,22 @@ const ProfileForm = () => {
   const profilePictureUrl = user?.profilePictureUrl || "/user.png";
 
   return (
-    <div className="to-muted/50 min-h-screen bg-gradient-to-b from-white">
-      <Card className="mx-auto mt-16 max-w-6xl overflow-hidden rounded-2xl border py-0 shadow-sm">
-        <CardContent className="flex items-center gap-2">
-          <div className="relative h-[120px] w-[120px]">
-            <Image
-              src={profilePictureUrl}
-              alt="User"
-              fill
-              className="rounded-full object-cover"
-              sizes="120px"
-            />
+    <div className="">
+      <Card className="mx-auto mt-9 h-40 max-w-5xl overflow-hidden rounded-2xl border py-0 shadow-sm">
+        <CardContent className="flex h-full items-center gap-2">
+          <div className="relative flex h-[120px] w-[120px] items-center justify-center">
+            <Zoom zoomMargin={100}>
+              <div className="h-[120px] w-[120px] overflow-hidden rounded-full">
+                <Image
+                  src={profilePictureUrl}
+                  alt="User"
+                  width={100}
+                  height={100}
+                  className="h-full w-full object-cover"
+                  unoptimized
+                />
+              </div>
+            </Zoom>
           </div>
 
           <div className="min-w-0 flex-1">
