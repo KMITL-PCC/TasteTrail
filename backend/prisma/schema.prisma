@@ -165,6 +165,7 @@ model ReviewImage {
   id         Int      @id @default(autoincrement()) @map("review_image_id")
   reviewId   Int      @map("review_id")
   imageUrl   String   @map("image_url") @db.VarChar(2048)
+  publicId   String   @map("public_id") @db.VarChar(100)
   uploadedAt DateTime @default(now()) @map("uploaded_at") @db.Timestamptz(6)
 
   review Review @relation(fields: [reviewId], references: [id])

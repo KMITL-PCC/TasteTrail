@@ -206,6 +206,44 @@ export default {
       // console.log(uploadedResults);
       const restaurant = await prisma.$transaction(async (tx) => {
         //2. create restaurant
+        // const newRestaurant = await tx.restaurant.create({
+        //   data: {
+        //     name: information.name,
+        //     description: information.description,
+        //     address: information.address,
+        //     minPrice: price.minPrice,
+        //     maxPrice: price.maxPrice,
+        //     contact: {
+        //       create: {
+        //         contactType: "phone",
+        //         contactDetail: information.contactDetail || "",
+        //       },
+        //     },
+        //     restaurantServices: {
+        //       create: services.map((s: number) => ({ serviceId: s })),
+        //     },
+        //   },
+        // });
+
+        // //3. create open hour time
+        // await tx.openingHour.createMany({
+        //   data: time.map((t: Restaurant.time) => ({
+        //     weekday: t.weekday,
+        //     openTime: t.openTime,
+        //     closeTime: t.closeTime,
+        //     restaurantId: newRestaurant.id,
+        //   })),
+        // });
+
+        // //4. save image url on db
+        // await tx.restaurantImage.createMany({
+        //   data: uploadedResults.map((img) => ({
+        //     restaurantId: newRestaurant.id,
+        //     imageUrl: img.url,
+        //     publicId: img.public_id,
+        //   })),
+        // });
+
         const newRestaurant = await tx.restaurant.create({
           data: {
             name: information.name,
@@ -220,36 +258,27 @@ export default {
               },
             },
             restaurantServices: {
-              create: services.map((s: number) => ({ serviceId: s })),
+              create: services.map((serviceId) => ({ serviceId })),
+            },
+            openninghour: {
+              createMany: {
+                data: time.map((t: Restaurant.time) => ({
+                  weekday: t.weekday,
+                  openTime: t.openTime,
+                  closeTime: t.closeTime,
+                })),
+              },
+            },
+            images: {
+              createMany: {
+                data: uploadedResults.map((img) => ({
+                  imageUrl: img.url,
+                  publicId: img.public_id,
+                })),
+              },
             },
           },
         });
-
-        //3. create open hour time
-        await tx.openingHour.createMany({
-          // data: availableTime.map((t) => ({
-          //   weekday: t.weekday,
-          //   openTime: t.openTime,
-          //   closeTime: t.closeTime,
-          //   restaurantId: newRestaurant.id,
-          // })),
-          data: time.map((t: Restaurant.time) => ({
-            weekday: t.weekday,
-            openTime: t.openTime,
-            closeTime: t.closeTime,
-            restaurantId: newRestaurant.id,
-          })),
-        });
-
-        //4. save image url on db
-        await tx.restaurantImage.createMany({
-          data: uploadedResults.map((img) => ({
-            restaurantId: newRestaurant.id,
-            imageUrl: img.url,
-            publicId: img.public_id,
-          })),
-        });
-
         return newRestaurant;
       });
 

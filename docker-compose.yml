@@ -85,6 +85,28 @@ services:
       timeout: 5s # Timeout 5 วินาที
       retries: 5 # ลอง 5 ครั้งก่อนประกาศว่าไม่ healthy
       start_period: 10s # รอ 10 วินาทีแรกก่อนเริ่ม Health Check
+  
+  n8n:
+    image: n8nio/n8n:latest
+    container_name: n8n
+    ports:
+      - "5678:5678"
+    volumes:
+      - ./n8n/workflows:/home/node/.n8n
+    env_file: .env
+    networks:
+      - mern_network
+
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    restart: unless-stopped
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    networks:
+      - mern_network
 
 networks:
   mern_network:
@@ -92,3 +114,5 @@ networks:
 volumes:
   postgres_data:
   redis_data:
+  ollama_data:
+  n8n_data:

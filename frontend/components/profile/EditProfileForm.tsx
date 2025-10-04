@@ -14,10 +14,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Upload, Trash2, Save, User, Lock, EyeOff, Eye } from "lucide-react";
-import Link from "next/link";
+import { Save, User, Lock, EyeOff, Eye, X } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { useUser } from "@/store/user-store";
+
 import z from "zod";
 
 const backendURL =
@@ -118,12 +119,13 @@ export default function EditProfilePage() {
           toast.error("Connection Error", { description: msg });
           return;
         }
-        const data = await res.json();
-        setUsername(data?.username ?? "");
-        if (data?.avatarUrl) {
-          const url = data.avatarUrl.startsWith("http")
-            ? data.avatarUrl
-            : `${backendURL}${data.avatarUrl}`;
+        const { user } = await res.json();
+        setUsername(user?.username ?? "");
+
+        if (user?.profilePictureUrl) {
+          const url = user.profilePictureUrl.startsWith("http")
+            ? user.profilePictureUrl
+            : `${backendURL}${user.profilePictureUrl}`;
           setAvatarPreview(url);
         }
       } catch (err) {
@@ -281,340 +283,336 @@ export default function EditProfilePage() {
     }
   }
   return (
-    <div className="">
-      <div className="bg-background/80 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10 w-full border-b backdrop-blur">
-        <div className="container mx-auto flex items-center justify-between px-4 py-3">
-          <div className="text-muted-foreground flex items-center gap-2 text-sm">
+    <div>
+      {/* <div className="bg-background/80 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10 w-full border-b backdrop-blur">
+        <div className="container flex items-center justify-between px-4 py-3 mx-auto">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Link
               href="/profile"
-              className="text-foreground inline-flex items-center gap-2 font-medium hover:underline"
+              className="inline-flex items-center gap-2 font-medium text-foreground hover:underline"
             >
-              <User className="h-4 w-4" /> Profile
+              <User className="w-4 h-4" /> Profile
             </Link>
             <span>/</span>
             <span className="text-foreground">Edit profile</span>
           </div>
         </div>
-      </div>
+      </div> */}
 
-      <div className="container mx-auto px-30 py-8">
-        <Tabs defaultValue={defaultTab} className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="profile">
-              <User className="mr-2 h-4 w-4" />
-              Profile
-            </TabsTrigger>
-            <TabsTrigger value="password">
-              <Lock className="mr-2 h-4 w-4" />
-              Password
-            </TabsTrigger>
-          </TabsList>
+      <Tabs defaultValue={defaultTab} className="space-y-6">
+        <TabsList className="m-0">
+          <TabsTrigger value="profile">
+            <User className="mr-2 h-4 w-4" />
+            Profile
+          </TabsTrigger>
+          <TabsTrigger value="password">
+            <Lock className="mr-2 h-4 w-4" />
+            Password
+          </TabsTrigger>
+        </TabsList>
 
-          <TabsContent value="profile">
-            <form
-              id="profile-form"
-              onSubmit={onSaveProfile}
-              className="max-h-l w-full max-w-6xl overflow-hidden rounded-2xl border py-0 shadow-sm"
-            >
-              <Card className="space-y-6 border-0 shadow-sm">
-                <CardContent className="grid grid-cols-1 gap-6 py-10 md:grid-cols-12 md:items-center">
-                  {/* Avatar */}
-                  <div className="flex justify-center md:col-span-5">
-                    <div className="relative h-36 w-36">
-                      <Avatar className="ring-muted-foreground/20 h-50 w-50 cursor-pointer ring-2">
-                        {avatarPreview ? (
-                          <AvatarImage src={avatarPreview} alt="avatar" />
-                        ) : (
-                          <AvatarImage src="/placeholder.svg" alt="avatar" />
-                        )}
-                        <AvatarFallback>
-                          {(username?.[0] || "").toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-
-                      {avatarPreview && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setAvatarPreview(null);
-                            setAvatarFile(null);
-                            if (fileInputRef.current)
-                              fileInputRef.current.value = "";
-                          }}
-                          className="absolute top-0 right-0 -translate-x-1/4 -translate-y-1/4 rounded-full bg-red-600 p-1 text-white hover:bg-red-700"
-                          title="Remove"
-                        >
-                          ✕
-                        </button>
+        <TabsContent value="profile">
+          <form
+            id="profile-form"
+            onSubmit={onSaveProfile}
+            className="max-h-l w-full max-w-6xl overflow-hidden rounded-2xl border py-0 shadow-sm"
+          >
+            <Card className="space-y-6 border-0 shadow-sm">
+              <CardContent className="grid grid-cols-1 gap-6 py-10 md:grid-cols-12 md:items-center">
+                {/* Avatar */}
+                <div className="flex justify-center md:col-span-5">
+                  <div className="relative size-36">
+                    <Avatar className="ring-muted-foreground/20 h-50 w-50 cursor-pointer ring-2">
+                      {avatarPreview ? (
+                        <AvatarImage src={avatarPreview} alt="avatar" />
+                      ) : (
+                        <AvatarImage src="/placeholder.svg" alt="avatar" />
                       )}
+                      <AvatarFallback>
+                        {(username?.[0] || "").toUpperCase()}
+                      </AvatarFallback>
+                    </Avatar>
 
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (!file) return;
-                          setAvatarFile(file);
-                          setAvatarPreview(URL.createObjectURL(file));
+                    {avatarPreview && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setAvatarPreview(null);
+                          setAvatarFile(null);
+                          if (fileInputRef.current)
+                            fileInputRef.current.value = "";
                         }}
-                      />
-
-                      <div
-                        className="absolute inset-0 cursor-pointer"
-                        onClick={() => fileInputRef.current?.click()}
-                      />
-                    </div>
-                  </div>
-
-                  {/* Account */}
-                  <div className="flex flex-col justify-center pt-6 md:col-span-7 md:pl-2">
-                    <CardHeader>
-                      <CardTitle>Account</CardTitle>
-                      <CardDescription>
-                        Basic account information.
-                      </CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      <div className="space-y-2 pt-5 md:col-span-2">
-                        <Label htmlFor="username">Username</Label>
-                        <Input
-                          id="username"
-                          value={username}
-                          onChange={(e) => setUsername(e.target.value)}
-                          placeholder="username"
-                        />
-                      </div>
-                    </CardContent>
-                  </div>
-                </CardContent>
-
-                <CardFooter className="flex items-center justify-end px-10">
-                  <Button type="submit" disabled={savingProfile}>
-                    <Save className="h-4 w-4" /> Save profile
-                  </Button>
-                </CardFooter>
-              </Card>
-            </form>
-          </TabsContent>
-
-          <TabsContent value="password">
-            <form onSubmit={onSavePassword}>
-              <Card>
-                <CardHeader>
-                  <CardTitle>Change password</CardTitle>
-                  <CardDescription>
-                    Use current password to set a new one.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="grid gap-4">
-                  {/* Current Password */}
-                  <div>
-                    <Label htmlFor="currentPassword" className="mb-2 block">
-                      Current password
-                    </Label>
-                    <div className="flex items-center rounded-md border focus-within:ring-2 focus-within:ring-green-500">
-                      <Input
-                        id="currentPassword"
-                        type={showCurrentPassword ? "text" : "password"}
-                        value={currentPassword}
-                        onChange={(e) =>
-                          setCurrentPassword(sanitizePassword(e.target.value))
-                        }
-                        className="h-11 flex-1 border-0 focus:ring-0"
-                        autoComplete="current-password"
-                      />
-                      <button
-                        type="button"
-                        aria-label={
-                          showCurrentPassword
-                            ? "Hide password"
-                            : "Show password"
-                        }
-                        onClick={() => setShowCurrentPassword((prev) => !prev)}
-                        className="px-3 text-gray-500 hover:text-gray-800 focus:outline-none"
+                        className="absolute top-0 -right-16 -translate-x-1/4 -translate-y-1/4 rounded-full bg-red-600 p-1 text-white hover:bg-red-700"
+                        title="Remove"
                       >
-                        {showCurrentPassword ? (
-                          <EyeOff className="h-5 w-5" />
-                        ) : (
-                          <Eye className="h-5 w-5" />
-                        )}
+                        <X />
                       </button>
-                    </div>
-                  </div>
-
-                  {/* New Password */}
-                  <div>
-                    <Label htmlFor="newPassword" className="mb-2 block">
-                      New password
-                    </Label>
-                    <div
-                      className={`flex items-center rounded-md focus-within:ring-2 focus-within:ring-green-500 ${
-                        newPassword.length === 0
-                          ? "border border-gray-300"
-                          : isNewPasswordValid
-                            ? "border border-green-500"
-                            : "border border-red-500"
-                      }`}
-                    >
-                      <Input
-                        id="newPassword"
-                        type={showNewPassword ? "text" : "password"}
-                        value={newPassword}
-                        onChange={(e) =>
-                          setNewPassword(sanitizePassword(e.target.value))
-                        }
-                        className="h-11 flex-1 border-0 focus:ring-0"
-                        autoComplete="new-password"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowNewPassword((prev) => !prev)}
-                        className="px-3 text-gray-500 hover:text-gray-800 focus:outline-none"
-                      >
-                        {showNewPassword ? (
-                          <EyeOff className="h-5 w-5" />
-                        ) : (
-                          <Eye className="h-5 w-5" />
-                        )}
-                      </button>
-                    </div>
-
-                    {/* Password strength checklist */}
-                    {newPassword.length > 0 && (
-                      <ul className="mt-2 space-y-1 text-sm">
-                        <li
-                          className={
-                            /[a-z]/.test(newPassword)
-                              ? "text-green-600"
-                              : "text-gray-500"
-                          }
-                        >
-                          • Lowercase letter
-                        </li>
-                        <li
-                          className={
-                            /[A-Z]/.test(newPassword)
-                              ? "text-green-600"
-                              : "text-gray-500"
-                          }
-                        >
-                          • Uppercase letter
-                        </li>
-                        <li
-                          className={
-                            /\d/.test(newPassword)
-                              ? "text-green-600"
-                              : "text-gray-500"
-                          }
-                        >
-                          • Number
-                        </li>
-                        <li
-                          className={
-                            /[!@#$%^&*()\-+=.?]/.test(newPassword)
-                              ? "text-green-600"
-                              : "text-gray-500"
-                          }
-                        >
-                          • Special character (!@#$%^&*()-+=.?)
-                        </li>
-                        <li
-                          className={
-                            newPassword.length >= 6
-                              ? "text-green-600"
-                              : "text-gray-500"
-                          }
-                        >
-                          • At least 6 characters
-                        </li>
-                      </ul>
                     )}
-                  </div>
 
-                  {/* Confirm Password */}
-                  <div>
-                    <Label htmlFor="confirmPassword" className="mb-2 block">
-                      Confirm password
-                    </Label>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (!file) return;
+                        setAvatarFile(file);
+                        setAvatarPreview(URL.createObjectURL(file));
+                      }}
+                    />
+
                     <div
-                      className={`flex items-center rounded-md focus-within:ring-2 focus-within:ring-green-500 ${
-                        confirmPassword.length === 0
-                          ? "border border-gray-300"
-                          : confirmPassword === newPassword
-                            ? "border border-green-500"
-                            : "border border-red-500"
-                      }`}
-                    >
-                      <Input
-                        id="confirmPassword"
-                        type={showConfirmPassword ? "text" : "password"}
-                        value={confirmPassword}
-                        onChange={(e) =>
-                          setConfirmPassword(sanitizePassword(e.target.value))
-                        }
-                        className="h-11 flex-1 border-0 focus:ring-0"
-                        autoComplete="new-password"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setShowConfirmPassword((prev) => !prev)}
-                        className="px-3 text-gray-500 hover:text-gray-800 focus:outline-none"
-                      >
-                        {showConfirmPassword ? (
-                          <EyeOff className="h-5 w-5" />
-                        ) : (
-                          <Eye className="h-5 w-5" />
-                        )}
-                      </button>
-                    </div>
+                      className="absolute inset-0 cursor-pointer"
+                      onClick={() => fileInputRef.current?.click()}
+                    />
                   </div>
-                </CardContent>
+                </div>
 
-                <CardFooter className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <Button type="submit" disabled={savingPassword}>
-                    <Lock className="mr-2 h-4 w-4" />
-                    {savingPassword ? "Updating..." : "Update password"}
-                  </Button>
+                {/* Account */}
+                <div className="flex flex-col justify-center pt-6 md:col-span-7 md:pl-2">
+                  <CardHeader>
+                    <CardTitle>Account</CardTitle>
+                    <CardDescription>
+                      Basic account information.
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    <div className="space-y-2 pt-5 md:col-span-2">
+                      <Label htmlFor="username">Username</Label>
+                      <Input
+                        id="username"
+                        value={username}
+                        onChange={(e) => setUsername(e.target.value)}
+                        placeholder="username"
+                      />
+                    </div>
+                  </CardContent>
+                </div>
+              </CardContent>
 
-                  <Button
-                    type="button" // 👈 เพิ่มบรรทัดนี้
-                    variant="link"
-                    size="sm"
-                    onClick={async () => {
-                      if (!csrfToken) {
-                        toast.error("Session not ready");
-                        return;
+              <CardFooter className="flex items-center justify-end px-10">
+                <Button type="submit" disabled={savingProfile}>
+                  <Save className="h-4 w-4" /> Save profile
+                </Button>
+              </CardFooter>
+            </Card>
+          </form>
+        </TabsContent>
+
+        <TabsContent value="password">
+          <form onSubmit={onSavePassword}>
+            <Card>
+              <CardHeader>
+                <CardTitle>Change password</CardTitle>
+                <CardDescription>
+                  Use current password to set a new one.
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="grid gap-4">
+                {/* Current Password */}
+                <div>
+                  <Label htmlFor="currentPassword" className="mb-2 block">
+                    Current password
+                  </Label>
+                  <div className="flex items-center rounded-md border focus-within:ring-2 focus-within:ring-green-500">
+                    <Input
+                      id="currentPassword"
+                      type={showCurrentPassword ? "text" : "password"}
+                      value={currentPassword}
+                      onChange={(e) =>
+                        setCurrentPassword(sanitizePassword(e.target.value))
                       }
-                      try {
-                        const res = await fetch(`${backendURL}/auth/sendOTP`, {
-                          method: "POST",
-                          headers: {
-                            "Content-Type": "application/json",
-                            "X-CSRF-Token": csrfToken,
-                          },
-                          credentials: "include",
-                        });
-                        if (!res.ok) throw new Error("Failed to send OTP");
-
-                        toast.success("OTP sent successfully!");
-                        router.push(
-                          `/update-by-otp?return=${encodeURIComponent("/editprofile?tab=password")}`,
-                        );
-                      } catch (err) {
-                        toast.error("Error sending OTP");
+                      className="h-11 flex-1 border-0 focus:ring-0"
+                      autoComplete="current-password"
+                    />
+                    <button
+                      type="button"
+                      aria-label={
+                        showCurrentPassword ? "Hide password" : "Show password"
                       }
-                    }}
+                      onClick={() => setShowCurrentPassword((prev) => !prev)}
+                      className="px-3 text-gray-500 hover:text-gray-800 focus:outline-none"
+                    >
+                      {showCurrentPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* New Password */}
+                <div>
+                  <Label htmlFor="newPassword" className="mb-2 block">
+                    New password
+                  </Label>
+                  <div
+                    className={`flex items-center rounded-md focus-within:ring-2 focus-within:ring-green-500 ${
+                      newPassword.length === 0
+                        ? "border border-gray-300"
+                        : isNewPasswordValid
+                          ? "border border-green-500"
+                          : "border border-red-500"
+                    }`}
                   >
-                    Update By OTP
-                  </Button>
-                </CardFooter>
-              </Card>
-            </form>
-          </TabsContent>
-        </Tabs>
-      </div>
+                    <Input
+                      id="newPassword"
+                      type={showNewPassword ? "text" : "password"}
+                      value={newPassword}
+                      onChange={(e) =>
+                        setNewPassword(sanitizePassword(e.target.value))
+                      }
+                      className="h-11 flex-1 border-0 focus:ring-0"
+                      autoComplete="new-password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword((prev) => !prev)}
+                      className="px-3 text-gray-500 hover:text-gray-800 focus:outline-none"
+                    >
+                      {showNewPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
+                    </button>
+                  </div>
+
+                  {/* Password strength checklist */}
+                  {newPassword.length > 0 && (
+                    <ul className="mt-2 space-y-1 text-sm">
+                      <li
+                        className={
+                          /[a-z]/.test(newPassword)
+                            ? "text-green-600"
+                            : "text-gray-500"
+                        }
+                      >
+                        • Lowercase letter
+                      </li>
+                      <li
+                        className={
+                          /[A-Z]/.test(newPassword)
+                            ? "text-green-600"
+                            : "text-gray-500"
+                        }
+                      >
+                        • Uppercase letter
+                      </li>
+                      <li
+                        className={
+                          /\d/.test(newPassword)
+                            ? "text-green-600"
+                            : "text-gray-500"
+                        }
+                      >
+                        • Number
+                      </li>
+                      <li
+                        className={
+                          /[!@#$%^&*()\-+=.?]/.test(newPassword)
+                            ? "text-green-600"
+                            : "text-gray-500"
+                        }
+                      >
+                        • Special character (!@#$%^&*()-+=.?)
+                      </li>
+                      <li
+                        className={
+                          newPassword.length >= 6
+                            ? "text-green-600"
+                            : "text-gray-500"
+                        }
+                      >
+                        • At least 6 characters
+                      </li>
+                    </ul>
+                  )}
+                </div>
+
+                {/* Confirm Password */}
+                <div>
+                  <Label htmlFor="confirmPassword" className="mb-2 block">
+                    Confirm password
+                  </Label>
+                  <div
+                    className={`flex items-center rounded-md focus-within:ring-2 focus-within:ring-green-500 ${
+                      confirmPassword.length === 0
+                        ? "border border-gray-300"
+                        : confirmPassword === newPassword
+                          ? "border border-green-500"
+                          : "border border-red-500"
+                    }`}
+                  >
+                    <Input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) =>
+                        setConfirmPassword(sanitizePassword(e.target.value))
+                      }
+                      className="h-11 flex-1 border-0 focus:ring-0"
+                      autoComplete="new-password"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword((prev) => !prev)}
+                      className="px-3 text-gray-500 hover:text-gray-800 focus:outline-none"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff className="h-5 w-5" />
+                      ) : (
+                        <Eye className="h-5 w-5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </CardContent>
+
+              <CardFooter className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <Button type="submit" disabled={savingPassword}>
+                  <Lock className="mr-2 h-4 w-4" />
+                  {savingPassword ? "Updating..." : "Update password"}
+                </Button>
+
+                <Button
+                  type="button" // 👈 เพิ่มบรรทัดนี้
+                  variant="link"
+                  size="sm"
+                  onClick={async () => {
+                    if (!csrfToken) {
+                      toast.error("Session not ready");
+                      return;
+                    }
+                    try {
+                      const res = await fetch(`${backendURL}/auth/sendOTP`, {
+                        method: "POST",
+                        headers: {
+                          "Content-Type": "application/json",
+                          "X-CSRF-Token": csrfToken,
+                        },
+                        credentials: "include",
+                      });
+                      if (!res.ok) throw new Error("Failed to send OTP");
+
+                      toast.success("OTP sent successfully!");
+                      router.push(
+                        `/update-by-otp?return=${encodeURIComponent("/editprofile?tab=password")}`,
+                      );
+                    } catch (err) {
+                      toast.error("Error sending OTP");
+                    }
+                  }}
+                >
+                  Update By OTP
+                </Button>
+              </CardFooter>
+            </Card>
+          </form>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
