@@ -68,6 +68,8 @@ const ForgotPasswordForm = () => {
   const isValidEmail = (email: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
 
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   // Password strength validation
   const isStrongPassword = (pwd: string) =>
     pwd.length >= 8 && /[A-Z]/.test(pwd) && /[a-z]/.test(pwd) && /\d/.test(pwd);
@@ -502,9 +504,9 @@ const ForgotPasswordForm = () => {
             </div>
 
             {/* Confirm Password */}
-            <div>
+            <div className="relative">
               <input
-                type="password"
+                type={showConfirmPassword ? "text" : "password"}
                 placeholder="Confirm New Password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -512,6 +514,17 @@ const ForgotPasswordForm = () => {
                 className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 placeholder-gray-400 shadow-sm transition focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none disabled:bg-gray-50"
                 required
               />
+              <button
+                type="button" // ป้องกันปุ่ม submit โดยไม่ตั้งใจ
+                onClick={() => setShowConfirmPassword((s) => !s)}
+                className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-1 text-gray-500 hover:text-gray-800 focus:outline-none"
+              >
+                {showConfirmPassword ? (
+                  <EyeOff className="h-5 w-5" />
+                ) : (
+                  <Eye className="h-5 w-5" />
+                )}
+              </button>
             </div>
 
             {/* Password checklist */}

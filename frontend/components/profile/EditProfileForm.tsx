@@ -69,7 +69,7 @@ export default function EditProfilePage() {
     });
 
   const [csrfToken, setCsrfToken] = useState<string | null>(null);
-  const [provider, setProvider] = useState<string>("local"); // ค่าเริ่มต้น local
+  const [provider, setProvider] = useState<string | null>(null); // เปลี่ยนจาก "" เป็น null
 
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
@@ -79,6 +79,8 @@ export default function EditProfilePage() {
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const [providerChecked, setProviderChecked] = useState(false); // flag รอ fetch
 
   // Profile
   const [username, setUsername] = useState("");
