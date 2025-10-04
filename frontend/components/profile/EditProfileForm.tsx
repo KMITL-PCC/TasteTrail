@@ -17,7 +17,6 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Save, User, Lock, EyeOff, Eye, X } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { useUser } from "@/store/user-store";
 
 import z from "zod";
 
@@ -31,6 +30,44 @@ const CSRF_ENDPOINT = `${backendURL}/api/csrf-token`;
 function sanitizePassword(input: string) {
   return input.replace(/[<>"'`;]/g, "").trim();
 }
+
+// ---------------- security helpers ----------------
+function detectMaliciousInput(input: string) {
+  if (!input) return false;
+
+  // any HTML tag => XSS
+  const xssPattern = /<[^>]*>/i;
+
+  // common SQLi keywords, comment markers, semicolon, or "sqli"
+  const sqliPattern =
+    /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|OR|AND|EXEC|MERGE|ALTER|TRUNCATE)\b|--|;|\/\*|\*\/|sqli)/i;
+
+  return xssPattern.test(input) || sqliPattern.test(input);
+}
+
+/**
+ * sanitizeUsername:
+ * - normalize, trim, remove control chars
+ * - remove dangerous bracket characters (<, >) to avoid XSS payloads being sent
+ * - allow common username characters plus @ and #
+ * - limit length to 30
+ *
+ * Note: server should still validate/sanitize again.
+ */
+function sanitizeUsername(raw: string) {
+  if (!raw) return "";
+  let s = raw.normalize ? raw.normalize("NFKC") : raw;
+  s = s.trim();
+  // remove control chars
+  s = s.replace(/[\u0000-\u001F\u007F-\u009F]/g, "");
+  // remove angle brackets and quotes (to prevent HTML injection)
+  s = s.replace(/[<>\"'`]/g, "");
+  // keep only allowed characters (letters, numbers, underscore, dot, dash, @, #)
+  s = s.replace(/[^A-Za-z0-9_.\-@#]/g, "");
+  s = s.slice(0, 30);
+  return s;
+}
+// --------------------------------------------------
 
 export default function EditProfilePage() {
   const searchParams = useSearchParams();
@@ -73,6 +110,9 @@ export default function EditProfilePage() {
   const [username, setUsername] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
 
+  // malicious detection message for username
+  const [maliciousError, setMaliciousError] = useState("");
+
   // Change password
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -111,7 +151,7 @@ export default function EditProfilePage() {
     (async () => {
       try {
         const res = await fetch(PROFILE_ENDPOINT, {
-          method: "GET", // ใช้ GET แทน PUT ในการดึงข้อมูล
+          method: "GET",
           credentials: "include",
         });
         if (!res.ok) {
@@ -136,21 +176,33 @@ export default function EditProfilePage() {
     })();
   }, []);
 
+  function containsXSSorSQLi(input: string) {
+    const patterns = [
+      /<\s*script.*?>/i, // XSS แบบง่าย
+      /<\/\s*script>/i,
+      /['";]/, // SQLi พื้นฐาน ' " ;
+      /--/, // SQL comment
+      /\/\*/, // SQL comment start
+    ];
+    return patterns.some((pat) => pat.test(input));
+  }
+
   // ===== Profile upload/preview =====
+  // State เพิ่มสำหรับแจ้งเตือนไฟล์ใหญ่
+  const [avatarError, setAvatarError] = useState("");
+
   function onUploadAvatar(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // จำกัดไฟล์ ≤ 2MB
-    const MAX_SIZE = 2 * 1024 * 1024;
+    const MAX_SIZE = 4 * 1024 * 1024; // 4MB
     if (file.size > MAX_SIZE) {
-      toast.error("Image too large", {
-        description: "Please select an image smaller than 2MB.",
-      });
-      if (e.target) e.target.value = "";
+      setAvatarError("Image size exceeds 4MB.");
+      if (e.target) e.target.value = ""; // รีเซ็ต input
       return;
     }
 
+    setAvatarError(""); // ล้าง error
     setAvatarFile(file);
 
     // แสดงตัวอย่างทันทีด้วย Data URL
@@ -169,16 +221,39 @@ export default function EditProfilePage() {
       return;
     }
 
+    // หากมีการตรวจพบ malicious input ให้บล็อกการส่ง
+    // เปลี่ยนฟังก์ชัน detectMaliciousInput ให้คืน string หรือ ""
+    function detectMaliciousInput(input: string): string {
+      if (!input) return "";
+      const xssPattern = /<[^>]*>/i;
+      const sqliPattern =
+        /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|OR|AND|EXEC|MERGE|ALTER|TRUNCATE)\b|--|;|\/\*|\*\/|sqli)/i;
+
+      if (xssPattern.test(input) || sqliPattern.test(input)) {
+        return "Invalid characters detected.";
+      }
+      return "";
+    }
+
+    // sanitize ก่อนส่ง (server ต้อง validate อีกชั้นเสมอ)
+    const safeUsername = sanitizeUsername(username);
+    if (!safeUsername) {
+      toast.error("Invalid username", {
+        description: "Username contains invalid characters.",
+      });
+      return;
+    }
+
     try {
       setSavingProfile(true);
       toast.info("Saving profile...");
 
       const form = new FormData();
-      form.set("username", username);
+      form.set("username", safeUsername); // <-- ส่งค่า sanitized
       if (avatarFile) form.set("avatar", avatarFile);
 
       const res = await fetch(UPDATEPROFILE_ENDPOINT, {
-        method: "PUT", // ใช้ PATCH สำหรับการอัปเดตข้อมูล
+        method: "PUT",
         body: form,
         headers: { "X-CSRF-Token": csrfToken },
         credentials: "include",
@@ -195,11 +270,10 @@ export default function EditProfilePage() {
         description: data.message || "Your changes have been updated.",
       });
 
-      if (data?.avatarUrl) setAvatarPreview(data.avatarUrl); // ใช้รูปใหม่จาก backend
+      if (data?.avatarUrl) setAvatarPreview(data.avatarUrl);
       if (fileInputRef.current) fileInputRef.current.value = "";
       setAvatarFile(null);
 
-      // Broadcast ให้หน้าอื่นรู้ว่ามีการอัปเดต
       if (typeof window !== "undefined" && "BroadcastChannel" in window) {
         const ch = new BroadcastChannel("profile-updated");
         ch.postMessage({ ts: Date.now() });
@@ -226,7 +300,6 @@ export default function EditProfilePage() {
       return;
     }
 
-    // ✅ validate newPassword strength
     const result = passwordSchema.safeParse(newPassword);
     if (!result.success) {
       toast.error("Weak password", {
@@ -267,12 +340,10 @@ export default function EditProfilePage() {
         description: data.message || "Your password has been changed.",
       });
 
-      // ล้างฟิลด์
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
 
-      // ✅ Redirect ไปหน้า profile หลัง update สำเร็จ
       router.push("/profile?updated=1");
     } catch (e: any) {
       toast.error("Connection Error", {
@@ -282,30 +353,18 @@ export default function EditProfilePage() {
       setSavingPassword(false);
     }
   }
+
   return (
     <div>
-      {/* <div className="bg-background/80 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10 w-full border-b backdrop-blur">
-        <div className="container flex items-center justify-between px-4 py-3 mx-auto">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Link
-              href="/profile"
-              className="inline-flex items-center gap-2 font-medium text-foreground hover:underline"
-            >
-              <User className="w-4 h-4" /> Profile
-            </Link>
-            <span>/</span>
-            <span className="text-foreground">Edit profile</span>
-          </div>
-        </div>
-      </div> */}
-
       <Tabs defaultValue={defaultTab} className="space-y-6">
         <TabsList className="m-0">
           <TabsTrigger value="profile">
             <User className="mr-2 h-4 w-4" />
+            <User className="mr-2 h-4 w-4" />
             Profile
           </TabsTrigger>
           <TabsTrigger value="password">
+            <Lock className="mr-2 h-4 w-4" />
             <Lock className="mr-2 h-4 w-4" />
             Password
           </TabsTrigger>
@@ -316,12 +375,13 @@ export default function EditProfilePage() {
             id="profile-form"
             onSubmit={onSaveProfile}
             className="max-h-l w-full max-w-6xl overflow-hidden rounded-2xl border py-0 shadow-sm"
+            className="max-h-l w-full max-w-6xl overflow-hidden rounded-2xl border py-0 shadow-sm"
           >
             <Card className="space-y-6 border-0 shadow-sm">
               <CardContent className="grid grid-cols-1 gap-6 py-10 md:grid-cols-12 md:items-center">
-                {/* Avatar */}
                 <div className="flex justify-center md:col-span-5">
                   <div className="relative size-36">
+                    <Avatar className="ring-muted-foreground/20 h-50 w-50 cursor-pointer ring-2">
                     <Avatar className="ring-muted-foreground/20 h-50 w-50 cursor-pointer ring-2">
                       {avatarPreview ? (
                         <AvatarImage src={avatarPreview} alt="avatar" />
@@ -339,9 +399,11 @@ export default function EditProfilePage() {
                         onClick={() => {
                           setAvatarPreview(null);
                           setAvatarFile(null);
+                          setAvatarError("");
                           if (fileInputRef.current)
                             fileInputRef.current.value = "";
                         }}
+                        className="absolute top-0 -right-16 -translate-x-1/4 -translate-y-1/4 rounded-full bg-red-600 p-1 text-white hover:bg-red-700"
                         className="absolute top-0 -right-16 -translate-x-1/4 -translate-y-1/4 rounded-full bg-red-600 p-1 text-white hover:bg-red-700"
                         title="Remove"
                       >
@@ -349,17 +411,16 @@ export default function EditProfilePage() {
                       </button>
                     )}
 
+                    {avatarError && (
+                      <p className="mt-2 text-sm text-red-600">{avatarError}</p>
+                    )}
+
                     <input
                       ref={fileInputRef}
                       type="file"
                       accept="image/*"
                       className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        setAvatarFile(file);
-                        setAvatarPreview(URL.createObjectURL(file));
-                      }}
+                      onChange={onUploadAvatar}
                     />
 
                     <div
@@ -369,7 +430,6 @@ export default function EditProfilePage() {
                   </div>
                 </div>
 
-                {/* Account */}
                 <div className="flex flex-col justify-center pt-6 md:col-span-7 md:pl-2">
                   <CardHeader>
                     <CardTitle>Account</CardTitle>
@@ -379,13 +439,35 @@ export default function EditProfilePage() {
                   </CardHeader>
                   <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
                     <div className="space-y-2 pt-5 md:col-span-2">
+                    <div className="space-y-2 pt-5 md:col-span-2">
                       <Label htmlFor="username">Username</Label>
                       <Input
                         id="username"
                         value={username}
-                        onChange={(e) => setUsername(e.target.value)}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setUsername(val);
+
+                          // detect malicious input (now returns boolean)
+                          const isBad = detectMaliciousInput(val);
+                          if (isBad) {
+                            setMaliciousError("Invalid characters detected.");
+                          } else {
+                            setMaliciousError("");
+                          }
+                        }}
                         placeholder="username"
+                        className={`h-11 rounded-md border px-3 ${
+                          maliciousError
+                            ? "border-red-500 focus:border-red-500"
+                            : "border-gray-300 focus:border-green-500"
+                        }`}
                       />
+                      {maliciousError && (
+                        <p className="mt-1 text-sm text-red-600">
+                          {maliciousError}
+                        </p>
+                      )}
                     </div>
                   </CardContent>
                 </div>
@@ -393,6 +475,7 @@ export default function EditProfilePage() {
 
               <CardFooter className="flex items-center justify-end px-10">
                 <Button type="submit" disabled={savingProfile}>
+                  <Save className="h-4 w-4" /> Save profile
                   <Save className="h-4 w-4" /> Save profile
                 </Button>
               </CardFooter>
@@ -574,11 +657,12 @@ export default function EditProfilePage() {
               <CardFooter className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                 <Button type="submit" disabled={savingPassword}>
                   <Lock className="mr-2 h-4 w-4" />
+                  <Lock className="mr-2 h-4 w-4" />
                   {savingPassword ? "Updating..." : "Update password"}
                 </Button>
 
                 <Button
-                  type="button" // 👈 เพิ่มบรรทัดนี้
+                  type="button"
                   variant="link"
                   size="sm"
                   onClick={async () => {
@@ -619,12 +703,12 @@ export default function EditProfilePage() {
 
 async function pickError(res: Response, fallback: string) {
   try {
-    const clone = res.clone(); // สร้างสำเนาของ response
-    const j = await clone.json(); // อ่านข้อมูลจากสำเนาของ response
-    return j?.message || fallback; // ส่งคืนข้อความหรือข้อความ fallback
+    const clone = res.clone();
+    const j = await clone.json();
+    return j?.message || fallback;
   } catch {
-    const clone = res.clone(); // สร้างสำเนาใหม่อีกครั้งหากการอ่านเป็น JSON ล้มเหลว
-    const t = await clone.text(); // อ่านข้อมูลจากสำเนาเป็น text
-    return t || fallback; // ส่งคืนข้อความหรือข้อความ fallback
+    const clone = res.clone();
+    const t = await clone.text();
+    return t || fallback;
   }
 }

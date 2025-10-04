@@ -23,7 +23,16 @@ const ProfileForm = () => {
       <CardContent className="flex items-center gap-4 p-4">
         <div className="relative h-[100px] w-[100px]">
           {profilePictureUrl ? (
-            <Zoom zoomMargin={200}>
+            <Zoom
+              zoomMargin={200}
+              // กำหนด src เวอร์ชันใหญ่สำหรับซูม
+              zoomImg={{
+                src: profilePictureUrl,
+                width: 100, // ขนาดใหญ่ตอนซูม
+                height: 100,
+                alt: "User",
+              }}
+            >
               <Image
                 src={profilePictureUrl}
                 alt="User"

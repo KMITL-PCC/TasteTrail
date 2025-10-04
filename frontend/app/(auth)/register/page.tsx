@@ -23,6 +23,7 @@ import { Eye, EyeOff } from "lucide-react";
 /* ---------------- UI: Google Icon ---------------- */
 const GoogleIcon = () => (
   <svg className="mr-3 h-5 w-5" viewBox="0 0 48 48">
+  <svg className="mr-3 h-5 w-5" viewBox="0 0 48 48">
     <path
       fill="#FFC107"
       d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"
@@ -49,12 +50,16 @@ const registerFormSchema = z
       .string()
       .min(6, { message: "Username must be at least 6 characters." })
       .max(30, { message: "Username must be at most 30 characters." })
+      .regex(/^[A-Za-z0-9@#<>]+$/, {
+        message: "Invalid characters detected.",
       .regex(/^[A-Za-z0-9_]+$/, {
         message: "Only letters, numbers, and underscore (_) allowed.",
       })
       .refine((val) => !/[<>"'%;()&+]/.test(val), {
         message: "Invalid characters are not allowed.",
       }),
+
+    email: z.string().email({ message: "Please enter a valid email address." }),
 
     email: z
       .string()
@@ -124,6 +129,16 @@ function abortableTimeout(ms = 15000) {
   return { ctrl, clear: () => clearTimeout(timer) };
 }
 
+function detectMaliciousInput(input: string) {
+  const xssPattern = /<\s*script|<\s*img|on\w+\s*=/i; // ตรวจสอบ tag & event handler
+  const sqliPattern =
+    /(\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|OR|AND)\b|\-\-|\;)/i;
+
+  if (xssPattern.test(input)) return "Potential XSS detected!";
+  if (sqliPattern.test(input)) return "Potential SQL Injection detected!";
+  return "";
+}
+
 /* ---------------- Reusable Pieces ---------------- */
 // นับถอยหลัง + ปุ่ม resend
 const ResendSection = memo(function ResendSection({
@@ -136,6 +151,7 @@ const ResendSection = memo(function ResendSection({
   onResend: () => void;
 }) {
   return (
+    <div className="mt-4 text-center text-sm text-gray-600">
     <div className="mt-4 text-center text-sm text-gray-600">
       Didn't receive the code?{" "}
       {countdown > 0 ? (
@@ -195,6 +211,7 @@ const OtpCodeField = memo(function OtpCodeField({
                 }
               }}
               className="h-11 rounded-md border-gray-300 text-center text-base tracking-widest focus:border-green-500 focus:ring-green-500 sm:h-12"
+              className="h-11 rounded-md border-gray-300 text-center text-base tracking-widest focus:border-green-500 focus:ring-green-500 sm:h-12"
             />
           </FormControl>
           <FormMessage className="text-sm text-red-500" />
@@ -222,6 +239,7 @@ export default function RegisterForm() {
 
   const backendURL = process.env.NEXT_PUBLIC_BACKEND_URL as string;
 
+  const [maliciousError, setMaliciousError] = useState("");
   // ดึง CSRF
   useEffect(() => {
     (async () => {
@@ -275,6 +293,17 @@ export default function RegisterForm() {
     mode: "onChange",
   });
 
+  // ---------------- sanitize function ----------------
+  function sanitizeUsername(raw: string) {
+    if (!raw) return "";
+    let s = raw.normalize ? raw.normalize("NFKC") : raw;
+    s = s.trim();
+    s = s.replace(/[\u0000-\u001F\u007F-\u009F]/g, "");
+    s = s.replace(/[^A-Za-z0-9@#<>]/g, ""); // <-- อนุญาต @ # < >
+    s = s.slice(0, 30); // จำกัดความยาว 30 ตัวอักษร
+    return s;
+  }
+
   // ส่งข้อมูลสมัคร + ขอ OTP
   async function onRegisterSubmit(values: RegisterFormValues) {
     if (!values.username || !values.email || !values.password) {
@@ -288,8 +317,17 @@ export default function RegisterForm() {
       return;
     }
 
+    // sanitize อีกครั้งก่อนส่ง (server-side ต้องเช็คซ้ำเสมอ)
+    const safeUsername = sanitizeUsername(values.username);
+    if (!safeUsername) {
+      toast.error("Invalid username", {
+        description: "Username contains invalid characters.",
+      });
+      return;
+    }
+
     toast.info("Registering account...", {
-      description: `Username: ${values.username}`,
+      description: `Username: ${safeUsername}`,
       duration: 2000,
     });
 
@@ -302,7 +340,7 @@ export default function RegisterForm() {
           "X-CSRF-Token": csrfToken,
         },
         body: JSON.stringify({
-          username: values.username.trim(),
+          username: safeUsername, // <-- ส่งค่า sanitized
           email: values.email.trim(),
           password: values.password,
         }),
@@ -313,7 +351,8 @@ export default function RegisterForm() {
 
       if (response.ok) {
         setRegistrationEmail(values.email.trim());
-        setRegistrationData(values);
+        // เก็บ registrationData ที่ sanitized (ใช้สำหรับ resend)
+        setRegistrationData({ ...values, username: safeUsername });
         setShowOtpForm(true);
         setCountdown(50);
         toast.success("Registration Successful!", {
@@ -459,10 +498,13 @@ export default function RegisterForm() {
         <Button
           variant="ghost"
           className="rounded-full p-2"
+          className="rounded-full p-2"
           onClick={handleBackToRegister}
         >
           <ArrowLeft className="h-6 w-6 text-gray-700 sm:h-8 sm:w-8" />
+          <ArrowLeft className="h-6 w-6 text-gray-700 sm:h-8 sm:w-8" />
         </Button>
+        <h1 className="flex-grow pr-12 text-center text-3xl font-bold text-gray-900 sm:text-4xl">
         <h1 className="flex-grow pr-12 text-center text-3xl font-bold text-gray-900 sm:text-4xl">
           Verify OTP
         </h1>
@@ -482,6 +524,7 @@ export default function RegisterForm() {
           <OtpCodeField autoFocus />
           <Button
             type="submit"
+            className="h-12 w-full rounded-md bg-green-500 text-lg font-semibold text-white shadow-md transition-colors duration-200 hover:bg-green-600 sm:h-14"
             className="h-12 w-full rounded-md bg-green-500 text-lg font-semibold text-white shadow-md transition-colors duration-200 hover:bg-green-600 sm:h-14"
           >
             Verify Account
@@ -515,6 +558,44 @@ export default function RegisterForm() {
               <FormField
                 control={registerForm.control}
                 name="username"
+                render={({ field, formState }) => {
+                  const handleChange = (
+                    e: React.ChangeEvent<HTMLInputElement>,
+                  ) => {
+                    const val = e.target.value;
+
+                    // ตรวจสอบ malicious input จาก raw value
+                    const errMsg = detectMaliciousInput(val);
+                    setMaliciousError(errMsg);
+
+                    // ให้ RHF ใช้ raw value
+                    field.onChange(val);
+
+                    // ถ้ามี malicious input, setError
+                    if (errMsg) {
+                      registerForm.setError("username", { message: errMsg });
+                    } else {
+                      registerForm.clearErrors("username");
+                    }
+                  };
+
+                  return (
+                    <FormItem>
+                      <FormLabel>Username</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder="Username"
+                          {...field}
+                          className="h-12 text-base"
+                          onChange={handleChange}
+                        />
+                      </FormControl>
+                      <FormMessage>
+                        {maliciousError || formState.errors.username?.message}
+                      </FormMessage>
+                    </FormItem>
+                  );
+                }}
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel className="font-medium text-gray-700">
@@ -558,6 +639,7 @@ export default function RegisterForm() {
                         placeholder="Enter your email"
                         {...field}
                         className="focus:border-primary focus:ring-primary h-11 rounded-md border-gray-300 text-base sm:h-12"
+                        className="focus:border-primary focus:ring-primary h-11 rounded-md border-gray-300 text-base sm:h-12"
                         autoComplete="email"
                       />
                     </FormControl>
@@ -569,6 +651,23 @@ export default function RegisterForm() {
               <FormField
                 control={registerForm.control}
                 name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="font-medium text-gray-700">
+                      Password
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="Create a password"
+                        {...field}
+                        className="focus:border-primary focus:ring-primary h-11 rounded-md border-gray-300 text-base sm:h-12"
+                        autoComplete="new-password"
+                      />
+                    </FormControl>
+                    <FormMessage className="text-sm text-red-500" />
+                  </FormItem>
+                )}
                 render={({ field }) => {
                   const rules = checkPasswordRules(field.value || "");
                   return (
@@ -650,6 +749,13 @@ export default function RegisterForm() {
                       Confirm Password
                     </FormLabel>
                     <FormControl>
+                      <Input
+                        type="password"
+                        placeholder="Confirm your password"
+                        {...field}
+                        className="focus:border-primary focus:ring-primary h-11 rounded-md border-gray-300 text-base sm:h-12"
+                        autoComplete="new-password"
+                      />
                       <div className="relative">
                         <Input
                           type={showConfirmPassword ? "text" : "password"}
@@ -683,6 +789,7 @@ export default function RegisterForm() {
                 name="terms"
                 render={({ field }) => (
                   <FormItem className="flex flex-row items-start space-y-0 space-x-3 rounded-md py-4">
+                  <FormItem className="flex flex-row items-start space-y-0 space-x-3 rounded-md py-4">
                     <FormControl>
                       <Checkbox
                         checked={field.value}
@@ -691,9 +798,11 @@ export default function RegisterForm() {
                     </FormControl>
                     <div className="space-y-1 leading-none">
                       <FormLabel className="text-primary text-sm font-normal whitespace-nowrap">
+                      <FormLabel className="text-primary text-sm font-normal whitespace-nowrap">
                         I agree to the{" "}
                         <a
                           href="/terms"
+                          className="hover:text-primary underline"
                           className="hover:text-primary underline"
                         >
                           Terms of Service
@@ -701,6 +810,7 @@ export default function RegisterForm() {
                         and{" "}
                         <a
                           href="/privacy"
+                          className="hover:text-primary underline"
                           className="hover:text-primary underline"
                         >
                           Privacy Policy
@@ -720,12 +830,14 @@ export default function RegisterForm() {
                   !csrfToken /* กันตอน token ยังไม่พร้อม */
                 }
                 className="bg-primary hover:bg-primary h-12 w-full rounded-md text-lg font-semibold text-white shadow-md transition-colors duration-200 disabled:cursor-not-allowed disabled:bg-gray-400 sm:h-14"
+                className="bg-primary hover:bg-primary h-12 w-full rounded-md text-lg font-semibold text-white shadow-md transition-colors duration-200 disabled:cursor-not-allowed disabled:bg-gray-400 sm:h-14"
               >
                 Register
               </Button>
             </form>
           </Form>
 
+          <div className="mt-6 flex items-center space-x-3">
           <div className="mt-6 flex items-center space-x-3">
             <hr className="flex-grow border-gray-300" />
             <span className="text-sm text-gray-500">or</span>
@@ -735,6 +847,7 @@ export default function RegisterForm() {
           <Button
             variant="outline"
             className="h-11 w-full rounded-md border-gray-300 text-base font-medium transition-colors duration-200 hover:bg-gray-50 sm:h-12 sm:text-lg"
+            className="h-11 w-full rounded-md border-gray-300 text-base font-medium transition-colors duration-200 hover:bg-gray-50 sm:h-12 sm:text-lg"
             onClick={handleGoogleLogin}
             disabled={!backendURL}
           >
@@ -743,10 +856,12 @@ export default function RegisterForm() {
           </Button>
 
           <div className="mt-4 text-center text-sm">
+          <div className="mt-4 text-center text-sm">
             <p className="text-gray-600">
               Already have an account?{" "}
               <a
                 href="/login"
+                className="text-primary font-semibold hover:underline"
                 className="text-primary font-semibold hover:underline"
               >
                 Login
@@ -760,6 +875,7 @@ export default function RegisterForm() {
 
   /* ---------------- Render ---------------- */
   return (
+    <div className="flex flex-1 flex-col items-center justify-center p-10">
     <div className="flex flex-1 flex-col items-center justify-center p-10">
       {showOtpForm ? <OtpVerificationForm /> : <RegisterMainForm />}
     </div>

@@ -84,7 +84,7 @@ export default function MainMap({
     <div className="z-0 h-[50vh] rounded-md">
       <MapContainer
         center={initialPosition || DEFAULT_LOCATION}
-        zoom={13}
+        zoom={20}
         scrollWheelZoom
         style={{ height: "100%", width: "100%" }}
       >

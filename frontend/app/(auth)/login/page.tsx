@@ -16,9 +16,10 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-
 import Link from "next/link";
+import DOMPurify from "dompurify";
 
+// Google Icon
 const GoogleIcon = () => (
   <svg className="mr-3 h-5 w-5" viewBox="0 0 48 48">
     <path
@@ -40,88 +41,74 @@ const GoogleIcon = () => (
   </svg>
 );
 
+// Zod schema + regex validation
 const formSchema = z.object({
   username: z
     .string()
-    .min(2, { message: "Username must be at least 2 characters." }),
+    .min(2, { message: "Username must be at least 2 characters." })
+    .regex(/^[a-zA-Z0-9_.-]+$/, {
+      message: "Username can only contain letters, numbers, _, . or -",
+    }),
   password: z
     .string()
-    .min(6, { message: "Password must be at least 6 characters." }),
+    .min(8, { message: "Password must be at least 8 characters." }),
 });
 
-function LoginPage() {
+export default function LoginPage() {
   const [csrfToken, setCsrfToken] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const backendURL = process.env.NEXT_PUBLIC_BACKEND_URL;
   const router = useRouter();
-
-  // Prefetch หน้าแรกให้ไวขึ้น
-  useEffect(() => {
-    router.prefetch("/");
-  }, [router]);
-
-  // 1) ดึง CSRF token
-  useEffect(() => {
-    const fetchCsrfToken = async () => {
-      try {
-        const response = await fetch(`${backendURL}/api/csrf-token`, {
-          credentials: "include",
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          setCsrfToken(data.csrfToken);
-          console.log("CSRF Token obtained.");
-        } else {
-          toast.error("Security token error", {
-            description: "Could not establish a secure session.",
-          });
-        }
-      } catch (error) {
-        console.error("Error fetching CSRF token:", error);
-        toast.error("Connection Error", {
-          description: "Could not connect to the server for security setup.",
-        });
-      }
-    };
-    if (backendURL) fetchCsrfToken();
-  }, [backendURL]);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: { username: "", password: "" },
   });
 
+  useEffect(() => {
+    router.prefetch("/");
+  }, [router]);
+
+  // Fetch CSRF token
+  useEffect(() => {
+    const fetchCsrfToken = async () => {
+      try {
+        const response = await fetch(`${backendURL}/api/csrf-token`, {
+          credentials: "include",
+        });
+        if (response.ok) {
+          const data = await response.json();
+          setCsrfToken(data.csrfToken);
+        } else {
+          toast.error("Security token error");
+        }
+      } catch (err) {
+        console.error(err);
+        toast.error("Connection Error");
+      }
+    };
+    if (backendURL) fetchCsrfToken();
+  }, [backendURL]);
+
+  // ตรวจจับ XSS / SQLi
+  const suspiciousPattern =
+    /(<\/?\w+[^>]*>)|(['";]|--|\/\*|\*\/)|\b(OR|AND|SELECT|INSERT|UPDATE|DELETE|DROP|UNION|EXEC|DECLARE)\b/i;
+  const isSuspiciousInput = (val: string) => suspiciousPattern.test(val);
+
   // Google login
   const handleGoogleLogin = () => {
-    if (backendURL) {
-      window.location.href = `${backendURL}/auth/google`;
-    } else {
-      toast.error("Configuration Error", {
-        description: "The Google login service is not available.",
-      });
-    }
+    if (backendURL) window.location.href = `${backendURL}/auth/google`;
+    else toast.error("Configuration Error");
   };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!backendURL) {
-      toast.error("Configuration Error", {
-        description: "Backend URL is missing.",
-      });
-      return;
-    }
-    if (!csrfToken) {
-      toast.error("Session not ready", {
-        description: "Please wait a moment and try again.",
-      });
-      return;
-    }
+    if (!backendURL || !csrfToken) return;
 
     setIsSubmitting(true);
-    toast.info("Verifying data...", {
-      description: `Username: ${values.username}`,
-      duration: 2000,
-    });
+
+    // sanitize input
+    const safeUsername = DOMPurify.sanitize(values.username);
+    const safePassword = DOMPurify.sanitize(values.password);
 
     try {
       const response = await fetch(`${backendURL}/auth/login`, {
@@ -131,34 +118,25 @@ function LoginPage() {
           "X-CSRF-Token": csrfToken,
         },
         body: JSON.stringify({
-          loginform: values.username,
-          password: values.password,
+          loginform: safeUsername,
+          password: safePassword,
         }),
         credentials: "include",
       });
 
       if (response.ok) {
-        const data = await response.json();
-        console.log("Login successful:", data);
-        toast.success("Login Successful!", { description: "Welcome back!" });
-
-        // ⬇️ กลับหน้าหลักทันที และล้างหน้า login จาก history
+        toast.success("Login Successful!");
         router.replace("/");
-        // ถ้าโฮมเพจอ่าน session ฝั่งเซิร์ฟเวอร์อยู่แล้ว จะโหลดสถานะใหม่ให้เอง
       } else {
         const errorData = await response.json().catch(() => ({}));
-        console.error("Login failed:", errorData);
-        toast.error("Login Failed", {
-          description:
-            errorData.message ||
+        toast.error(
+          errorData.message ||
             "Invalid username or password. Please try again.",
-        });
+        );
       }
     } catch (error) {
-      console.error("Connection error:", error);
-      toast.error("Connection Error", {
-        description: "Unable to connect to the server. Please try again.",
-      });
+      console.error(error);
+      toast.error("Connection Error");
     } finally {
       setIsSubmitting(false);
     }
@@ -173,7 +151,6 @@ function LoginPage() {
             <p className="text-primary">to your account</p>
           </div>
 
-          {/* Google Login */}
           <Button
             variant="outline"
             className="h-12 w-full text-base"
@@ -191,6 +168,7 @@ function LoginPage() {
 
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              {/* Username field with XSS/SQLi detection */}
               <FormField
                 control={form.control}
                 name="username"
@@ -201,7 +179,23 @@ function LoginPage() {
                       <Input
                         placeholder="Username"
                         {...field}
-                        className="h-12 text-base"
+                        className={`h-12 text-base transition-all ${
+                          form.formState.errors.username
+                            ? "border-red-500 ring-1 ring-red-300"
+                            : ""
+                        }`}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          field.onChange(v);
+                          if (isSuspiciousInput(v)) {
+                            form.setError("username", {
+                              type: "manual",
+                              message: "Invalid characters detected.",
+                            });
+                          } else {
+                            form.clearErrors("username");
+                          }
+                        }}
                       />
                     </FormControl>
                     <FormMessage />
@@ -209,6 +203,7 @@ function LoginPage() {
                 )}
               />
 
+              {/* Password field */}
               <FormField
                 control={form.control}
                 name="password"
@@ -228,7 +223,6 @@ function LoginPage() {
                 )}
               />
 
-              {/* ปุ่ม Submit — ไม่ครอบด้วย <Link> */}
               <Button
                 type="submit"
                 className="h-12 w-full text-lg font-semibold"
@@ -271,5 +265,3 @@ function LoginPage() {
     </div>
   );
 }
-
-export default LoginPage;

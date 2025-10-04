@@ -206,18 +206,29 @@ export default function SellerInfoWeb() {
   const handleStoreFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
-      const selectedFiles = Array.from(files).slice(0, 4); // จำกัดสูงสุด 4 รูป
-      const validFiles = selectedFiles.filter(
+      const selectedFiles = Array.from(files);
+
+      // รวมไฟล์เก่า + ไฟล์ใหม่
+      const combinedFiles = [...uploadedImages, ...selectedFiles];
+
+      // จำกัดสูงสุด 4 ไฟล์
+      const limitedFiles = combinedFiles.slice(0, 4);
+
+      // ตรวจสอบขนาด
+      const validFiles = limitedFiles.filter(
         (file) => file.size <= 8 * 1024 * 1024,
       );
 
-      if (validFiles.length !== selectedFiles.length) {
+      if (validFiles.length !== limitedFiles.length) {
         toast.error("ขนาดไฟล์ไม่ควรเกิน 8MB");
       }
 
       setUploadedImages(validFiles);
       setPreviewImages(validFiles.map((file) => URL.createObjectURL(file)));
     }
+
+    // reset input เพื่อให้สามารถเลือกไฟล์เดิมซ้ำได้
+    e.target.value = "";
   };
 
   // ✅ ฟังก์ชันอัปโหลดรูปเจ้าของร้าน
@@ -632,17 +643,20 @@ export default function SellerInfoWeb() {
                   <Label className="text-sm">
                     อัปโหลดรูปภาพร้าน (สูงสุด 4 รูป, ขนาดไม่เกิน 8MB)
                   </Label>
-                  <div className="mt-2 flex items-center gap-2">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleStoreFileChange}
-                      multiple
-                      className="rounded border border-gray-300 px-2 py-1"
-                    />
-                    <span className="text-sm text-gray-500">
+                  <div className="mt-2 flex items-center gap-4">
+                    <label className="cursor-pointer rounded bg-green-600 px-4 py-2 text-white hover:bg-green-500">
+                      เลือกรูปภาพ
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleStoreFileChange}
+                        multiple
+                        className="hidden"
+                      />
+                    </label>
+                    <span className="text-sm text-gray-600">
                       {uploadedImages.length > 0
-                        ? `${uploadedImages.length} ไฟล์ถูกเลือก`
+                        ? `เลือกแล้ว ${uploadedImages.length} ไฟล์`
                         : "No file chosen"}
                     </span>
                   </div>
@@ -665,16 +679,19 @@ export default function SellerInfoWeb() {
                   <Label className="text-sm">
                     อัปโหลดรูปเจ้าของร้าน (1 รูป, ขนาดไม่เกิน 8MB)
                   </Label>
-                  <div className="mt-2 flex items-center gap-2">
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleProfileFileChange}
-                      className="rounded border border-gray-300 px-2 py-1"
-                    />
-                    <span className="text-sm text-gray-500">
+                  <div className="mt-2 flex items-center gap-4">
+                    <label className="cursor-pointer rounded bg-green-600 px-4 py-2 text-white hover:bg-green-500">
+                      เลือกรูปภาพ
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleProfileFileChange}
+                        className="hidden"
+                      />
+                    </label>
+                    <span className="text-sm text-gray-600">
                       {profileImages.length > 0
-                        ? `${profileImages.length} ไฟล์ถูกเลือก`
+                        ? `เลือกแล้ว ${profileImages.length} ไฟล์`
                         : "No file chosen"}
                     </span>
                   </div>
@@ -733,14 +750,7 @@ export default function SellerInfoWeb() {
             </div>
           </CardContent>
 
-          <CardFooter className="flex justify-end gap-2 border-t bg-gray-50 p-4">
-            <Button
-              variant="outline"
-              className="border-gray-300 text-gray-700 hover:bg-gray-100"
-              onClick={() => router.back()} // ✅ ปุ่มยกเลิก
-            >
-              ยกเลิก
-            </Button>
+          <CardFooter className="flex justify-end border-t bg-gray-50 p-4">
             <Button
               className="bg-green-700 hover:bg-green-600"
               onClick={handleSave}
