@@ -4,6 +4,10 @@ import { HttpError } from "../../utils/httpError.util";
 import { sort } from "./review.controllers";
 
 type orderBy = { createdAt?: "asc" | "desc" } | { rating?: "asc" | "desc" };
+type whereClause = {
+  restaurantId: string;
+  rating?: number;
+};
 
 export class ReviewServices {
   private prisma: PrismaClient;
@@ -132,7 +136,13 @@ export class ReviewServices {
     }
   }
 
-  async get(page: number, limit: number, restaurantId: string, sort: sort) {
+  async get(
+    page: number,
+    limit: number,
+    restaurantId: string,
+    sort: sort,
+    filter: number
+  ) {
     //1. create sort
     let orderBy: orderBy = { createdAt: "asc" }; // default = เก่าสุด
 
@@ -151,15 +161,22 @@ export class ReviewServices {
         break;
     }
 
-    //2. pagination
+    //2. create rating filter
+    let whereClause: whereClause = {
+      restaurantId,
+    };
+
+    if (filter) {
+      whereClause.rating = Number(filter);
+    }
+
+    //3. pagination
     const offset = (page - 1) * limit;
 
-    //3. query review
+    //4. query review
     const [reviews, total] = await this.prisma.$transaction([
       this.prisma.review.findMany({
-        where: {
-          restaurantId,
-        },
+        where: whereClause,
         orderBy,
         skip: offset,
         select: {
@@ -187,7 +204,7 @@ export class ReviewServices {
       }),
     ]);
 
-    //4. map review
+    //5. map review
     const reviewMap = reviews.map((review) => ({
       id: review.id,
       user: {
@@ -196,7 +213,8 @@ export class ReviewServices {
       },
       rating: review.rating,
       date: this.formatTime(review.createdAt),
-      Images: review.images.map((images) => images.imageUrl),
+      content: review.reviewText,
+      images: review.images.map((images) => images.imageUrl),
     }));
 
     const totalPages = Math.ceil(total / limit);

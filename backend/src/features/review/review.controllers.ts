@@ -64,8 +64,15 @@ export class ReviewControllers {
     const limit = Number(req.query.limit) || 20;
     const restaurantId = req.query.restaurantId as string;
     const sort = req.query.sort as sort;
+    const filter = Number(req.query.filter);
     try {
-      const result = await this.services.get(page, limit, restaurantId, sort);
+      const result = await this.services.get(
+        page,
+        limit,
+        restaurantId,
+        sort,
+        filter
+      );
 
       console.log(result);
       res.status(200).json({
