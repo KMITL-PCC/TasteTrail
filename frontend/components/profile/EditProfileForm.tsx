@@ -366,9 +366,11 @@ export default function EditProfilePage() {
 
                     {/* ข้อความ error ถ้าไฟล์ใหญ่เกิน 4MB */}
                     {avatarError && (
-                      <p className="mt-1 text-center text-sm text-red-500">
-                        {avatarError}
-                      </p>
+                      <div className="mt-2 flex w-50 justify-center">
+                        <p className="text-center text-sm text-red-500">
+                          {avatarError}
+                        </p>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -402,14 +404,11 @@ export default function EditProfilePage() {
                           <p
                             className={`mt-1 text-sm ${isUsernameValid ? "text-green-600" : "text-red-500"}`}
                           >
-                            {isUsernameValid
-                              ? "Looks good!"
-                              : "Username must be 3-20 characters."}
+                            {isUsernameValid ? "Looks good!" : ""}
                           </p>
                           {(detectXSS(username) || detectSQLi(username)) && (
                             <p className="mt-1 text-sm text-red-600">
-                              ⚠️ Invalid characters or possible injection
-                              detected!
+                              Input rejected for security reasons.
                             </p>
                           )}
                         </>
@@ -448,6 +447,7 @@ export default function EditProfilePage() {
                     setShow={setShowCurrentPassword}
                     onChange={setCurrentPassword}
                     autoComplete="current-password"
+                    showChecks={false}
                   />
                   {/* New Password */}
                   <PasswordField
@@ -458,7 +458,9 @@ export default function EditProfilePage() {
                     setShow={setShowNewPassword}
                     onChange={setNewPassword}
                     autoComplete="new-password"
+                    showChecks={true}
                   />
+
                   {/* Confirm Password */}
                   <PasswordField
                     id="confirmPassword"
@@ -468,6 +470,8 @@ export default function EditProfilePage() {
                     setShow={setShowConfirmPassword}
                     onChange={setConfirmPassword}
                     autoComplete="new-password"
+                    showChecks={true}
+                    matchValue={newPassword} // สำหรับเช็คว่าตรงกับ new password
                   />
                 </CardContent>
                 <CardFooter className="flex items-center">
@@ -539,6 +543,8 @@ interface PasswordFieldProps {
   setShow: React.Dispatch<React.SetStateAction<boolean>>;
   onChange: (val: string) => void;
   autoComplete?: string;
+  showChecks?: boolean; // true สำหรับ new/confirm password
+  matchValue?: string; // สำหรับ confirm password
 }
 
 function PasswordField({
@@ -549,28 +555,67 @@ function PasswordField({
   setShow,
   onChange,
   autoComplete,
+  showChecks = false,
+  matchValue,
 }: PasswordFieldProps) {
+  const checks = {
+    length: value.length >= 8,
+    lowercase: /[a-z]/.test(value),
+    uppercase: /[A-Z]/.test(value),
+    number: /\d/.test(value),
+    special: /[!@#$%^&*()\-+=.?]/.test(value),
+    match: matchValue !== undefined ? value === matchValue : true,
+  };
+
+  const showWarnings = showChecks && value.length > 0;
+
   return (
-    <div className="relative">
+    <div className="mb-4">
       <Label htmlFor={id} className="mb-2 block">
         {label}
       </Label>
-      <Input
-        id={id}
-        type={show ? "text" : "password"}
-        value={value}
-        onChange={(e) => onChange(sanitizePassword(e.target.value))}
-        className="h-11 rounded-md border-gray-300 pr-10 text-base focus:border-green-500 focus:ring-green-500"
-        autoComplete={autoComplete}
-      />
-      <button
-        type="button"
-        aria-label={show ? "Hide password" : "Show password"}
-        onClick={() => setShow((prev) => !prev)}
-        className="absolute top-8 right-2 p-1 text-gray-500 hover:text-gray-800 focus:outline-none"
-      >
-        {show ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-      </button>
+      <div className="flex h-11 items-center rounded-md border border-gray-300 px-3">
+        <input
+          id={id}
+          type={show ? "text" : "password"}
+          value={value}
+          onChange={(e) => onChange(sanitizePassword(e.target.value))}
+          className="flex-1 bg-transparent text-base outline-none"
+          autoComplete={autoComplete}
+        />
+        <button
+          type="button"
+          onClick={() => setShow((prev) => !prev)}
+          className="p-1 text-gray-500 hover:text-gray-800 focus:outline-none"
+        >
+          {show ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+        </button>
+      </div>
+
+      {showWarnings && (
+        <ul className="mt-2 space-y-1 text-sm">
+          <li className={checks.length ? "text-green-600" : "text-red-500"}>
+            {checks.length ? "✅" : "❌"} At least 8 characters
+          </li>
+          <li className={checks.lowercase ? "text-green-600" : "text-red-500"}>
+            {checks.lowercase ? "✅" : "❌"} At least one lowercase letter
+          </li>
+          <li className={checks.uppercase ? "text-green-600" : "text-red-500"}>
+            {checks.uppercase ? "✅" : "❌"} At least one uppercase letter
+          </li>
+          <li className={checks.number ? "text-green-600" : "text-red-500"}>
+            {checks.number ? "✅" : "❌"} At least one number
+          </li>
+          <li className={checks.special ? "text-green-600" : "text-red-500"}>
+            {checks.special ? "✅" : "❌"} At least one special character
+          </li>
+          {matchValue !== undefined && (
+            <li className={checks.match ? "text-green-600" : "text-red-500"}>
+              {checks.match ? "✅" : "❌"} Must match new password
+            </li>
+          )}
+        </ul>
+      )}
     </div>
   );
 }

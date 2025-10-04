@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
 /* ---------------- UI: Google Icon ---------------- */
@@ -180,6 +180,9 @@ export default function RegisterForm() {
   const [registrationEmail, setRegistrationEmail] = useState("");
   const [csrfToken, setCsrfToken] = useState<string | null>(null);
 
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   // resend & countdown state
   const [countdown, setCountdown] = useState(0);
   const [isResending, setIsResending] = useState(false);
@@ -230,7 +233,7 @@ export default function RegisterForm() {
       confirmPassword: "",
       terms: false,
     },
-    mode: "onChange",
+    mode: "onSubmit",
   });
 
   // ฟอร์ม OTP
@@ -541,13 +544,22 @@ export default function RegisterForm() {
                       Password
                     </FormLabel>
                     <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="Create a password"
-                        {...field}
-                        className="h-11 rounded-md border-gray-300 text-base focus:border-green-500 focus:ring-green-500 sm:h-12"
-                        autoComplete="new-password"
-                      />
+                      <div className="relative">
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Create a password"
+                          {...field}
+                          className="h-11 rounded-md border-gray-300 pr-10 text-base focus:border-green-500 focus:ring-green-500 sm:h-12"
+                          autoComplete="new-password"
+                        />
+                        <button
+                          type="button"
+                          className="absolute top-1/2 right-2 -translate-y-1/2 text-gray-500"
+                          onClick={() => setShowPassword((v) => !v)}
+                        >
+                          {showPassword ? <EyeOff /> : <Eye />}
+                        </button>
+                      </div>
                     </FormControl>
                     <FormMessage className="text-sm text-red-500" />
                   </FormItem>
@@ -563,13 +575,22 @@ export default function RegisterForm() {
                       Confirm Password
                     </FormLabel>
                     <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="Confirm your password"
-                        {...field}
-                        className="h-11 rounded-md border-gray-300 text-base focus:border-green-500 focus:ring-green-500 sm:h-12"
-                        autoComplete="new-password"
-                      />
+                      <div className="relative">
+                        <Input
+                          type={showConfirmPassword ? "text" : "password"}
+                          placeholder="Confirm your password"
+                          {...field}
+                          className="h-11 rounded-md border-gray-300 pr-10 text-base focus:border-green-500 focus:ring-green-500 sm:h-12"
+                          autoComplete="new-password"
+                        />
+                        <button
+                          type="button"
+                          className="absolute top-1/2 right-2 -translate-y-1/2 text-gray-500"
+                          onClick={() => setShowConfirmPassword((v) => !v)}
+                        >
+                          {showConfirmPassword ? <EyeOff /> : <Eye />}
+                        </button>
+                      </div>
                     </FormControl>
                     <FormMessage className="text-sm text-red-500" />
                   </FormItem>

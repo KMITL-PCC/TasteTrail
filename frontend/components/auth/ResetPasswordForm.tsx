@@ -42,7 +42,9 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [csrfToken, setCsrfToken] = useState<string | null>(null);
-  const [showPassword, setShowPassword] = useState(false);
+
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     const fetchCsrfToken = async () => {
@@ -147,9 +149,10 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
       </div>
 
       <form onSubmit={handlePasswordSubmit} className="space-y-4">
+        {/* New Password */}
         <div className="relative">
           <input
-            type={showPassword ? "text" : "password"}
+            type={showNewPassword ? "text" : "password"}
             placeholder="New Password"
             value={newPassword}
             onChange={(e) => setNewPassword(e.target.value)}
@@ -159,10 +162,10 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
           />
           <button
             type="button"
-            onClick={() => setShowPassword((s) => !s)}
-            className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-1 text-gray-500 hover:text-gray-800 focus:outline-none"
+            onClick={() => setShowNewPassword((s) => !s)}
+            className="absolute top-0 right-2 bottom-0 my-auto p-1 text-gray-500 hover:text-gray-800 focus:outline-none"
           >
-            {showPassword ? (
+            {showNewPassword ? (
               <EyeOff className="h-5 w-5" />
             ) : (
               <Eye className="h-5 w-5" />
@@ -170,9 +173,10 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
           </button>
         </div>
 
-        <div>
+        {/* Confirm Password */}
+        <div className="relative">
           <input
-            type="password"
+            type={showConfirmPassword ? "text" : "password"}
             placeholder="Confirm New Password"
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
@@ -180,44 +184,45 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
             className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 placeholder-gray-400 shadow-sm transition focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none disabled:bg-gray-50"
             required
           />
+          <button
+            type="button"
+            onClick={() => setShowConfirmPassword((s) => !s)}
+            className="absolute top-0 right-2 bottom-0 my-auto p-1 text-gray-500 hover:text-gray-800 focus:outline-none"
+          >
+            {showConfirmPassword ? (
+              <EyeOff className="h-5 w-5" />
+            ) : (
+              <Eye className="h-5 w-5" />
+            )}
+          </button>
         </div>
 
         {/* Password checklist */}
-        <div className="mt-2 grid grid-cols-1 gap-1 text-sm">
-          <div className="flex items-center gap-2">
-            <span
-              className={`inline-block h-3 w-3 rounded-full ${checks.minLength ? "bg-green-500" : "bg-gray-300"}`}
-            />
-            <span className="text-xs text-gray-600">At least 8 characters</span>
+        {newPassword && (
+          <div className="mt-2 grid grid-cols-1 gap-1 text-sm">
+            {[
+              { check: checks.minLength, label: "At least 8 characters" },
+              { check: checks.hasLower, label: "Lowercase letter" },
+              { check: checks.hasUpper, label: "Uppercase letter" },
+              { check: checks.hasNumber, label: "Number" },
+              {
+                check: checks.hasSpecial,
+                label: "Special character (!@#$...)",
+              },
+            ].map((item, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <span
+                  className={`inline-block h-3 w-3 rounded-full ${
+                    item.check ? "bg-green-500" : "bg-gray-300"
+                  }`}
+                />
+                <span className="text-xs text-gray-600">{item.label}</span>
+              </div>
+            ))}
           </div>
-          <div className="flex items-center gap-2">
-            <span
-              className={`inline-block h-3 w-3 rounded-full ${checks.hasLower ? "bg-green-500" : "bg-gray-300"}`}
-            />
-            <span className="text-xs text-gray-600">Lowercase letter</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span
-              className={`inline-block h-3 w-3 rounded-full ${checks.hasUpper ? "bg-green-500" : "bg-gray-300"}`}
-            />
-            <span className="text-xs text-gray-600">Uppercase letter</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span
-              className={`inline-block h-3 w-3 rounded-full ${checks.hasNumber ? "bg-green-500" : "bg-gray-300"}`}
-            />
-            <span className="text-xs text-gray-600">Number</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span
-              className={`inline-block h-3 w-3 rounded-full ${checks.hasSpecial ? "bg-green-500" : "bg-gray-300"}`}
-            />
-            <span className="text-xs text-gray-600">
-              Special character (!@#$...)
-            </span>
-          </div>
-        </div>
+        )}
 
+        {/* Submit button */}
         <button
           type="submit"
           disabled={isLoading}
@@ -226,6 +231,7 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
           {isLoading ? "Saving..." : "Reset Password"}
         </button>
 
+        {/* Message */}
         {message && (
           <div className="text-center text-sm text-green-500">{message}</div>
         )}

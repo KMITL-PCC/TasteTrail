@@ -12,6 +12,7 @@ import { Textarea } from "../ui/textarea";
 import { toast } from "sonner";
 import dynamic from "next/dynamic";
 import Image from "next/image";
+import { useRouter } from "next/navigation"; // เพิ่ม import ข้างบน
 
 const Mainmap = dynamic(() => import("../map/MainMap"), { ssr: false });
 
@@ -50,6 +51,7 @@ export default function SellerInfoWeb() {
     string[]
   >([]);
 
+  const router = useRouter();
   const [openingTimes, setOpeningTimes] = useState<OpeningTime[]>([
     { weekday: 0, openTime: "", closeTime: "" },
     { weekday: 1, openTime: "", closeTime: "" },
@@ -184,6 +186,8 @@ export default function SellerInfoWeb() {
       toast.success("บันทึกสำเร็จ", {
         description: data?.message || "ข้อมูลร้านค้าถูกบันทึกเรียบร้อยแล้ว",
       });
+
+      router.back();
     } catch (err) {
       toast.error("Connection Error", {
         description: "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้",
@@ -271,6 +275,113 @@ export default function SellerInfoWeb() {
 
                 <Separator />
 
+                <div className="mb-4">
+                  <Label className="text-sm font-medium">
+                    วันและเวลาเปิด-ปิด
+                  </Label>
+
+                  {/* แถวบน 4 วัน */}
+                  <div className="mt-2 grid grid-cols-1 gap-4 md:grid-cols-4">
+                    {daysOfWeek.slice(0, 4).map((day, index) => (
+                      <div
+                        key={index}
+                        className="flex flex-col rounded-lg border border-gray-200 p-3 shadow-sm transition-shadow hover:shadow-md"
+                      >
+                        <p className="mb-2 text-sm font-semibold text-gray-700">
+                          {day}
+                        </p>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-500">เปิด</span>
+                            <input
+                              type="time"
+                              value={openingTimes[index].openTime}
+                              onChange={(e) =>
+                                handleTimeChange(
+                                  index,
+                                  "openTime",
+                                  e.target.value,
+                                )
+                              }
+                              className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm"
+                              step={60}
+                            />
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-500">ปิด</span>
+                            <input
+                              type="time"
+                              value={openingTimes[index].closeTime}
+                              onChange={(e) =>
+                                handleTimeChange(
+                                  index,
+                                  "closeTime",
+                                  e.target.value,
+                                )
+                              }
+                              className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm"
+                              step={60}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* แถวล่าง 3 วันตรงกลาง */}
+                  <div className="mt-2 flex flex-col items-center gap-2 md:flex-row md:justify-center md:gap-4">
+                    {daysOfWeek.slice(4).map((day, i) => {
+                      const index = i + 4;
+                      return (
+                        <div
+                          key={index}
+                          className="flex w-full flex-col rounded-lg border border-gray-200 p-3 shadow-sm transition-shadow hover:shadow-md md:w-40"
+                        >
+                          <p className="mb-2 text-sm font-semibold text-gray-700">
+                            {day}
+                          </p>
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-gray-500">
+                                เปิด
+                              </span>
+                              <input
+                                type="time"
+                                value={openingTimes[index].openTime}
+                                onChange={(e) =>
+                                  handleTimeChange(
+                                    index,
+                                    "openTime",
+                                    e.target.value,
+                                  )
+                                }
+                                className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm"
+                                step={60}
+                              />
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-gray-500">ปิด</span>
+                              <input
+                                type="time"
+                                value={openingTimes[index].closeTime}
+                                onChange={(e) =>
+                                  handleTimeChange(
+                                    index,
+                                    "closeTime",
+                                    e.target.value,
+                                  )
+                                }
+                                className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm"
+                                step={60}
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
                 {/* ราคาต่ำสุด/สูงสุด */}
                 <FieldBlock label="ช่วงราคา (บาท)">
                   <div className="flex gap-4">
@@ -338,10 +449,12 @@ export default function SellerInfoWeb() {
                     {previewImages.map((img, index) => (
                       <div key={index} className="relative h-32 w-32">
                         {/* ใช้ <img> แทน <Image> สำหรับ blob URL */}
-                        <img
+                        <Image
                           src={img}
                           alt={`uploaded-img-${index}`}
                           className="h-32 w-32 rounded-md object-cover"
+                          width={128}
+                          height={128}
                         />
                         {/* ปุ่มลบมุมขวาบน */}
                         <button
@@ -389,10 +502,12 @@ export default function SellerInfoWeb() {
                   <div className="relative mt-4 h-32 w-32">
                     {previewProfileImages[0] && (
                       <>
-                        <img
+                        <Image
                           src={previewProfileImages[0]}
                           alt="owner-profile"
                           className="h-32 w-32 rounded-full object-cover"
+                          width={128}
+                          height={128}
                         />
                         <button
                           type="button"
@@ -450,7 +565,15 @@ export default function SellerInfoWeb() {
             </div>
           </CardContent>
 
-          <CardFooter className="flex justify-end border-t bg-gray-50 p-4">
+          <CardFooter className="flex justify-end space-x-2 border-t bg-gray-50 p-4">
+            <Button
+              variant="outline"
+              onClick={() => router.back()}
+              className="bg-gray-200 text-gray-700 hover:bg-gray-300"
+            >
+              ยกเลิก
+            </Button>
+
             <Button
               className="bg-green-700 hover:bg-green-600"
               onClick={handleSave}
