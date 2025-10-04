@@ -17,8 +17,6 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Save, User, Lock, EyeOff, Eye, X } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { useUser } from "@/store/user-store";
-
 import z from "zod";
 
 const backendURL =
@@ -33,12 +31,10 @@ function sanitizePassword(input: string) {
 }
 
 function detectXSS(input: string) {
-  // ตรวจสอบเครื่องหมายที่มักใช้โจมตี XSS
   return /[<>"'`;]/.test(input);
 }
 
 function detectSQLi(input: string) {
-  // ตรวจสอบ keyword SQL ที่อันตรายแบบง่ายๆ
   return /\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|OR|AND)\b/i.test(input);
 }
 
@@ -69,24 +65,21 @@ export default function EditProfilePage() {
     });
 
   const [csrfToken, setCsrfToken] = useState<string | null>(null);
-  const [provider, setProvider] = useState<string | null>(null); // เปลี่ยนจาก "" เป็น null
+  const [thirdPartyOnly, setThirdPartyOnly] = useState<boolean | null>(null);
 
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Avatar
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const [providerChecked, setProviderChecked] = useState(false); // flag รอ fetch
+  const [profileChecked, setProfileChecked] = useState(false);
 
-  // Profile
   const [username, setUsername] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
 
-  // Change password
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -95,7 +88,7 @@ export default function EditProfilePage() {
   const isNewPasswordValid = passwordSchema.safeParse(newPassword).success;
   const isConfirmValid = confirmPassword === newPassword;
 
-  // === CSRF ===
+  // --- CSRF ---
   useEffect(() => {
     (async () => {
       try {
@@ -103,12 +96,7 @@ export default function EditProfilePage() {
           method: "GET",
           credentials: "include",
         });
-        if (!res.ok) {
-          toast.error("Security token error", {
-            description: "  .",
-          });
-          return;
-        }
+        if (!res.ok) throw new Error("Security token error");
         const data = await res.json();
         setCsrfToken(data?.csrfToken || null);
       } catch (err) {
@@ -119,7 +107,7 @@ export default function EditProfilePage() {
     })();
   }, []);
 
-  // === Load profile ===
+  // --- Load profile ---
   useEffect(() => {
     (async () => {
       try {
@@ -133,7 +121,7 @@ export default function EditProfilePage() {
           return;
         }
         const { user } = await res.json();
-        setProvider(user?.provider || "local");
+        setThirdPartyOnly(!!user?.thirdPartyOnly);
         setUsername(user?.username ?? "");
 
         if (user?.profilePictureUrl) {
@@ -146,57 +134,25 @@ export default function EditProfilePage() {
         toast.error("Connection Error", {
           description: "Unable to fetch your profile. Please try again.",
         });
-        setProvider("local"); // fallback
+        setThirdPartyOnly(false); // fallback
       } finally {
-        setProviderChecked(true); // ✅ fetch เสร็จแล้ว
+        setProfileChecked(true);
       }
     })();
   }, []);
 
-  // ===== Profile upload/preview =====
   const [avatarError, setAvatarError] = useState<string | null>(null);
-
-  <input
-    ref={fileInputRef}
-    type="file"
-    accept="image/*"
-    className="hidden"
-    onChange={(e) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
-
-      const MAX_SIZE = 4 * 1024 * 1024; // 4MB
-      if (file.size > MAX_SIZE) {
-        setAvatarError("File is too large. Maximum size is 4MB.");
-        e.target.value = "";
-        return;
-      }
-      if (!providerChecked) {
-        return (
-          <div className="flex h-screen items-center justify-center">
-            <p>Loading profile...</p>
-          </div>
-        );
-      }
-
-      setAvatarError(null);
-      setAvatarFile(file);
-      setAvatarPreview(URL.createObjectURL(file));
-    }}
-  />;
 
   function onUploadAvatar(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    const MAX_SIZE = 4 * 1024 * 1024; // 4MB
+    const MAX_SIZE = 4 * 1024 * 1024;
     if (file.size > MAX_SIZE) {
       setAvatarError("File is too large. Maximum size is 4MB.");
-      e.target.value = ""; // เคลียร์ input
+      e.target.value = "";
       return;
     }
-
-    setAvatarError(null); // ✅ รีเซ็ต error ถ้าไฟล์ถูกต้อง
+    setAvatarError(null);
     setAvatarFile(file);
     setAvatarPreview(URL.createObjectURL(file));
   }
@@ -209,7 +165,7 @@ export default function EditProfilePage() {
         description:
           "Username contains invalid characters or possible injection!",
       });
-      return; // ❌ ไม่ส่งข้อมูลไป backend
+      return;
     }
 
     if (!csrfToken) {
@@ -228,7 +184,7 @@ export default function EditProfilePage() {
       if (avatarFile) form.set("avatar", avatarFile);
 
       const res = await fetch(UPDATEPROFILE_ENDPOINT, {
-        method: "PUT", // ใช้ PATCH สำหรับการอัปเดตข้อมูล
+        method: "PUT",
         body: form,
         headers: { "X-CSRF-Token": csrfToken },
         credentials: "include",
@@ -245,11 +201,10 @@ export default function EditProfilePage() {
         description: data.message || "Your changes have been updated.",
       });
 
-      if (data?.avatarUrl) setAvatarPreview(data.avatarUrl); // ใช้รูปใหม่จาก backend
+      if (data?.avatarUrl) setAvatarPreview(data.avatarUrl);
       if (fileInputRef.current) fileInputRef.current.value = "";
       setAvatarFile(null);
 
-      // Broadcast ให้หน้าอื่นรู้ว่ามีการอัปเดต
       if (typeof window !== "undefined" && "BroadcastChannel" in window) {
         const ch = new BroadcastChannel("profile-updated");
         ch.postMessage({ ts: Date.now() });
@@ -265,12 +220,8 @@ export default function EditProfilePage() {
     }
   }
 
-  function sanitizeUsername(input: string) {
-    return input.replace(/[<>"'`;]/g, "").trim();
-  }
-
   const isUsernameValid = username.length >= 3 && username.length <= 20;
-  // ===== Change password (with current) =====
+
   async function onSavePassword(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
@@ -281,7 +232,6 @@ export default function EditProfilePage() {
       return;
     }
 
-    // ✅ validate newPassword strength
     const result = passwordSchema.safeParse(newPassword);
     if (!result.success) {
       toast.error("Weak password", {
@@ -322,12 +272,10 @@ export default function EditProfilePage() {
         description: data.message || "Your password has been changed.",
       });
 
-      // ล้างฟิลด์
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
 
-      // ✅ Redirect ไปหน้า profile หลัง update สำเร็จ
       router.push("/profile?updated=1");
     } catch (e: any) {
       toast.error("Connection Error", {
@@ -337,39 +285,30 @@ export default function EditProfilePage() {
       setSavingPassword(false);
     }
   }
+
+  if (!profileChecked) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <p>Loading profile...</p>
+      </div>
+    );
+  }
+
   return (
     <div>
-      {/* <div className="bg-background/80 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10 w-full border-b backdrop-blur">
-        <div className="container flex items-center justify-between px-4 py-3 mx-auto">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Link
-              href="/profile"
-              className="inline-flex items-center gap-2 font-medium text-foreground hover:underline"
-            >
-              <User className="w-4 h-4" /> Profile
-            </Link>
-            <span>/</span>
-            <span className="text-foreground">Edit profile</span>
-          </div>
-        </div>
-      </div> */}
-
-      <Tabs
-        defaultValue={provider === "google" ? "profile" : defaultTab}
-        className="space-y-6"
-      >
+      <Tabs defaultValue={defaultTab} className="space-y-6">
         <TabsList className="m-0">
           <TabsTrigger value="profile">
             <User className="mr-2 h-4 w-4" /> Profile
           </TabsTrigger>
-          {/* Password tab เฉพาะถ้าไม่ใช่ Google */}
-          {provider && provider !== "google" && (
+          {thirdPartyOnly === false && (
             <TabsTrigger value="password">
               <Lock className="mr-2 h-4 w-4" />
               Password
             </TabsTrigger>
           )}
         </TabsList>
+
         <TabsContent value="profile">
           <form
             id="profile-form"
@@ -489,8 +428,7 @@ export default function EditProfilePage() {
           </form>
         </TabsContent>
 
-        {/* Password content เฉพาะ local */}
-        {provider !== "google" && (
+        {thirdPartyOnly === false && (
           <TabsContent value="password">
             <form onSubmit={onSavePassword}>
               <Card>
@@ -532,9 +470,39 @@ export default function EditProfilePage() {
                     autoComplete="new-password"
                   />
                 </CardContent>
-                <CardFooter>
+                <CardFooter className="flex items-center">
+                  {/* ปุ่ม Update password อยู่ซ้าย */}
                   <Button type="submit" disabled={savingPassword}>
                     Update password
+                  </Button>
+
+                  {/* ปุ่ม Update by OTP อยู่ขวาแบบลิงก์สีเขียว */}
+                  <Button
+                    type="button"
+                    variant="link"
+                    className="ml-auto text-green-600 hover:text-green-800"
+                    onClick={async () => {
+                      if (!csrfToken) return toast.error("Session not ready");
+                      try {
+                        const res = await fetch(`${backendURL}/auth/sendOTP`, {
+                          method: "POST",
+                          headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRF-Token": csrfToken,
+                          },
+                          credentials: "include",
+                        });
+                        if (!res.ok) throw new Error("Failed to send OTP");
+                        toast.success("OTP sent successfully!");
+                        router.push(
+                          `/update-by-otp?return=${encodeURIComponent("/editprofile?tab=password")}`,
+                        );
+                      } catch {
+                        toast.error("Error sending OTP");
+                      }
+                    }}
+                  >
+                    Update by OTP
                   </Button>
                 </CardFooter>
               </Card>
@@ -542,8 +510,7 @@ export default function EditProfilePage() {
           </TabsContent>
         )}
 
-        {/* Google info content */}
-        {provider === "google" && (
+        {thirdPartyOnly === true && (
           <TabsContent value="google-info">
             <Card className="p-6 text-center">
               <CardTitle className="text-lg font-semibold">
@@ -563,7 +530,7 @@ export default function EditProfilePage() {
   );
 }
 
-// ------------------- PasswordField component -------------------
+// PasswordField component เหมือนเดิม
 interface PasswordFieldProps {
   id: string;
   label: string;
@@ -607,16 +574,15 @@ function PasswordField({
     </div>
   );
 }
-// ------------------- End PasswordField -------------------
 
 async function pickError(res: Response, fallback: string) {
   try {
-    const clone = res.clone(); // สร้างสำเนาของ response
-    const j = await clone.json(); // อ่านข้อมูลจากสำเนาของ response
-    return j?.message || fallback; // ส่งคืนข้อความหรือข้อความ fallback
+    const clone = res.clone();
+    const j = await clone.json();
+    return j?.message || fallback;
   } catch {
-    const clone = res.clone(); // สร้างสำเนาใหม่อีกครั้งหากการอ่านเป็น JSON ล้มเหลว
-    const t = await clone.text(); // อ่านข้อมูลจากสำเนาเป็น text
-    return t || fallback; // ส่งคืนข้อความหรือข้อความ fallback
+    const clone = res.clone();
+    const t = await clone.text();
+    return t || fallback;
   }
 }
