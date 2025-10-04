@@ -11,50 +11,15 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "../ui/textarea";
 import { toast } from "sonner";
 import dynamic from "next/dynamic";
-import { z } from "zod";
 import Image from "next/image";
-
-export const openingTimeSchema = z.object({
-  weekday: z.number().min(0).max(6),
-  openTime: z
-    .string()
-    .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "เวลาเปิดไม่ถูกต้อง"),
-  closeTime: z
-    .string()
-    .regex(/^([01]\d|2[0-3]):([0-5]\d)$/, "เวลาปิดไม่ถูกต้อง"),
-});
-
-export const sellerInfoSchema = z.object({
-  firstName: z.string().min(1, "กรุณากรอกชื่อจริง").max(30),
-  lastName: z.string().min(1, "กรุณากรอกนามสกุล").max(30),
-  shopName: z.string().min(1, "กรุณากรอกชื่อร้าน").max(30),
-  description: z.string().max(300).optional(),
-  hasPhysicalStore: z.boolean(),
-  pickupAddress: z
-    .string()
-    .max(300, "ที่อยู่ยาวเกินไป")
-    .regex(
-      /^[\u0E00-\u0E7Fa-zA-Z0-9\s/.,-]*$/,
-      "ที่อยู่สามารถมีได้เฉพาะตัวอักษรไทย, อังกฤษ, ตัวเลข, และ / , . -",
-    ),
-
-  latitude: z.number().nullable(),
-  longitude: z.number().nullable(),
-  minPrice: z.number().min(0),
-  maxPrice: z.number().min(0),
-  contactDetail: z.string().min(1, "กรุณากรอกช่องทางติดต่อ").max(100),
-  openingTimes: z.array(openingTimeSchema).length(7),
-});
 
 const Mainmap = dynamic(() => import("../map/MainMap"), { ssr: false });
 
-// ✅ Backend URL
 const backendURL =
   process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:3001";
 const CSRF_ENDPOINT = `${backendURL}/api/csrf-token`;
 const SELLER_ENDPOINT = `${backendURL}/account/openRestaurant`;
 
-// วันในสัปดาห์
 const daysOfWeek = [
   "อาทิตย์",
   "จันทร์",
@@ -80,10 +45,7 @@ export default function SellerInfoWeb() {
 
   const [uploadedImages, setUploadedImages] = useState<File[]>([]);
   const [previewImages, setPreviewImages] = useState<string[]>([]);
-  // เก็บไฟล์
   const [profileImages, setProfileUploadImages] = useState<File[]>([]);
-
-  // เก็บ preview (string URL ไม่ใช่ File)
   const [previewProfileImages, setPreviewProfileUploadImages] = useState<
     string[]
   >([]);
@@ -100,59 +62,19 @@ export default function SellerInfoWeb() {
 
   const [minPrice, setMinPrice] = useState<number | "">("");
   const [maxPrice, setMaxPrice] = useState<number | "">("");
-
   const [latitude, setLatitude] = useState<number | null>(null);
   const [longitude, setLongitude] = useState<number | null>(null);
-
   const [csrfToken, setCsrfToken] = useState<string | null>(null);
-
   const [services, setServices] = useState<number[]>([]);
+  const [contactDetail, setContactDetail] = useState("");
+  const [description, setDescription] = useState("");
+
   const toggleService = (id: number) => {
     setServices((prev) =>
       prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id],
     );
   };
-  const [contactDetail, setContactDetail] = useState("");
 
-  const [description, setDescription] = useState("");
-
-  const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
-
-  const validateForm = () => {
-    const data = {
-      firstName,
-      lastName,
-      shopName,
-      description,
-      hasPhysicalStore,
-      pickupAddress,
-      latitude,
-      longitude,
-      minPrice: typeof minPrice === "number" ? minPrice : 0,
-      maxPrice: typeof maxPrice === "number" ? maxPrice : 0,
-      contactDetail,
-      openingTimes,
-    };
-
-    const result = sellerInfoSchema.safeParse(data); // ✅ safeParse แนะนำ
-
-    if (!result.success) {
-      // ใช้ .issues แทน .errors
-      const fieldErrors: typeof errors = {};
-      result.error.issues.forEach((err) => {
-        const path = err.path.join("."); // nested path
-        fieldErrors[path] = err.message;
-      });
-      setErrors(fieldErrors);
-      toast.error("กรุณากรอกข้อมูลให้ถูกต้อง");
-      return false;
-    }
-
-    setErrors({});
-    return true;
-  };
-
-  // โหลด CSRF token
   useEffect(() => {
     const fetchCsrfToken = async () => {
       try {
@@ -160,14 +82,6 @@ export default function SellerInfoWeb() {
           method: "GET",
           credentials: "include",
         });
-
-        if (!res.ok) {
-          toast.error("Security token error", {
-            description: "ไม่สามารถโหลด CSRF token",
-          });
-          return;
-        }
-
         const data = await res.json();
         setCsrfToken(data.csrfToken || null);
       } catch (err) {
@@ -176,24 +90,18 @@ export default function SellerInfoWeb() {
         });
       }
     };
-
     fetchCsrfToken();
   }, []);
 
-  // สร้างแผนที่
-
-  // ฟังก์ชันแก้ไขเวลา
   const handleTimeChange = (
     weekday: number,
     timeType: "openTime" | "closeTime",
     value: string,
   ) => {
-    // แปลงเวลาเป็น HH:MM 24 ชั่วโมง
     const [h, m] = value.split(":").map(Number);
     const formatted = `${h.toString().padStart(2, "0")}:${m
       .toString()
       .padStart(2, "0")}`;
-
     setOpeningTimes((prev) => {
       const updated = [...prev];
       updated[weekday] = { ...updated[weekday], [timeType]: formatted };
@@ -204,40 +112,25 @@ export default function SellerInfoWeb() {
   const handleStoreFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
-      const selectedFiles = Array.from(files).slice(0, 4); // จำกัดสูงสุด 4 รูป
-      const validFiles = selectedFiles.filter(
-        (file) => file.size <= 8 * 1024 * 1024,
-      );
-
-      if (validFiles.length !== selectedFiles.length) {
-        toast.error("ขนาดไฟล์ไม่ควรเกิน 8MB");
-      }
-
-      setUploadedImages(validFiles);
-      setPreviewImages(validFiles.map((file) => URL.createObjectURL(file)));
+      const selectedFiles = Array.from(files);
+      // รวมกับไฟล์เดิมแต่ไม่เกิน 4
+      const combined = [...uploadedImages, ...selectedFiles].slice(0, 4);
+      setUploadedImages(combined);
+      setPreviewImages(combined.map((file) => URL.createObjectURL(file)));
     }
   };
 
-  // ✅ ฟังก์ชันอัปโหลดรูปเจ้าของร้าน
   const handleProfileFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files) {
-      const selectedFiles = Array.from(files).slice(0, 1); // จำกัด 1 รูป
-      const validFiles = selectedFiles.filter(
-        (file) => file.size <= 8 * 1024 * 1024,
+      const selectedFiles = Array.from(files).slice(0, 1);
+      setProfileUploadImages(selectedFiles);
+      setPreviewProfileUploadImages(
+        selectedFiles.map((file) => URL.createObjectURL(file)),
       );
-
-      if (validFiles.length !== selectedFiles.length) {
-        toast.error("ขนาดไฟล์ไม่ควรเกิน 8MB");
-      }
-
-      setProfileUploadImages(validFiles);
-      const profileImgs = validFiles.map((file) => URL.createObjectURL(file));
-      setPreviewProfileUploadImages(profileImgs); // ✅ ตรงกับ state ข้างบน
     }
   };
 
-  // ฟังก์ชันบันทึก
   const handleSave = async () => {
     if (!csrfToken) {
       toast.error("Session not ready", {
@@ -246,40 +139,7 @@ export default function SellerInfoWeb() {
       return;
     }
 
-    // ✅ Validate ก่อนส่ง
-    const data = {
-      firstName,
-      lastName,
-      shopName,
-      description,
-      hasPhysicalStore,
-      pickupAddress,
-      latitude,
-      longitude,
-      minPrice: typeof minPrice === "number" ? minPrice : 0,
-      maxPrice: typeof maxPrice === "number" ? maxPrice : 0,
-      contactDetail,
-      openingTimes,
-    };
-
-    const result = sellerInfoSchema.safeParse(data);
-
-    if (!result.success) {
-      const fieldErrors: typeof errors = {};
-      result.error.issues.forEach((err) => {
-        const path = err.path.join(".");
-        fieldErrors[path] = err.message;
-      });
-      setErrors(fieldErrors);
-      toast.error("กรุณากรอกข้อมูลให้ถูกต้อง");
-      return;
-    }
-
-    setErrors({}); // เคลียร์ errors
-
     try {
-      toast.info("กำลังบันทึกข้อมูล...");
-
       const form = new FormData();
       form.append("fullname", JSON.stringify({ firstName, lastName }));
       form.append(
@@ -302,7 +162,6 @@ export default function SellerInfoWeb() {
         }),
       );
       form.append("time", JSON.stringify(openingTimes));
-
       uploadedImages.forEach((file) => form.append("restaurantImages", file));
       profileImages.forEach((file) => form.append("profileImage", file));
 
@@ -332,87 +191,50 @@ export default function SellerInfoWeb() {
     }
   };
 
+  const getFileNames = (files: File[]) => {
+    if (!files.length) return "No file chosen";
+    return files.map((f) => f.name).join(", ");
+  };
+
   return (
     <div className="min-h-screen bg-white">
-      <div className="max-w-3xl px-4 mx-auto mt-6">
+      <div className="mx-auto mt-6 max-w-3xl px-4">
         <Card>
           <CardContent className="p-6">
             <div className="grid grid-cols-1 gap-6">
-              {/* หัวข้ออยู่ด้านบน */}
               <div className="mb-6">
                 <h2 className="text-base font-medium">รายละเอียดร้านค้า</h2>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                   กรอกข้อมูลพื้นฐานของร้านคุณให้ครบถ้วน
                 </p>
               </div>
 
               <div className="grid gap-6">
-                {/* ชื่อจริงและนามสกุล */}
                 <FieldBlock label="ชื่อจริงและนามสกุล" required>
                   <Input
                     value={firstName}
-                    maxLength={30}
                     placeholder="ชื่อจริง"
-                    onChange={(e) => {
-                      const allowed = e.target.value.replace(
-                        /[^ก-ฮa-zA-Z]/g,
-                        "",
-                      ); // อนุญาตแค่ไทยและอังกฤษ
-                      setFirstName(allowed);
-                    }}
+                    onChange={(e) => setFirstName(e.target.value)}
                   />
                   <Input
                     value={lastName}
-                    maxLength={30}
                     placeholder="นามสกุลจริง"
-                    onChange={(e) => {
-                      const allowed = e.target.value.replace(
-                        /[^ก-ฮa-zA-Z]/g,
-                        "",
-                      ); // อนุญาตแค่ไทยและอังกฤษ
-                      setLastName(allowed);
-                    }}
+                    onChange={(e) => setLastName(e.target.value)}
                   />
                 </FieldBlock>
 
                 <Separator />
 
-                {/* ชื่อร้าน */}
                 <FieldBlock label="ชื่อร้านค้า" required>
                   <Input
                     value={shopName}
-                    maxLength={30}
                     placeholder="ชื่อร้านค้า"
-                    onChange={(e) => {
-                      const allowed = e.target.value.replace(
-                        /[^ก-ฮa-zA-Z0-9\s]/g,
-                        "",
-                      );
-                      // อนุญาตตัวอักษรไทย อังกฤษ ตัวเลข และเว้นวรรค
-                      setShopName(allowed);
-                    }}
-                  />
-                </FieldBlock>
-
-                {/* คำอธิบายร้าน */}
-                <FieldBlock label="คำอธิบายร้านค้า (Description)">
-                  <Textarea
-                    rows={3}
-                    value={description}
-                    onChange={(e) => {
-                      const allowed = e.target.value.replace(
-                        /[^ก-ฮa-zA-Z0-9\s]/g,
-                        "",
-                      );
-                      setDescription(allowed);
-                    }}
-                    placeholder="ใส่คำอธิบายสั้น ๆ ของร้านคุณ"
+                    onChange={(e) => setShopName(e.target.value)}
                   />
                 </FieldBlock>
 
                 <Separator />
 
-                {/* หน้าร้าน */}
                 <FieldBlock label="หน้าร้าน">
                   <div className="flex items-center gap-2">
                     <Checkbox
@@ -424,28 +246,19 @@ export default function SellerInfoWeb() {
                   </div>
                 </FieldBlock>
 
-                <Separator />
-
                 {hasPhysicalStore && (
                   <>
-                    <FieldBlock label="ที่อยู่ในการเข้ารับสินค้า" required>
+                    <Separator />
+                    <FieldBlock label="ที่อยู่ในการเข้ารับสินค้า">
                       <textarea
                         rows={3}
                         value={pickupAddress}
-                        onChange={(e) => {
-                          const allowed = e.target.value.replace(
-                            /[^ก-ฮa-zA-Z0-9\s/.,-]/g,
-                            "",
-                          );
-                          setPickupAddress(allowed);
-                        }}
+                        onChange={(e) => setPickupAddress(e.target.value)}
                         placeholder="บ้านเลขที่ / หมู่ / ตำบล / อำเภอ / จังหวัด / รหัสไปรษณีย์"
                       />
                     </FieldBlock>
 
-                    <Separator />
-
-                    <div className="relative w-full h-64 overflow-hidden rounded-lg">
+                    <div className="relative h-64 w-full overflow-hidden rounded-lg">
                       <Mainmap
                         onLocationChange={([lat, lng]) => {
                           setLatitude(lat);
@@ -453,133 +266,12 @@ export default function SellerInfoWeb() {
                         }}
                       />
                     </div>
-
-                    <Separator />
-
-                    {/* เวลาเปิดปิด */}
-                    <div className="mb-4">
-                      <Label className="text-sm font-medium">
-                        วันและเวลาเปิด-ปิด
-                      </Label>
-
-                      {/* แถวบน 4 วัน */}
-                      <div className="grid grid-cols-1 gap-4 mt-2 md:grid-cols-4">
-                        {daysOfWeek.slice(0, 4).map((day, index) => (
-                          <div
-                            key={index}
-                            className="flex flex-col p-3 transition-shadow border border-gray-200 rounded-lg shadow-sm hover:shadow-md"
-                          >
-                            <p className="mb-2 text-sm font-semibold text-gray-700">
-                              {day}
-                            </p>
-                            <div className="flex flex-col gap-1">
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs text-gray-500">
-                                  เปิด
-                                </span>
-                                <input
-                                  type="time"
-                                  value={openingTimes[index].openTime}
-                                  onChange={(e) =>
-                                    handleTimeChange(
-                                      index,
-                                      "openTime",
-                                      e.target.value,
-                                    )
-                                  }
-                                  className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md"
-                                  step={60}
-                                  pattern="[0-2][0-9]:[0-5][0-9]"
-                                  title="เวลาแบบ 24 ชั่วโมง (HH:mm)"
-                                />
-                              </div>
-
-                              <div className="flex items-center gap-2">
-                                <span className="text-xs text-gray-500">
-                                  ปิด
-                                </span>
-                                <input
-                                  type="time"
-                                  value={openingTimes[index].closeTime}
-                                  onChange={(e) =>
-                                    handleTimeChange(
-                                      index,
-                                      "closeTime",
-                                      e.target.value,
-                                    )
-                                  }
-                                  className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md"
-                                  step={60}
-                                  pattern="[0-2][0-9]:[0-5][0-9]"
-                                  title="เวลาแบบ 24 ชั่วโมง (HH:mm)"
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-
-                      {/* แถวล่าง 3 วันตรงกลาง */}
-                      <div className="flex flex-col items-center gap-2 mt-2 md:flex-row md:justify-center md:gap-4">
-                        {daysOfWeek.slice(4).map((day, i) => {
-                          const index = i + 4;
-                          return (
-                            <div
-                              key={index}
-                              className="flex flex-col w-full p-3 transition-shadow border border-gray-200 rounded-lg shadow-sm hover:shadow-md md:w-40"
-                            >
-                              <p className="mb-2 text-sm font-semibold text-gray-700">
-                                {day}
-                              </p>
-                              <div className="flex flex-col gap-1">
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs text-gray-500">
-                                    เปิด
-                                  </span>
-                                  <input
-                                    type="time"
-                                    value={openingTimes[index].openTime}
-                                    onChange={(e) =>
-                                      handleTimeChange(
-                                        index,
-                                        "openTime",
-                                        e.target.value,
-                                      )
-                                    }
-                                    className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md"
-                                    step={60}
-                                  />
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-xs text-gray-500">
-                                    ปิด
-                                  </span>
-                                  <input
-                                    type="time"
-                                    value={openingTimes[index].closeTime}
-                                    onChange={(e) =>
-                                      handleTimeChange(
-                                        index,
-                                        "closeTime",
-                                        e.target.value,
-                                      )
-                                    }
-                                    className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md"
-                                    step={60}
-                                  />
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    <Separator />
                   </>
                 )}
 
-                {/* ราคา */}
+                <Separator />
+
+                {/* ราคาต่ำสุด/สูงสุด */}
                 <FieldBlock label="ช่วงราคา (บาท)">
                   <div className="flex gap-4">
                     <div className="flex flex-col">
@@ -609,76 +301,115 @@ export default function SellerInfoWeb() {
                   </div>
                 </FieldBlock>
 
-                {/* ช่องทางติดต่อ */}
-                <FieldBlock label="ช่องทางติดต่อ (Contact detail)" required>
+                <FieldBlock label="ช่องทางติดต่อ (Contact detail)">
                   <Input
                     value={contactDetail}
-                    maxLength={10} // เบอร์โทรไทย 10 หลัก
                     placeholder="เบอร์โทร"
-                    onChange={(e) => {
-                      const allowed = e.target.value.replace(/[^0-9]/g, "");
-                      // อนุญาตแค่ตัวเลข
-                      setContactDetail(allowed);
-                    }}
+                    onChange={(e) => setContactDetail(e.target.value)}
                   />
                 </FieldBlock>
 
-                <Separator />
-
                 {/* รูปภาพร้าน */}
-                <div>
-                  <Label className="text-sm">
-                    อัปโหลดรูปภาพร้าน (สูงสุด 4 รูป, ขนาดไม่เกิน 8MB)
-                  </Label>
+                <FieldBlock
+                  label="อัปโหลดรูปภาพร้าน (สูงสุด 4 รูป, ขนาดไม่เกิน 8MB)"
+                  required
+                >
+                  <div className="flex items-center gap-4">
+                    <label
+                      htmlFor="restaurantImages"
+                      className="cursor-pointer rounded-md bg-green-600 px-4 py-2 text-white hover:bg-green-500"
+                    >
+                      เลือกรูปภาพ
+                    </label>
+                    <span className="text-sm text-gray-500">
+                      {getFileNames(uploadedImages)}
+                    </span>
+                  </div>
                   <input
+                    id="restaurantImages"
                     type="file"
                     accept="image/*"
                     onChange={handleStoreFileChange}
                     multiple
-                    className="mt-2"
+                    className="hidden"
                   />
-                  <div className="flex gap-2 mt-4">
+
+                  <div className="mt-4 flex flex-wrap gap-2">
                     {previewImages.map((img, index) => (
-                      <img
-                        key={index}
-                        src={img}
-                        alt={`uploaded-img-${index}`}
-                        className="object-cover w-32 h-32 rounded-md"
-                      />
+                      <div key={index} className="relative h-32 w-32">
+                        {/* ใช้ <img> แทน <Image> สำหรับ blob URL */}
+                        <img
+                          src={img}
+                          alt={`uploaded-img-${index}`}
+                          className="h-32 w-32 rounded-md object-cover"
+                        />
+                        {/* ปุ่มลบมุมขวาบน */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newFiles = uploadedImages.filter(
+                              (_, i) => i !== index,
+                            );
+                            const newPreviews = previewImages.filter(
+                              (_, i) => i !== index,
+                            );
+                            setUploadedImages(newFiles);
+                            setPreviewImages(newPreviews);
+                          }}
+                          className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs text-white"
+                        >
+                          ×
+                        </button>
+                      </div>
                     ))}
                   </div>
-                </div>
-
-                <Separator />
+                </FieldBlock>
 
                 {/* รูปเจ้าของร้าน */}
-                <div>
-                  <Label className="text-sm">
-                    อัปโหลดรูปภาพเจ้าของร้าน (1 รูป, ขนาดไม่เกิน 8MB)
-                  </Label>
+                <FieldBlock label="อัปโหลดรูปเจ้าของร้าน">
+                  <div className="flex items-center gap-4">
+                    <label
+                      htmlFor="profileImage"
+                      className="cursor-pointer rounded-md bg-green-600 px-4 py-2 text-white hover:bg-green-500"
+                    >
+                      เลือกรูปภาพ
+                    </label>
+                    <span className="text-sm text-gray-500">
+                      {getFileNames(profileImages)}
+                    </span>
+                  </div>
                   <input
+                    id="profileImage"
                     type="file"
                     accept="image/*"
                     onChange={handleProfileFileChange}
-                    className="mt-2"
+                    className="hidden"
                   />
-                  <div className="flex gap-2 mt-4">
-                    {previewProfileImages.map((img, index) => (
-                      <Image
-                        key={index}
-                        src={img}
-                        width={100}
-                        height={100}
-                        alt={`owner-profile-${index}`}
-                        className="object-cover w-32 h-32 rounded-full"
-                      />
-                    ))}
+
+                  <div className="relative mt-4 h-32 w-32">
+                    {previewProfileImages[0] && (
+                      <>
+                        <img
+                          src={previewProfileImages[0]}
+                          alt="owner-profile"
+                          className="h-32 w-32 rounded-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setProfileUploadImages([]);
+                            setPreviewProfileUploadImages([]);
+                          }}
+                          className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs text-white"
+                        >
+                          ×
+                        </button>
+                      </>
+                    )}
                   </div>
-                </div>
+                </FieldBlock>
 
-                <Separator />
-
-                {/* บริการที่มี */}
+                {/* บริการ */}
                 <FieldBlock label="บริการที่มี">
                   <div className="grid gap-2 sm:grid-cols-2">
                     <div className="flex items-center gap-2">
@@ -719,12 +450,12 @@ export default function SellerInfoWeb() {
             </div>
           </CardContent>
 
-          <CardFooter className="flex justify-end p-4 border-t bg-gray-50">
+          <CardFooter className="flex justify-end border-t bg-gray-50 p-4">
             <Button
               className="bg-green-700 hover:bg-green-600"
               onClick={handleSave}
             >
-              <SaveIcon className="w-4 h-4 mr-2" />
+              <SaveIcon className="mr-2 h-4 w-4" />
               บันทึกข้อมูล
             </Button>
           </CardFooter>
@@ -736,12 +467,12 @@ export default function SellerInfoWeb() {
 
 function FieldBlock({
   label,
-  required,
   children,
+  required,
 }: {
   label: string;
-  required?: boolean;
   children: React.ReactNode;
+  required?: boolean;
 }) {
   return (
     <div className="grid gap-2">
