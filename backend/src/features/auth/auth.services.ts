@@ -252,4 +252,17 @@ export class AuthServices {
 
     return restaurant?.id;
   }
+
+  async is3rdOnly(userId: string) {
+    const isHavePasswordHash = await this.prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+      select: {
+        passwordHash: true,
+      },
+    });
+
+    return isHavePasswordHash?.passwordHash === null;
+  }
 }
