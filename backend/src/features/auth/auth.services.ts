@@ -59,7 +59,9 @@ export class AuthServices {
       },
     });
 
-    if (existingUser) {
+    if (existingUser && existingUser.passwordHash === null) {
+      return null;
+    } else if (existingUser) {
       return false;
     } else {
       return true;
@@ -121,7 +123,7 @@ export class AuthServices {
     //1. check user exists
     const userCheck = await this.checkUserNotExistence("", email);
 
-    if (userCheck) {
+    if (userCheck === null) {
       return {
         success: false,
         status: 400,
