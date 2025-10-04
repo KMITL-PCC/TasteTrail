@@ -124,7 +124,7 @@ export default function EditProfilePage() {
     (async () => {
       try {
         const res = await fetch(PROFILE_ENDPOINT, {
-          method: "GET", // ใช้ GET แทน PUT ในการดึงข้อมูล
+          method: "GET",
           credentials: "include",
         });
         if (!res.ok) {
@@ -146,6 +146,9 @@ export default function EditProfilePage() {
         toast.error("Connection Error", {
           description: "Unable to fetch your profile. Please try again.",
         });
+        setProvider("local"); // fallback
+      } finally {
+        setProviderChecked(true); // ✅ fetch เสร็จแล้ว
       }
     })();
   }, []);
@@ -167,6 +170,13 @@ export default function EditProfilePage() {
         setAvatarError("File is too large. Maximum size is 4MB.");
         e.target.value = "";
         return;
+      }
+      if (!providerChecked) {
+        return (
+          <div className="flex h-screen items-center justify-center">
+            <p>Loading profile...</p>
+          </div>
+        );
       }
 
       setAvatarError(null);
@@ -349,12 +359,9 @@ export default function EditProfilePage() {
         className="space-y-6"
       >
         <TabsList className="m-0">
-          {/* Profile tab */}
           <TabsTrigger value="profile">
-            <User className="mr-2 h-4 w-4" />
-            Profile
+            <User className="mr-2 h-4 w-4" /> Profile
           </TabsTrigger>
-
           {/* Password tab เฉพาะถ้าไม่ใช่ Google */}
           {provider && provider !== "google" && (
             <TabsTrigger value="password">
