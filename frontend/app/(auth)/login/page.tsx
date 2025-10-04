@@ -16,27 +16,35 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-
 import Link from "next/link";
+import { Eye, EyeOff } from "lucide-react";
 
 const GoogleIcon = () => (
   <svg className="mr-3 h-5 w-5" viewBox="0 0 48 48">
     <path
       fill="#FFC107"
-      d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"
-    ></path>
+      d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8
+      c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039
+      l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20
+      s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"
+    />
     <path
       fill="#FF3D00"
-      d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"
-    ></path>
+      d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12
+      c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4
+      C16.318,4,9.656,8.337,6.306,14.691z"
+    />
     <path
       fill="#4CAF50"
-      d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"
-    ></path>
+      d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238
+      C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025
+      C9.505,39.556,16.227,44,24,44z"
+    />
     <path
       fill="#1976D2"
-      d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l6.19,5.238C42.012,35.836,44,30.138,44,24C44,22.659,43.862,21.35,43.611,20.083z"
-    ></path>
+      d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574
+      l6.19,5.238C42.012,35.836,44,30.138,44,24C44,22.659,43.862,21.35,43.611,20.083z"
+    />
   </svg>
 );
 
@@ -46,53 +54,93 @@ const formSchema = z.object({
     .min(2, { message: "Username must be at least 2 characters." }),
   password: z
     .string()
-    .min(6, { message: "Password must be at least 6 characters." }),
+    .min(6, { message: "Password must be at least 8 characters." }),
 });
 
 function LoginPage() {
   const [csrfToken, setCsrfToken] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [hasSuspiciousInput, setHasSuspiciousInput] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+
   const backendURL = process.env.NEXT_PUBLIC_BACKEND_URL;
   const router = useRouter();
 
-  // Prefetch หน้าแรกให้ไวขึ้น
+  const [loginError, setLoginError] = useState<string | null>(null);
+
+  // ---------------- detection helpers ----------------
+  const detectXSS = (value: string) => {
+    const patterns = [
+      /<\s*script\b/i,
+      /(on\w+\s*=)/i,
+      /javascript\s*:/i,
+      /<\s*iframe\b/i,
+      /&lt;.*&gt;|<.*>/i,
+    ];
+    return patterns.some((re) => re.test(value));
+  };
+
+  const detectSQLi = (value: string) => {
+    const patterns = [
+      /(\bor\b|\band\b)\s+1\s*=\s*1/i,
+      /union\s+select/i,
+      /select\b.*\bfrom\b/i,
+      /insert\s+into/i,
+      /update\s+\w+\s+set/i,
+      /drop\s+table/i,
+      /--|;|#|\bexec\b/i,
+    ];
+    return patterns.some((re) => re.test(value));
+  };
+
+  // ---------------- form ----------------
+  const form = useForm<z.infer<typeof formSchema>>({
+    resolver: zodResolver(formSchema),
+    defaultValues: { username: "", password: "" },
+  });
+
+  // ---------------- watch username ----------------
+  useEffect(() => {
+    const subscription = form.watch((_, { name }) => {
+      if (name === "username" || name === undefined) {
+        const username = form.getValues("username") || "";
+        const xss = detectXSS(username);
+        const sqli = detectSQLi(username);
+        setHasSuspiciousInput(xss || sqli);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
+
+  // Prefetch หน้าแรก
   useEffect(() => {
     router.prefetch("/");
   }, [router]);
 
-  // 1) ดึง CSRF token
+  // Fetch CSRF token
   useEffect(() => {
     const fetchCsrfToken = async () => {
       try {
         const response = await fetch(`${backendURL}/api/csrf-token`, {
           credentials: "include",
         });
-
         if (response.ok) {
           const data = await response.json();
           setCsrfToken(data.csrfToken);
-          console.log("CSRF Token obtained.");
         } else {
           toast.error("Security token error", {
             description: "Could not establish a secure session.",
           });
         }
       } catch (error) {
-        console.error("Error fetching CSRF token:", error);
         toast.error("Connection Error", {
-          description: "Could not connect to the server for security setup.",
+          description: "Could not connect to the server.",
         });
       }
     };
     if (backendURL) fetchCsrfToken();
   }, [backendURL]);
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema),
-    defaultValues: { username: "", password: "" },
-  });
-
-  // Google login
   const handleGoogleLogin = () => {
     if (backendURL) {
       window.location.href = `${backendURL}/auth/google`;
@@ -104,24 +152,10 @@ function LoginPage() {
   };
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (!backendURL) {
-      toast.error("Configuration Error", {
-        description: "Backend URL is missing.",
-      });
-      return;
-    }
-    if (!csrfToken) {
-      toast.error("Session not ready", {
-        description: "Please wait a moment and try again.",
-      });
-      return;
-    }
+    if (!backendURL || !csrfToken) return;
 
     setIsSubmitting(true);
-    toast.info("Verifying data...", {
-      description: `Username: ${values.username}`,
-      duration: 2000,
-    });
+    setLoginError(null); // รีเซ็ต error ก่อน submit
 
     try {
       const response = await fetch(`${backendURL}/auth/login`, {
@@ -138,27 +172,17 @@ function LoginPage() {
       });
 
       if (response.ok) {
-        const data = await response.json();
-        console.log("Login successful:", data);
         toast.success("Login Successful!", { description: "Welcome back!" });
-
-        // ⬇️ กลับหน้าหลักทันที และล้างหน้า login จาก history
         router.replace("/");
-        // ถ้าโฮมเพจอ่าน session ฝั่งเซิร์ฟเวอร์อยู่แล้ว จะโหลดสถานะใหม่ให้เอง
       } else {
         const errorData = await response.json().catch(() => ({}));
-        console.error("Login failed:", errorData);
-        toast.error("Login Failed", {
-          description:
-            errorData.message ||
-            "Invalid username or password. Please try again.",
-        });
+        const message =
+          errorData.message ||
+          "Invalid username or password. Please try again.";
+        setLoginError(message); // เก็บข้อความไว้ใน state
       }
-    } catch (error) {
-      console.error("Connection error:", error);
-      toast.error("Connection Error", {
-        description: "Unable to connect to the server. Please try again.",
-      });
+    } catch {
+      setLoginError("Unable to connect to the server.");
     } finally {
       setIsSubmitting(false);
     }
@@ -173,7 +197,6 @@ function LoginPage() {
             <p className="text-primary">to your account</p>
           </div>
 
-          {/* Google Login */}
           <Button
             variant="outline"
             className="h-12 w-full text-base"
@@ -205,6 +228,12 @@ function LoginPage() {
                       />
                     </FormControl>
                     <FormMessage />
+                    {hasSuspiciousInput && (
+                      <p className="mt-1 text-sm text-red-500">
+                        Suspicious input detected! Remove HTML tags or SQL
+                        keywords.
+                      </p>
+                    )}
                   </FormItem>
                 )}
               />
@@ -212,23 +241,70 @@ function LoginPage() {
               <FormField
                 control={form.control}
                 name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="Password"
-                        {...field}
-                        className="h-12 text-base"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                render={({ field, fieldState }) => {
+                  const passwordValue = form.getValues("password");
+                  const xss = detectXSS(passwordValue);
+                  const sqli = detectSQLi(passwordValue);
+                  const hasSuspiciousPassword = xss || sqli;
+
+                  return (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <div className="relative">
+                        <FormControl>
+                          <Input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Password"
+                            {...field}
+                            className="h-12 pr-10 text-base"
+                          />
+                        </FormControl>
+
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword((prev) => !prev)}
+                          className="absolute inset-y-0 right-2 flex items-center p-1 text-gray-500 hover:text-gray-800 focus:outline-none"
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-5 w-5" />
+                          ) : (
+                            <Eye className="h-5 w-5" />
+                          )}
+                        </button>
+                        {/* แสดง error จาก Zod */}
+                        {fieldState.error && (
+                          <p className="mt-1 text-sm text-red-500">
+                            {fieldState.error.message}
+                          </p>
+                        )}
+
+                        {/* แสดง login error */}
+                        {loginError && (
+                          <p className="mt-1 text-sm text-red-500">
+                            {loginError}
+                          </p>
+                        )}
+                      </div>
+
+                      {/* แสดง error จาก Zod */}
+                      {fieldState.error && (
+                        <p className="mt-1 text-sm text-red-500">
+                          {fieldState.error.message}
+                        </p>
+                      )}
+
+                      {/* แสดงเตือน XSS/SQLi */}
+                      {hasSuspiciousPassword && (
+                        <p className="mt-1 text-sm text-red-500">
+                          Suspicious input detected! Remove HTML tags or SQL
+                          keywords.
+                        </p>
+                      )}
+                    </FormItem>
+                  );
+                }}
               />
 
-              {/* ปุ่ม Submit — ไม่ครอบด้วย <Link> */}
               <Button
                 type="submit"
                 className="h-12 w-full text-lg font-semibold"

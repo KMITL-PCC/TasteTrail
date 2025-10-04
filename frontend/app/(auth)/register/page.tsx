@@ -21,7 +21,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 /* ---------------- UI: Google Icon ---------------- */
 const GoogleIcon = () => (
-  <svg className="w-5 h-5 mr-3" viewBox="0 0 48 48">
+  <svg className="mr-3 h-5 w-5" viewBox="0 0 48 48">
     <path
       fill="#FFC107"
       d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"
@@ -46,19 +46,30 @@ const registerFormSchema = z
   .object({
     username: z
       .string()
-      .min(6, { message: "Username must be at least 6 characters." })
+      .min(6, { message: "" })
       .max(30, { message: "Username must be at most 30 characters." })
       .regex(/^[A-Za-z0-9]+$/, {
         message:
           "Only English letters and numbers are allowed (no spaces/symbols).",
       }),
+
     email: z.string().email({ message: "Please enter a valid email address." }),
+
     password: z
       .string()
-      .min(6, { message: "Password must be at least 6 characters." }),
-    confirmPassword: z
-      .string()
-      .min(6, { message: "Confirm password must be at least 6 characters." }),
+      .min(8, { message: "" })
+      .regex(/[a-z]/)
+      .regex(/[A-Z]/, {
+        message: "Password must contain at least one uppercase letter.",
+      })
+      .regex(/\d/, { message: "Password must contain at least one number." })
+      .regex(/[@$!%*?&]/, {
+        message:
+          "Password must contain at least one special character (@$!%*?&).",
+      }),
+
+    confirmPassword: z.string(),
+
     terms: z.boolean().refine((val) => val === true, {
       message: "You must accept the terms and conditions.",
     }),
@@ -105,7 +116,7 @@ const ResendSection = memo(function ResendSection({
   onResend: () => void;
 }) {
   return (
-    <div className="mt-4 text-sm text-center text-gray-600">
+    <div className="mt-4 text-center text-sm text-gray-600">
       Didn't receive the code?{" "}
       {countdown > 0 ? (
         <span className="font-semibold text-gray-500">
@@ -163,7 +174,7 @@ const OtpCodeField = memo(function OtpCodeField({
                   e.preventDefault();
                 }
               }}
-              className="text-base tracking-widest text-center border-gray-300 rounded-md h-11 focus:border-green-500 focus:ring-green-500 sm:h-12"
+              className="h-11 rounded-md border-gray-300 text-center text-base tracking-widest focus:border-green-500 focus:ring-green-500 sm:h-12"
             />
           </FormControl>
           <FormMessage className="text-sm text-red-500" />
@@ -424,12 +435,12 @@ export default function RegisterForm() {
       <div className="flex items-center justify-between">
         <Button
           variant="ghost"
-          className="p-2 rounded-full"
+          className="rounded-full p-2"
           onClick={handleBackToRegister}
         >
-          <ArrowLeft className="w-6 h-6 text-gray-700 sm:h-8 sm:w-8" />
+          <ArrowLeft className="h-6 w-6 text-gray-700 sm:h-8 sm:w-8" />
         </Button>
-        <h1 className="flex-grow pr-12 text-3xl font-bold text-center text-gray-900 sm:text-4xl">
+        <h1 className="flex-grow pr-12 text-center text-3xl font-bold text-gray-900 sm:text-4xl">
           Verify OTP
         </h1>
       </div>
@@ -448,7 +459,7 @@ export default function RegisterForm() {
           <OtpCodeField autoFocus />
           <Button
             type="submit"
-            className="w-full h-12 text-lg font-semibold text-white transition-colors duration-200 bg-green-500 rounded-md shadow-md hover:bg-green-600 sm:h-14"
+            className="h-12 w-full rounded-md bg-green-500 text-lg font-semibold text-white shadow-md transition-colors duration-200 hover:bg-green-600 sm:h-14"
           >
             Verify Account
           </Button>
@@ -490,17 +501,11 @@ export default function RegisterForm() {
                       <Input
                         placeholder="Choose a username"
                         {...field}
-                        className="text-base border-gray-300 rounded-md focus:border-primary focus:ring-primary h-11 sm:h-12"
+                        className="focus:border-primary focus:ring-primary h-11 rounded-md border-gray-300 text-base sm:h-12"
                         onKeyDown={(e) => {
                           if (e.key === " ") e.preventDefault();
                         }}
-                        onChange={(e) => {
-                          const sanitized = e.target.value.replace(
-                            /[^A-Za-z0-9]/g,
-                            "",
-                          );
-                          field.onChange(sanitized);
-                        }}
+                        // ❌ ลบ sanitize ให้พิมพ์ @#!$><?/ ได้
                         inputMode="text"
                         autoComplete="username"
                       />
@@ -523,7 +528,7 @@ export default function RegisterForm() {
                         type="email"
                         placeholder="Enter your email"
                         {...field}
-                        className="text-base border-gray-300 rounded-md focus:border-primary focus:ring-primary h-11 sm:h-12"
+                        className="focus:border-primary focus:ring-primary h-11 rounded-md border-gray-300 text-base sm:h-12"
                         autoComplete="email"
                       />
                     </FormControl>
@@ -535,23 +540,74 @@ export default function RegisterForm() {
               <FormField
                 control={registerForm.control}
                 name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="font-medium text-gray-700">
-                      Password
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="Create a password"
-                        {...field}
-                        className="text-base border-gray-300 rounded-md focus:border-primary focus:ring-primary h-11 sm:h-12"
-                        autoComplete="new-password"
-                      />
-                    </FormControl>
-                    <FormMessage className="text-sm text-red-500" />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  const val = field.value || "";
+                  const checks = {
+                    lowercase: /[a-z]/.test(val),
+                    uppercase: /[A-Z]/.test(val),
+                    number: /\d/.test(val),
+                    special: /[@$!%*?&]/.test(val),
+                    length: val.length >= 8,
+                  };
+
+                  return (
+                    <FormItem>
+                      <FormLabel className="font-medium text-gray-700">
+                        Password
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="password"
+                          placeholder="Create a password"
+                          {...field}
+                          className="focus:border-primary focus:ring-primary h-11 rounded-md border-gray-300 text-base sm:h-12"
+                          autoComplete="new-password"
+                        />
+                      </FormControl>
+                      <FormMessage className="text-sm text-red-500" />
+                      <ul className="mt-2 space-y-1 text-sm">
+                        <li
+                          className={
+                            checks.length ? "text-green-600" : "text-red-500"
+                          }
+                        >
+                          {checks.length ? "✅" : "❌"} At least 8 characters
+                        </li>
+                        <li
+                          className={
+                            checks.lowercase ? "text-green-600" : "text-red-500"
+                          }
+                        >
+                          {checks.lowercase ? "✅" : "❌"} At least one
+                          lowercase letter
+                        </li>
+                        <li
+                          className={
+                            checks.uppercase ? "text-green-600" : "text-red-500"
+                          }
+                        >
+                          {checks.uppercase ? "✅" : "❌"} At least one
+                          uppercase letter
+                        </li>
+                        <li
+                          className={
+                            checks.number ? "text-green-600" : "text-red-500"
+                          }
+                        >
+                          {checks.number ? "✅" : "❌"} At least one number
+                        </li>
+                        <li
+                          className={
+                            checks.special ? "text-green-600" : "text-red-500"
+                          }
+                        >
+                          {checks.special ? "✅" : "❌"} At least one special
+                          character (@$!%*?&)
+                        </li>
+                      </ul>
+                    </FormItem>
+                  );
+                }}
               />
 
               <FormField
@@ -567,7 +623,7 @@ export default function RegisterForm() {
                         type="password"
                         placeholder="Confirm your password"
                         {...field}
-                        className="text-base border-gray-300 rounded-md focus:border-primary focus:ring-primary h-11 sm:h-12"
+                        className="focus:border-primary focus:ring-primary h-11 rounded-md border-gray-300 text-base sm:h-12"
                         autoComplete="new-password"
                       />
                     </FormControl>
@@ -580,7 +636,7 @@ export default function RegisterForm() {
                 control={registerForm.control}
                 name="terms"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-start py-4 space-x-3 space-y-0 rounded-md">
+                  <FormItem className="flex flex-row items-start space-y-0 space-x-3 rounded-md py-4">
                     <FormControl>
                       <Checkbox
                         checked={field.value}
@@ -588,18 +644,18 @@ export default function RegisterForm() {
                       />
                     </FormControl>
                     <div className="space-y-1 leading-none">
-                      <FormLabel className="text-sm font-normal text-primary whitespace-nowrap">
+                      <FormLabel className="text-primary text-sm font-normal whitespace-nowrap">
                         I agree to the{" "}
                         <a
                           href="/terms"
-                          className="underline hover:text-primary"
+                          className="hover:text-primary underline"
                         >
                           Terms of Service
                         </a>{" "}
                         and{" "}
                         <a
                           href="/privacy"
-                          className="underline hover:text-primary"
+                          className="hover:text-primary underline"
                         >
                           Privacy Policy
                         </a>
@@ -617,14 +673,14 @@ export default function RegisterForm() {
                   !registerForm.formState.isValid ||
                   !csrfToken /* กันตอน token ยังไม่พร้อม */
                 }
-                className="w-full h-12 text-lg font-semibold text-white transition-colors duration-200 rounded-md shadow-md bg-primary hover:bg-primary disabled:cursor-not-allowed disabled:bg-gray-400 sm:h-14"
+                className="bg-primary hover:bg-primary h-12 w-full rounded-md text-lg font-semibold text-white shadow-md transition-colors duration-200 disabled:cursor-not-allowed disabled:bg-gray-400 sm:h-14"
               >
                 Register
               </Button>
             </form>
           </Form>
 
-          <div className="flex items-center mt-6 space-x-3">
+          <div className="mt-6 flex items-center space-x-3">
             <hr className="flex-grow border-gray-300" />
             <span className="text-sm text-gray-500">or</span>
             <hr className="flex-grow border-gray-300" />
@@ -632,7 +688,7 @@ export default function RegisterForm() {
 
           <Button
             variant="outline"
-            className="w-full text-base font-medium transition-colors duration-200 border-gray-300 rounded-md h-11 hover:bg-gray-50 sm:h-12 sm:text-lg"
+            className="h-11 w-full rounded-md border-gray-300 text-base font-medium transition-colors duration-200 hover:bg-gray-50 sm:h-12 sm:text-lg"
             onClick={handleGoogleLogin}
             disabled={!backendURL}
           >
@@ -640,12 +696,12 @@ export default function RegisterForm() {
             Register with Google
           </Button>
 
-          <div className="mt-4 text-sm text-center">
+          <div className="mt-4 text-center text-sm">
             <p className="text-gray-600">
               Already have an account?{" "}
               <a
                 href="/login"
-                className="font-semibold text-primary hover:underline"
+                className="text-primary font-semibold hover:underline"
               >
                 Login
               </a>
@@ -658,7 +714,7 @@ export default function RegisterForm() {
 
   /* ---------------- Render ---------------- */
   return (
-    <div className="flex flex-col items-center justify-center flex-1 p-10">
+    <div className="flex flex-1 flex-col items-center justify-center p-10">
       {showOtpForm ? <OtpVerificationForm /> : <RegisterMainForm />}
     </div>
   );
