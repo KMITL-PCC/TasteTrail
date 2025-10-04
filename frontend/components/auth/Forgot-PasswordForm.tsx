@@ -2,13 +2,16 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import DOMPurify from "dompurify";
 import { Eye, EyeOff } from "lucide-react";
 
-// The backend URL is correctly defined here and will be used throughout the component.
+// Backend URL
 const backendURL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
 const ForgotPasswordForm = () => {
+  const router = useRouter();
+
   const [email, setEmail] = useState("");
   const [message, setMessage] = useState("");
   const [messageType, setMessageType] = useState<"success" | "error">("error");
@@ -26,6 +29,34 @@ const ForgotPasswordForm = () => {
 
   const [csrfToken, setCsrfToken] = useState<string | null>(null);
 
+  // ✅ RBAC: ตรวจสอบ provider
+  const [providerChecked, setProviderChecked] = useState(false);
+
+  useEffect(() => {
+    const checkProvider = async () => {
+      try {
+        const res = await fetch(`${backendURL}/auth/me`, {
+          credentials: "include",
+        });
+        if (!res.ok) {
+          setProviderChecked(true); // ไม่ login ก็ใช้ forgot password ได้
+          return;
+        }
+        const data = await res.json();
+        if (data.provider === "google") {
+          router.replace("/login?error=google-account");
+          return;
+        }
+      } catch (err) {
+        console.error("Failed to check provider:", err);
+      } finally {
+        setProviderChecked(true);
+      }
+    };
+    checkProvider();
+  }, [router]);
+
+  // Sanitize input
   const sanitizeInput = (value: string) => {
     return DOMPurify.sanitize(value.trim(), {
       ALLOWED_TAGS: [],
@@ -33,11 +64,13 @@ const ForgotPasswordForm = () => {
     });
   };
 
-  // Email ตรวจสอบเบื้องต้น
+  // Email validation
   const isValidEmail = (email: string) =>
     /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email);
 
-  // Password อย่างน้อย 8 ตัว มีทั้งตัวเล็ก ตัวใหญ่ และตัวเลข
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Password strength validation
   const isStrongPassword = (pwd: string) =>
     pwd.length >= 8 && /[A-Z]/.test(pwd) && /[a-z]/.test(pwd) && /\d/.test(pwd);
 
@@ -58,12 +91,10 @@ const ForgotPasswordForm = () => {
         const response = await fetch(`${backendURL}/api/csrf-token`, {
           credentials: "include",
         });
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
+        if (!response.ok) throw new Error("Network response was not ok");
+
         const data = await response.json();
         setCsrfToken(data.csrfToken);
-        console.log("CSRF Token fetched successfully.");
       } catch (error) {
         console.error("Failed to fetch CSRF token:", error);
         setMessage("Connection error. Please try again later.");
@@ -73,7 +104,7 @@ const ForgotPasswordForm = () => {
     fetchCsrfToken();
   }, []);
 
-  // Countdown
+  // Countdown for resend OTP
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (countdown > 0) {
@@ -114,9 +145,8 @@ const ForgotPasswordForm = () => {
       });
 
       const data = await response.json();
-      if (!response.ok) {
+      if (!response.ok)
         throw new Error(data.message || "Failed to send reset link.");
-      }
 
       setFormStep("otp");
       setMessage(
@@ -164,9 +194,7 @@ const ForgotPasswordForm = () => {
       });
 
       const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.message || "Invalid OTP.");
-      }
+      if (!response.ok) throw new Error(data.message || "Invalid OTP.");
 
       setFormStep("resetPassword");
       setMessage("OTP verified. Please set your new password.");
@@ -220,9 +248,8 @@ const ForgotPasswordForm = () => {
       });
 
       const data = await response.json();
-      if (!response.ok) {
+      if (!response.ok)
         throw new Error(data.message || "Failed to reset password.");
-      }
 
       setMessage(
         "Password has been reset successfully! Redirecting to login...",
@@ -267,9 +294,8 @@ const ForgotPasswordForm = () => {
       });
 
       const data = await response.json();
-      if (!response.ok) {
+      if (!response.ok)
         throw new Error(data.message || "Failed to resend code.");
-      }
 
       setMessage(data.message || "A new code has been sent.");
       setMessageType("success");
@@ -289,12 +315,25 @@ const ForgotPasswordForm = () => {
     setOtp("");
   };
 
+  // ✅ ถ้ายังไม่เช็ค provider เสร็จ → แสดง loading
+  if (!providerChecked) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <p className="text-gray-600">Checking account...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center bg-gray-50 p-10 pb-64 font-sans">
       {/* Popup Message */}
       {message && (
         <div
-          className={`absolute top-20 rounded-md px-4 py-3 text-sm font-medium ${messageType === "success" ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}`}
+          className={`absolute top-20 rounded-md px-4 py-3 text-sm font-medium ${
+            messageType === "success"
+              ? "bg-green-100 text-green-800"
+              : "bg-red-100 text-red-800"
+          }`}
         >
           {message}
         </div>
@@ -337,7 +376,7 @@ const ForgotPasswordForm = () => {
               {isLoading ? "Sending..." : "Send Reset Link"}
             </button>
 
-            {/* Text link back to Login */}
+            {/* Back to Login */}
             <div className="text-center">
               <Link
                 href="/login"
@@ -389,7 +428,7 @@ const ForgotPasswordForm = () => {
               {isLoading ? "Verifying..." : "Verify Code"}
             </button>
 
-            {/* Text link back to Login */}
+            {/* Back to Login */}
             <div className="text-center">
               <Link
                 href="/login"
@@ -429,7 +468,6 @@ const ForgotPasswordForm = () => {
       )}
 
       {/* Reset Password Form */}
-      {/* Reset Password Form */}
       {formStep === "resetPassword" && (
         <div className="w-full max-w-md">
           <div className="mb-6 text-center">
@@ -466,9 +504,9 @@ const ForgotPasswordForm = () => {
             </div>
 
             {/* Confirm Password */}
-            <div>
+            <div className="relative">
               <input
-                type="password"
+                type={showConfirmPassword ? "text" : "password"}
                 placeholder="Confirm New Password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
@@ -476,6 +514,17 @@ const ForgotPasswordForm = () => {
                 className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 placeholder-gray-400 shadow-sm transition focus:border-green-500 focus:ring-1 focus:ring-green-500 focus:outline-none disabled:bg-gray-50"
                 required
               />
+              <button
+                type="button" // ป้องกันปุ่ม submit โดยไม่ตั้งใจ
+                onClick={() => setShowConfirmPassword((s) => !s)}
+                className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-1 text-gray-500 hover:text-gray-800 focus:outline-none"
+              >
+                {showConfirmPassword ? (
+                  <EyeOff className="h-5 w-5" />
+                ) : (
+                  <Eye className="h-5 w-5" />
+                )}
+              </button>
             </div>
 
             {/* Password checklist */}

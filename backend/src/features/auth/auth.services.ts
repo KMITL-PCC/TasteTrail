@@ -59,7 +59,9 @@ export class AuthServices {
       },
     });
 
-    if (existingUser) {
+    if (existingUser && existingUser.passwordHash === null) {
+      return null;
+    } else if (existingUser) {
       return false;
     } else {
       return true;
@@ -121,11 +123,17 @@ export class AuthServices {
     //1. check user exists
     const userCheck = await this.checkUserNotExistence("", email);
 
-    if (userCheck) {
+    if (userCheck === null) {
       return {
         success: false,
         status: 400,
         message: "Email not registered or only login with social account",
+      };
+    } else if (userCheck) {
+      return {
+        success: false,
+        status: 400,
+        message: "Email not registered",
       };
     }
 
@@ -249,5 +257,18 @@ export class AuthServices {
     });
 
     return restaurant?.id;
+  }
+
+  async is3rdOnly(userId: string) {
+    const isHavePasswordHash = await this.prisma.user.findUnique({
+      where: {
+        id: userId,
+      },
+      select: {
+        passwordHash: true,
+      },
+    });
+
+    return isHavePasswordHash?.passwordHash === null;
   }
 }

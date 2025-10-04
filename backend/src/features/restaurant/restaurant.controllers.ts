@@ -3,7 +3,6 @@ import { Request, Response, NextFunction } from "express";
 import { Restaurant } from "../../types/restaurant";
 import restaurantServices from "./restaurant.services";
 import { User } from "@prisma/client";
-import { get } from "http";
 
 function validateNestedFields(obj: any, requiredFields: string[]): string[] {
   return requiredFields.filter((field) => !obj?.[field]);

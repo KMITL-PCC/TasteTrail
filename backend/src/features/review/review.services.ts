@@ -1,11 +1,39 @@
 import { PrismaClient } from "@prisma/client";
 import cloudinary from "../../config/cloudinary.config";
 import { HttpError } from "../../utils/httpError.util";
+import { sort } from "./review.controllers";
+
+type orderBy = { createdAt?: "asc" | "desc" } | { rating?: "asc" | "desc" };
+type whereClause = {
+  restaurantId: string;
+  rating?: number;
+};
 
 export class ReviewServices {
   private prisma: PrismaClient;
   constructor(prisma: PrismaClient) {
     this.prisma = prisma;
+  }
+
+  /*
+   * input @date gtm+0 2025-10-03T09:52:48.624Z
+   * output @string gmt+7 2025/10/04
+   */
+  private formatTime(inputDate: Date) {
+    // Input ที่คุณให้มา (เวลา GMT+0)
+    // const inputDate = new Date(time);
+
+    // แปลงเป็นเวลาท้องถิ่นของประเทศไทย (GMT+7)
+    const thaiTime = new Date(
+      inputDate.toLocaleString("en-US", { timeZone: "Asia/Bangkok" })
+    );
+
+    // จัดรูปแบบเป็น "YYYY/M/D"
+    const year = thaiTime.getFullYear();
+    const month = thaiTime.getMonth() + 1; // getMonth() เริ่มจาก 0
+    const day = thaiTime.getDate();
+
+    return `${year}/${month}/${day}`;
   }
 
   private uploadImages(pictures: Express.Multer.File[]) {
@@ -36,11 +64,14 @@ export class ReviewServices {
     review: string,
     pictures: Express.Multer.File[]
   ) {
-    const uploadPromises = this.uploadImages(pictures);
     let uploadedResults: { url: string; public_id: string }[] = [];
+
     try {
+      if (pictures) {
+        const uploadPromises = this.uploadImages(pictures);
+        uploadedResults = await Promise.all(uploadPromises);
+      }
       //1.upload images
-      uploadedResults = await Promise.all(uploadPromises);
 
       const result = await this.prisma.$transaction(async (tx) => {
         //2.check if user exist review
@@ -87,8 +118,6 @@ export class ReviewServices {
             totalReviews: stats._count.id,
           },
         });
-
-        return newReview;
       });
     } catch (error) {
       if (uploadedResults.length > 0) {
@@ -97,17 +126,59 @@ export class ReviewServices {
             cloudinary.uploader.destroy(img.public_id)
           )
         );
-        throw new Error(`error during create review service Error: ${error}`);
       }
+
+      if (error instanceof HttpError) {
+        throw error; // preserve HttpError
+      }
+
+      throw new Error(`error during create review service Error: ${error}`);
     }
   }
 
-  async get(page: number, limit: number, restaurantId: any) {
-    const reviews = await this.prisma.$transaction(async (tx) => {
-      const review = await tx.review.findMany({
-        where: {
-          restaurantId,
-        },
+  async get(
+    page: number,
+    limit: number,
+    restaurantId: string,
+    sort: sort,
+    filter: number
+  ) {
+    //1. create sort
+    let orderBy: orderBy = { createdAt: "asc" }; // default = เก่าสุด
+
+    switch (sort) {
+      case "newest":
+        orderBy = { createdAt: "desc" };
+        break;
+      case "oldest":
+        orderBy = { createdAt: "asc" };
+        break;
+      case "highest":
+        orderBy = { rating: "desc" };
+        break;
+      case "lowest":
+        orderBy = { rating: "asc" };
+        break;
+    }
+
+    //2. create rating filter
+    let whereClause: whereClause = {
+      restaurantId,
+    };
+
+    if (filter) {
+      whereClause.rating = Number(filter);
+    }
+
+    //3. pagination
+    const offset = (page - 1) * limit;
+
+    //4. query review
+    const [reviews, total] = await this.prisma.$transaction([
+      this.prisma.review.findMany({
+        where: whereClause,
+        orderBy,
+        skip: offset,
         select: {
           id: true,
           rating: true,
@@ -125,11 +196,82 @@ export class ReviewServices {
             },
           },
         },
-      });
+      }),
+      this.prisma.review.count({
+        where: {
+          restaurantId,
+        },
+      }),
+    ]);
 
-      return review;
+    //5. map review
+    const reviewMap = reviews.map((review) => ({
+      id: review.id,
+      user: {
+        name: review.user.username,
+        avatar: review.user.profilePictureUrl,
+      },
+      rating: review.rating,
+      date: this.formatTime(review.createdAt),
+      content: review.reviewText,
+      images: review.images.map((images) => images.imageUrl),
+    }));
+
+    const totalPages = Math.ceil(total / limit);
+    const hasNextPage = page < totalPages;
+    const hasPrevPage = page > 1;
+
+    return {
+      reviews: reviewMap,
+      pagination: {
+        currentPage: page,
+        totalPages: totalPages,
+        totalReviews: total,
+        limit: limit,
+        hasNextPage: hasNextPage,
+        hasPrevPage: hasPrevPage,
+      },
+    };
+  }
+
+  async delete(userId: string, restaurantId: string) {
+    //1. get public id
+    const review = await this.prisma.review.findFirst({
+      where: {
+        AND: [{ userId }, { restaurantId }],
+      },
+      select: {
+        id: true,
+        images: {
+          select: {
+            imageUrl: true,
+            publicId: true,
+          },
+        },
+      },
     });
 
-    return reviews;
+    if (!review) {
+      throw new Error("Can't find review");
+    }
+    try {
+      //2. delete picture in cloudinary
+      const results = await Promise.allSettled(
+        review.images.map((img) => cloudinary.uploader.destroy(img.publicId))
+      );
+
+      //3. delete review
+      await this.prisma.review.delete({
+        where: {
+          id: review.id,
+        },
+      });
+    } catch (error) {
+      if (error instanceof HttpError) {
+        throw error; // preserve HttpError
+      }
+
+      throw new Error(`error during create review service Error: ${error}`);
+    }
   }
 }

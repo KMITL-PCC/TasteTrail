@@ -2,8 +2,8 @@ import { Router } from "express";
 import {
   isLoggedIn,
   isAuthenticated,
-  hasRole,
   AuthValidation,
+  onlyFrom3rd,
 } from "../../middleware/auth.middleware";
 import { AuthControllers } from "./auth.controllers";
 
@@ -78,10 +78,11 @@ router.patch(
   authControllers.updatePass
 );
 
-router.post("/sendOTP", isAuthenticated, authControllers.sendOTP);
+router.post("/sendOTP", isAuthenticated, onlyFrom3rd, authControllers.sendOTP);
 router.patch(
   "/updatepass",
   isAuthenticated,
+  onlyFrom3rd,
   AuthValidation.validPassword("newPassword"),
   AuthValidation.validate,
   authControllers.updatePass
@@ -89,6 +90,7 @@ router.patch(
 router.patch(
   "/updatepass-current",
   isAuthenticated,
+  onlyFrom3rd,
   AuthValidation.validPassword("currentPassword"),
   AuthValidation.validPassword("newPassword"),
   AuthValidation.validate,

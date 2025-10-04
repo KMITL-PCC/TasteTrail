@@ -17,8 +17,6 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Save, User, Lock, EyeOff, Eye, X } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { useUser } from "@/store/user-store";
-
 import z from "zod";
 
 const backendURL =
@@ -30,6 +28,14 @@ const CSRF_ENDPOINT = `${backendURL}/api/csrf-token`;
 
 function sanitizePassword(input: string) {
   return input.replace(/[<>"'`;]/g, "").trim();
+}
+
+function detectXSS(input: string) {
+  return /[<>"'`;]/.test(input);
+}
+
+function detectSQLi(input: string) {
+  return /\b(SELECT|INSERT|UPDATE|DELETE|DROP|UNION|OR|AND)\b/i.test(input);
 }
 
 export default function EditProfilePage() {
@@ -59,21 +65,21 @@ export default function EditProfilePage() {
     });
 
   const [csrfToken, setCsrfToken] = useState<string | null>(null);
+  const [thirdPartyOnly, setThirdPartyOnly] = useState<boolean | null>(null);
 
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  // Avatar
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-  // Profile
+  const [profileChecked, setProfileChecked] = useState(false);
+
   const [username, setUsername] = useState("");
   const [savingProfile, setSavingProfile] = useState(false);
 
-  // Change password
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -82,7 +88,7 @@ export default function EditProfilePage() {
   const isNewPasswordValid = passwordSchema.safeParse(newPassword).success;
   const isConfirmValid = confirmPassword === newPassword;
 
-  // === CSRF ===
+  // --- CSRF ---
   useEffect(() => {
     (async () => {
       try {
@@ -90,12 +96,7 @@ export default function EditProfilePage() {
           method: "GET",
           credentials: "include",
         });
-        if (!res.ok) {
-          toast.error("Security token error", {
-            description: "  .",
-          });
-          return;
-        }
+        if (!res.ok) throw new Error("Security token error");
         const data = await res.json();
         setCsrfToken(data?.csrfToken || null);
       } catch (err) {
@@ -106,12 +107,12 @@ export default function EditProfilePage() {
     })();
   }, []);
 
-  // === Load profile ===
+  // --- Load profile ---
   useEffect(() => {
     (async () => {
       try {
         const res = await fetch(PROFILE_ENDPOINT, {
-          method: "GET", // ใช้ GET แทน PUT ในการดึงข้อมูล
+          method: "GET",
           credentials: "include",
         });
         if (!res.ok) {
@@ -120,6 +121,7 @@ export default function EditProfilePage() {
           return;
         }
         const { user } = await res.json();
+        setThirdPartyOnly(!!user?.thirdPartyOnly);
         setUsername(user?.username ?? "");
 
         if (user?.profilePictureUrl) {
@@ -132,35 +134,39 @@ export default function EditProfilePage() {
         toast.error("Connection Error", {
           description: "Unable to fetch your profile. Please try again.",
         });
+        setThirdPartyOnly(false); // fallback
+      } finally {
+        setProfileChecked(true);
       }
     })();
   }, []);
 
-  // ===== Profile upload/preview =====
+  const [avatarError, setAvatarError] = useState<string | null>(null);
+
   function onUploadAvatar(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
-
-    // จำกัดไฟล์ ≤ 2MB
-    const MAX_SIZE = 2 * 1024 * 1024;
+    const MAX_SIZE = 4 * 1024 * 1024;
     if (file.size > MAX_SIZE) {
-      toast.error("Image too large", {
-        description: "Please select an image smaller than 2MB.",
-      });
-      if (e.target) e.target.value = "";
+      setAvatarError("File is too large. Maximum size is 4MB.");
+      e.target.value = "";
       return;
     }
-
+    setAvatarError(null);
     setAvatarFile(file);
-
-    // แสดงตัวอย่างทันทีด้วย Data URL
-    const reader = new FileReader();
-    reader.onload = (ev) => setAvatarPreview(String(ev.target?.result || ""));
-    reader.readAsDataURL(file);
+    setAvatarPreview(URL.createObjectURL(file));
   }
 
   async function onSaveProfile(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+
+    if (detectXSS(username) || detectSQLi(username)) {
+      toast.error("Cannot save profile", {
+        description:
+          "Username contains invalid characters or possible injection!",
+      });
+      return;
+    }
 
     if (!csrfToken) {
       toast.error("Session not ready", {
@@ -178,7 +184,7 @@ export default function EditProfilePage() {
       if (avatarFile) form.set("avatar", avatarFile);
 
       const res = await fetch(UPDATEPROFILE_ENDPOINT, {
-        method: "PUT", // ใช้ PATCH สำหรับการอัปเดตข้อมูล
+        method: "PUT",
         body: form,
         headers: { "X-CSRF-Token": csrfToken },
         credentials: "include",
@@ -195,11 +201,10 @@ export default function EditProfilePage() {
         description: data.message || "Your changes have been updated.",
       });
 
-      if (data?.avatarUrl) setAvatarPreview(data.avatarUrl); // ใช้รูปใหม่จาก backend
+      if (data?.avatarUrl) setAvatarPreview(data.avatarUrl);
       if (fileInputRef.current) fileInputRef.current.value = "";
       setAvatarFile(null);
 
-      // Broadcast ให้หน้าอื่นรู้ว่ามีการอัปเดต
       if (typeof window !== "undefined" && "BroadcastChannel" in window) {
         const ch = new BroadcastChannel("profile-updated");
         ch.postMessage({ ts: Date.now() });
@@ -215,7 +220,8 @@ export default function EditProfilePage() {
     }
   }
 
-  // ===== Change password (with current) =====
+  const isUsernameValid = username.length >= 3 && username.length <= 20;
+
   async function onSavePassword(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
 
@@ -226,7 +232,6 @@ export default function EditProfilePage() {
       return;
     }
 
-    // ✅ validate newPassword strength
     const result = passwordSchema.safeParse(newPassword);
     if (!result.success) {
       toast.error("Weak password", {
@@ -267,12 +272,10 @@ export default function EditProfilePage() {
         description: data.message || "Your password has been changed.",
       });
 
-      // ล้างฟิลด์
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
 
-      // ✅ Redirect ไปหน้า profile หลัง update สำเร็จ
       router.push("/profile?updated=1");
     } catch (e: any) {
       toast.error("Connection Error", {
@@ -282,47 +285,43 @@ export default function EditProfilePage() {
       setSavingPassword(false);
     }
   }
+
+  if (!profileChecked) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <p>Loading profile...</p>
+      </div>
+    );
+  }
+
   return (
     <div>
-      {/* <div className="bg-background/80 supports-[backdrop-filter]:bg-background/60 sticky top-0 z-10 w-full border-b backdrop-blur">
-        <div className="container flex items-center justify-between px-4 py-3 mx-auto">
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <Link
-              href="/profile"
-              className="inline-flex items-center gap-2 font-medium text-foreground hover:underline"
-            >
-              <User className="w-4 h-4" /> Profile
-            </Link>
-            <span>/</span>
-            <span className="text-foreground">Edit profile</span>
-          </div>
-        </div>
-      </div> */}
-
       <Tabs defaultValue={defaultTab} className="space-y-6">
         <TabsList className="m-0">
           <TabsTrigger value="profile">
-            <User className="w-4 h-4 mr-2" />
-            Profile
+            <User className="mr-2 h-4 w-4" /> Profile
           </TabsTrigger>
-          <TabsTrigger value="password">
-            <Lock className="w-4 h-4 mr-2" />
-            Password
-          </TabsTrigger>
+          {thirdPartyOnly === false && (
+            <TabsTrigger value="password">
+              <Lock className="mr-2 h-4 w-4" />
+              Password
+            </TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="profile">
           <form
             id="profile-form"
             onSubmit={onSaveProfile}
-            className="w-full max-w-6xl py-0 overflow-hidden border shadow-sm max-h-l rounded-2xl"
+            className="max-h-l w-full max-w-6xl overflow-hidden rounded-2xl border py-0 shadow-sm"
           >
             <Card className="space-y-6 border-0 shadow-sm">
               <CardContent className="grid grid-cols-1 gap-6 py-10 md:grid-cols-12 md:items-center">
                 {/* Avatar */}
                 <div className="flex justify-center md:col-span-5">
                   <div className="relative size-36">
-                    <Avatar className="cursor-pointer ring-muted-foreground/20 h-50 w-50 ring-2">
+                    {/* Avatar */}
+                    <Avatar className="ring-muted-foreground/20 h-50 w-50 cursor-pointer ring-2">
                       {avatarPreview ? (
                         <AvatarImage src={avatarPreview} alt="avatar" />
                       ) : (
@@ -333,6 +332,7 @@ export default function EditProfilePage() {
                       </AvatarFallback>
                     </Avatar>
 
+                    {/* ปุ่มลบ avatar */}
                     {avatarPreview && (
                       <button
                         type="button"
@@ -342,30 +342,34 @@ export default function EditProfilePage() {
                           if (fileInputRef.current)
                             fileInputRef.current.value = "";
                         }}
-                        className="absolute top-0 p-1 text-white bg-red-600 rounded-full -right-16 -translate-x-1/4 -translate-y-1/4 hover:bg-red-700"
+                        className="absolute top-0 -right-16 -translate-x-1/4 -translate-y-1/4 rounded-full bg-red-600 p-1 text-white hover:bg-red-700"
                         title="Remove"
                       >
                         <X />
                       </button>
                     )}
 
+                    {/* input type file แอบไว้ */}
                     <input
                       ref={fileInputRef}
                       type="file"
                       accept="image/*"
                       className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (!file) return;
-                        setAvatarFile(file);
-                        setAvatarPreview(URL.createObjectURL(file));
-                      }}
+                      onChange={onUploadAvatar} // ฟังก์ชันตรวจ 4MB และ preview
                     />
 
+                    {/* overlay เพื่อคลิกเปิด file input */}
                     <div
                       className="absolute inset-0 cursor-pointer"
                       onClick={() => fileInputRef.current?.click()}
                     />
+
+                    {/* ข้อความ error ถ้าไฟล์ใหญ่เกิน 4MB */}
+                    {avatarError && (
+                      <p className="mt-1 text-center text-sm text-red-500">
+                        {avatarError}
+                      </p>
+                    )}
                   </div>
                 </div>
 
@@ -378,14 +382,38 @@ export default function EditProfilePage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div className="pt-5 space-y-2 md:col-span-2">
+                    <div className="space-y-2 pt-5 md:col-span-2">
                       <Label htmlFor="username">Username</Label>
                       <Input
                         id="username"
                         value={username}
-                        onChange={(e) => setUsername(e.target.value)}
+                        onChange={(e) => setUsername(e.target.value)} // ไม่ sanitize
                         placeholder="username"
+                        className={`h-11 rounded-md pr-3 text-base focus:ring-green-500 ${
+                          username.length === 0
+                            ? "border-gray-300 focus:border-green-500"
+                            : isUsernameValid
+                              ? "border-green-500 focus:border-green-500"
+                              : "border-red-500 focus:border-red-500"
+                        }`}
                       />
+                      {username.length > 0 && (
+                        <>
+                          <p
+                            className={`mt-1 text-sm ${isUsernameValid ? "text-green-600" : "text-red-500"}`}
+                          >
+                            {isUsernameValid
+                              ? "Looks good!"
+                              : "Username must be 3-20 characters."}
+                          </p>
+                          {(detectXSS(username) || detectSQLi(username)) && (
+                            <p className="mt-1 text-sm text-red-600">
+                              ⚠️ Invalid characters or possible injection
+                              detected!
+                            </p>
+                          )}
+                        </>
+                      )}
                     </div>
                   </CardContent>
                 </div>
@@ -393,233 +421,168 @@ export default function EditProfilePage() {
 
               <CardFooter className="flex items-center justify-end px-10">
                 <Button type="submit" disabled={savingProfile}>
-                  <Save className="w-4 h-4" /> Save profile
+                  <Save className="h-4 w-4" /> Save profile
                 </Button>
               </CardFooter>
             </Card>
           </form>
         </TabsContent>
 
-        <TabsContent value="password">
-          <form onSubmit={onSavePassword}>
-            <Card>
-              <CardHeader>
-                <CardTitle>Change password</CardTitle>
-                <CardDescription>
-                  Use current password to set a new one.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="grid gap-4">
-                {/* Current Password */}
-                <div className="relative">
-                  <Label htmlFor="currentPassword" className="block mb-2">
-                    Current password
-                  </Label>
-                  <Input
+        {thirdPartyOnly === false && (
+          <TabsContent value="password">
+            <form onSubmit={onSavePassword}>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Change password</CardTitle>
+                  <CardDescription>
+                    Use current password to set a new one.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="grid gap-4">
+                  {/* Current Password */}
+                  <PasswordField
                     id="currentPassword"
-                    type={showCurrentPassword ? "text" : "password"}
+                    label="Current password"
                     value={currentPassword}
-                    onChange={(e) =>
-                      setCurrentPassword(sanitizePassword(e.target.value))
-                    }
-                    className="pr-10 text-base border-gray-300 rounded-md h-11 focus:border-green-500 focus:ring-green-500"
+                    show={showCurrentPassword}
+                    setShow={setShowCurrentPassword}
+                    onChange={setCurrentPassword}
                     autoComplete="current-password"
                   />
-                  <button
-                    type="button"
-                    aria-label={
-                      showCurrentPassword ? "Hide password" : "Show password"
-                    }
-                    onClick={() => setShowCurrentPassword((prev) => !prev)}
-                    className="absolute p-1 text-gray-500 top-8 right-2 hover:text-gray-800 focus:outline-none"
-                  >
-                    {showCurrentPassword ? (
-                      <EyeOff className="w-5 h-5" />
-                    ) : (
-                      <Eye className="w-5 h-5" />
-                    )}
-                  </button>
-                </div>
-
-                {/* New Password */}
-                <div className="relative">
-                  <Label htmlFor="newPassword" className="block mb-2">
-                    New password
-                  </Label>
-                  <Input
+                  {/* New Password */}
+                  <PasswordField
                     id="newPassword"
-                    type={showNewPassword ? "text" : "password"}
+                    label="New password"
                     value={newPassword}
-                    onChange={(e) =>
-                      setNewPassword(sanitizePassword(e.target.value))
-                    }
-                    className={`h-11 rounded-md pr-10 text-base focus:ring-green-500 ${
-                      newPassword.length === 0
-                        ? "border-gray-300 focus:border-green-500"
-                        : isNewPasswordValid
-                          ? "border-green-500 focus:border-green-500"
-                          : "border-red-500 focus:border-red-500"
-                    }`}
+                    show={showNewPassword}
+                    setShow={setShowNewPassword}
+                    onChange={setNewPassword}
                     autoComplete="new-password"
                   />
-                  <button
-                    type="button"
-                    aria-label={
-                      showNewPassword ? "Hide password" : "Show password"
-                    }
-                    onClick={() => setShowNewPassword((prev) => !prev)}
-                    className="absolute p-1 text-gray-500 top-8 right-2 hover:text-gray-800 focus:outline-none"
-                  >
-                    {showNewPassword ? (
-                      <EyeOff className="w-5 h-5" />
-                    ) : (
-                      <Eye className="w-5 h-5" />
-                    )}
-                  </button>
-                </div>
-                {/* ✅ Password strength checklist */}
-                {newPassword.length > 0 && (
-                  <ul className="mt-2 space-y-1 text-sm">
-                    <li
-                      className={
-                        /[a-z]/.test(newPassword)
-                          ? "text-green-600"
-                          : "text-gray-500"
-                      }
-                    >
-                      • At least one lowercase letter
-                    </li>
-                    <li
-                      className={
-                        /[A-Z]/.test(newPassword)
-                          ? "text-green-600"
-                          : "text-gray-500"
-                      }
-                    >
-                      • At least one uppercase letter
-                    </li>
-                    <li
-                      className={
-                        /\d/.test(newPassword)
-                          ? "text-green-600"
-                          : "text-gray-500"
-                      }
-                    >
-                      • At least one number
-                    </li>
-                    <li
-                      className={
-                        /[!@#$%^&*()\-+=.?]/.test(newPassword)
-                          ? "text-green-600"
-                          : "text-gray-500"
-                      }
-                    >
-                      • At least one special character (!@#$%^&*()-+=.?)
-                    </li>
-                    <li
-                      className={
-                        newPassword.length >= 8
-                          ? "text-green-600"
-                          : "text-gray-500"
-                      }
-                    >
-                      • Minimum 8 characters
-                    </li>
-                  </ul>
-                )}
-
-                {/* Confirm Password */}
-                <div className="relative">
-                  <Label htmlFor="confirmPassword" className="block mb-2">
-                    Confirm password
-                  </Label>
-                  <Input
+                  {/* Confirm Password */}
+                  <PasswordField
                     id="confirmPassword"
-                    type={showConfirmPassword ? "text" : "password"}
+                    label="Confirm password"
                     value={confirmPassword}
-                    onChange={(e) =>
-                      setConfirmPassword(sanitizePassword(e.target.value))
-                    }
-                    className={`h-11 rounded-md pr-10 text-base focus:ring-green-500 ${
-                      confirmPassword.length === 0
-                        ? "border-gray-300 focus:border-green-500"
-                        : confirmPassword === newPassword
-                          ? "border-green-500 focus:border-green-500"
-                          : "border-red-500 focus:border-red-500"
-                    }`}
+                    show={showConfirmPassword}
+                    setShow={setShowConfirmPassword}
+                    onChange={setConfirmPassword}
                     autoComplete="new-password"
                   />
-                  <button
+                </CardContent>
+                <CardFooter className="flex items-center">
+                  {/* ปุ่ม Update password อยู่ซ้าย */}
+                  <Button type="submit" disabled={savingPassword}>
+                    Update password
+                  </Button>
+
+                  {/* ปุ่ม Update by OTP อยู่ขวาแบบลิงก์สีเขียว */}
+                  <Button
                     type="button"
-                    aria-label={
-                      showConfirmPassword ? "Hide password" : "Show password"
-                    }
-                    onClick={() => setShowConfirmPassword((prev) => !prev)}
-                    className="absolute p-1 text-gray-500 top-8 right-2 hover:text-gray-800 focus:outline-none"
+                    variant="link"
+                    className="ml-auto text-green-600 hover:text-green-800"
+                    onClick={async () => {
+                      if (!csrfToken) return toast.error("Session not ready");
+                      try {
+                        const res = await fetch(`${backendURL}/auth/sendOTP`, {
+                          method: "POST",
+                          headers: {
+                            "Content-Type": "application/json",
+                            "X-CSRF-Token": csrfToken,
+                          },
+                          credentials: "include",
+                        });
+                        if (!res.ok) throw new Error("Failed to send OTP");
+                        toast.success("OTP sent successfully!");
+                        router.push(
+                          `/update-by-otp?return=${encodeURIComponent("/editprofile?tab=password")}`,
+                        );
+                      } catch {
+                        toast.error("Error sending OTP");
+                      }
+                    }}
                   >
-                    {showConfirmPassword ? (
-                      <EyeOff className="w-5 h-5" />
-                    ) : (
-                      <Eye className="w-5 h-5" />
-                    )}
-                  </button>
-                </div>
-              </CardContent>
+                    Update by OTP
+                  </Button>
+                </CardFooter>
+              </Card>
+            </form>
+          </TabsContent>
+        )}
 
-              <CardFooter className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <Button type="submit" disabled={savingPassword}>
-                  <Lock className="w-4 h-4 mr-2" />
-                  {savingPassword ? "Updating..." : "Update password"}
-                </Button>
-
-                <Button
-                  type="button" // 👈 เพิ่มบรรทัดนี้
-                  variant="link"
-                  size="sm"
-                  onClick={async () => {
-                    if (!csrfToken) {
-                      toast.error("Session not ready");
-                      return;
-                    }
-                    try {
-                      const res = await fetch(`${backendURL}/auth/sendOTP`, {
-                        method: "POST",
-                        headers: {
-                          "Content-Type": "application/json",
-                          "X-CSRF-Token": csrfToken,
-                        },
-                        credentials: "include",
-                      });
-                      if (!res.ok) throw new Error("Failed to send OTP");
-
-                      toast.success("OTP sent successfully!");
-                      router.push(
-                        `/update-by-otp?return=${encodeURIComponent("/editprofile?tab=password")}`,
-                      );
-                    } catch (err) {
-                      toast.error("Error sending OTP");
-                    }
-                  }}
-                >
-                  Update By OTP
-                </Button>
-              </CardFooter>
+        {thirdPartyOnly === true && (
+          <TabsContent value="google-info">
+            <Card className="p-6 text-center">
+              <CardTitle className="text-lg font-semibold">
+                Google Account
+              </CardTitle>
+              <CardDescription>
+                This account was created with Google login.
+                <br />
+                You cannot change your password here. Please use Google sign-in
+                instead.
+              </CardDescription>
             </Card>
-          </form>
-        </TabsContent>
+          </TabsContent>
+        )}
       </Tabs>
+    </div>
+  );
+}
+
+// PasswordField component เหมือนเดิม
+interface PasswordFieldProps {
+  id: string;
+  label: string;
+  value: string;
+  show: boolean;
+  setShow: React.Dispatch<React.SetStateAction<boolean>>;
+  onChange: (val: string) => void;
+  autoComplete?: string;
+}
+
+function PasswordField({
+  id,
+  label,
+  value,
+  show,
+  setShow,
+  onChange,
+  autoComplete,
+}: PasswordFieldProps) {
+  return (
+    <div className="relative">
+      <Label htmlFor={id} className="mb-2 block">
+        {label}
+      </Label>
+      <Input
+        id={id}
+        type={show ? "text" : "password"}
+        value={value}
+        onChange={(e) => onChange(sanitizePassword(e.target.value))}
+        className="h-11 rounded-md border-gray-300 pr-10 text-base focus:border-green-500 focus:ring-green-500"
+        autoComplete={autoComplete}
+      />
+      <button
+        type="button"
+        aria-label={show ? "Hide password" : "Show password"}
+        onClick={() => setShow((prev) => !prev)}
+        className="absolute top-8 right-2 p-1 text-gray-500 hover:text-gray-800 focus:outline-none"
+      >
+        {show ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+      </button>
     </div>
   );
 }
 
 async function pickError(res: Response, fallback: string) {
   try {
-    const clone = res.clone(); // สร้างสำเนาของ response
-    const j = await clone.json(); // อ่านข้อมูลจากสำเนาของ response
-    return j?.message || fallback; // ส่งคืนข้อความหรือข้อความ fallback
+    const clone = res.clone();
+    const j = await clone.json();
+    return j?.message || fallback;
   } catch {
-    const clone = res.clone(); // สร้างสำเนาใหม่อีกครั้งหากการอ่านเป็น JSON ล้มเหลว
-    const t = await clone.text(); // อ่านข้อมูลจากสำเนาเป็น text
-    return t || fallback; // ส่งคืนข้อความหรือข้อความ fallback
+    const clone = res.clone();
+    const t = await clone.text();
+    return t || fallback;
   }
 }

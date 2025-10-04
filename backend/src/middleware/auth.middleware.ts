@@ -2,9 +2,11 @@ import { Request, Response, NextFunction } from "express";
 import { validationResult, body } from "express-validator";
 import passport from "../config/passport";
 import { Role, User } from "@prisma/client";
+import { AuthServices } from "../features/auth/auth.services";
 import { HttpError } from "../utils/httpError.util";
+import prisma from "../config/db.config";
 
-// --- Authentication Middleware ---
+const authService = new AuthServices(prisma);
 // ตรวจสอบว่าผู้ใช้ล็อกอินอยู่หรือไม่
 export function isAuthenticated(
   req: Request,
@@ -58,6 +60,26 @@ export function invalidCsrf(
   next(err);
 }
 
+export async function onlyFrom3rd(
+  req: Request,
+  res: Response,
+  next: NextFunction
+) {
+  const user = req.user as User;
+  const isFrom3rdOnly = await authService.checkUserNotExistence(
+    user?.username,
+    user?.email
+  );
+
+  if (isFrom3rdOnly === null) {
+    return res.status(400).json({
+      message: "You login from 3 rd only. can't use this function",
+    });
+  }
+
+  next();
+}
+
 export class AuthValidation {
   static validate(req: Request, res: Response, next: NextFunction) {
     const errors = validationResult(req);
@@ -91,7 +113,7 @@ export class AuthValidation {
         .notEmpty()
         .isLength({ min: 2, max: 50 })
         .withMessage("Name must be between 2 and 50 characters")
-        .matches(/^[a-zA-Z\s]+$/)
+        .matches(/^[a-zA-Z0-9\s]+$/)
         .withMessage("Name must contain only letters and spaces"),
     ];
   }

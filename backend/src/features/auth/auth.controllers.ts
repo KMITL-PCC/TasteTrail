@@ -405,6 +405,10 @@ export class AuthControllers {
     try {
       const updatePass = await this.service.updatePassword(email, newPassword);
 
+      req.session.destroy((err) => {
+        if (err) console.error("Error destroying session:", err);
+      });
+
       // delete session.otp;
       // if (session.forgotData) {
       //   delete session.forgotData;
@@ -421,6 +425,10 @@ export class AuthControllers {
       } else {
         console.error("Error during update password ERROR:", error);
       }
+
+      req.session.destroy((err) => {
+        if (err) console.error("Error destroying session:", err);
+      });
 
       res.status(500).json({
         message: "Error during update password",
@@ -482,6 +490,7 @@ export class AuthControllers {
 
     try {
       const restaurantId = await this.service.getRestaurantByOwnerId(user.id);
+      const is3rdOnly = await this.service.is3rdOnly(user.id);
       res.status(200).json({
         user: {
           username: user.username,
@@ -489,6 +498,7 @@ export class AuthControllers {
           role: user.role,
           profilePictureUrl: user.profilePictureUrl,
           restaurantId: restaurantId || null,
+          thirdPartyOnly: is3rdOnly,
         },
       });
     } catch (err: unknown) {
