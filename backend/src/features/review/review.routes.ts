@@ -41,4 +41,11 @@ router.get(
   reviewControllers.get
 );
 
+router.delete(
+  "/delete",
+  isAuthenticated,
+  ReviewValidation.validRestaurantIdQuery("restaurantId"),
+  reviewControllers.delete
+);
+
 export default router;

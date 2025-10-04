@@ -168,7 +168,7 @@ model ReviewImage {
   publicId   String   @map("public_id") @db.VarChar(100)
   uploadedAt DateTime @default(now()) @map("uploaded_at") @db.Timestamptz(6)
 
-  review Review @relation(fields: [reviewId], references: [id])
+  review Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
 }
 
 // --- Table: Contact ---

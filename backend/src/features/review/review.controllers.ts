@@ -97,4 +97,31 @@ export class ReviewControllers {
       });
     }
   };
+
+  delete = async (req: Request, res: Response) => {
+    const user = req.user as User;
+    const restaurantId = req.query.restaurantId as string;
+
+    try {
+      await this.services.delete(user.id, restaurantId);
+      res.sendStatus(204);
+    } catch (error: unknown) {
+      console.error(
+        "Error during delete review ERROR:",
+        error instanceof Error ? error.message : error
+      );
+
+      if (error instanceof HttpError) {
+        const payload: any = {
+          success: false,
+          code: error.code,
+          message: error.message,
+        };
+        return res.status(error.status).json(payload);
+      }
+      res.status(500).json({
+        message: "error during delete review",
+      });
+    }
+  };
 }
