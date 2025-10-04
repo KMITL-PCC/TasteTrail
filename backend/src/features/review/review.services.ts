@@ -233,4 +233,45 @@ export class ReviewServices {
       },
     };
   }
+
+  async delete(userId: string, restaurantId: string) {
+    //1. get public id
+    const review = await this.prisma.review.findFirst({
+      where: {
+        AND: [{ userId }, { restaurantId }],
+      },
+      select: {
+        id: true,
+        images: {
+          select: {
+            imageUrl: true,
+            publicId: true,
+          },
+        },
+      },
+    });
+
+    if (!review) {
+      throw new Error("Can't find review");
+    }
+    try {
+      //2. delete picture in cloudinary
+      const results = await Promise.allSettled(
+        review.images.map((img) => cloudinary.uploader.destroy(img.publicId))
+      );
+
+      //3. delete review
+      await this.prisma.review.delete({
+        where: {
+          id: review.id,
+        },
+      });
+    } catch (error) {
+      if (error instanceof HttpError) {
+        throw error; // preserve HttpError
+      }
+
+      throw new Error(`error during create review service Error: ${error}`);
+    }
+  }
 }

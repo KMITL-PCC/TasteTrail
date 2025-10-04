@@ -113,7 +113,7 @@ export class AuthValidation {
         .notEmpty()
         .isLength({ min: 2, max: 50 })
         .withMessage("Name must be between 2 and 50 characters")
-        .matches(/^[a-zA-Z\s]+$/)
+        .matches(/^[a-zA-Z0-9\s]+$/)
         .withMessage("Name must contain only letters and spaces"),
     ];
   }
