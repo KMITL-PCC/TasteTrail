@@ -129,6 +129,12 @@ export class AuthServices {
         status: 400,
         message: "Email not registered or only login with social account",
       };
+    } else if (userCheck) {
+      return {
+        success: false,
+        status: 400,
+        message: "Email not registered",
+      };
     }
 
     //2. send otp to email
