@@ -397,17 +397,12 @@ export default function EditProfilePage() {
                           username.length === 0
                             ? "border-gray-300 focus:border-green-500"
                             : isUsernameValid
-                              ? "border-green-500 focus:border-green-500"
+                              ? ""
                               : "border-red-500 focus:border-red-500"
                         }`}
                       />
                       {username.length > 0 && (
                         <>
-                          <p
-                            className={`mt-1 text-sm ${isUsernameValid ? "text-green-600" : "text-red-500"}`}
-                          >
-                            {isUsernameValid ? "Looks good!" : ""}
-                          </p>
                           {(detectXSS(username) || detectSQLi(username)) && (
                             <p className="mt-1 text-sm text-red-600">
                               Input rejected for security reasons.

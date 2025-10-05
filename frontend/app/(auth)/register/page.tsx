@@ -50,7 +50,7 @@ const registerFormSchema = z
       .min(6, { message: "" })
       .max(30, { message: "Username must be at most 30 characters." })
       .regex(/^[A-Za-z0-9]+$/, {
-        message: "Your input contains disallowed content and was blocked.",
+        message: "Input rejected for security reasons.",
       }),
 
     email: z.string().email({ message: "Please enter a valid email address." }),
