@@ -19,12 +19,10 @@ export class ReviewControllers {
         review: "string", 
         */
 
-    console.log(req.body);
     const user = req.user as User;
     const userId = user.id;
     const pictures = req.files as Express.Multer.File[];
 
-    console.log(req.files);
     try {
       const restaurantId = req.body.restaurantId;
       const rating = parseInt(req.body.rating);
