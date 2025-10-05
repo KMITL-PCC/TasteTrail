@@ -538,32 +538,86 @@ export default function RegisterForm() {
               <FormField
                 control={registerForm.control}
                 name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="font-medium text-gray-700">
-                      Password
-                    </FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Input
-                          type={showPassword ? "text" : "password"}
-                          placeholder="Create a password"
-                          {...field}
-                          className="h-11 rounded-md border-gray-300 pr-10 text-base focus:border-green-500 focus:ring-green-500 sm:h-12"
-                          autoComplete="new-password"
-                        />
-                        <button
-                          type="button"
-                          className="absolute top-1/2 right-2 -translate-y-1/2 text-gray-500"
-                          onClick={() => setShowPassword((v) => !v)}
-                        >
-                          {showPassword ? <EyeOff /> : <Eye />}
-                        </button>
-                      </div>
-                    </FormControl>
-                    <FormMessage className="text-sm text-red-500" />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  const [newPassword, setNewPassword] = useState(
+                    field.value || "",
+                  );
+
+                  const checks = {
+                    minLength: newPassword.length >= 8,
+                    hasLower: /[a-z]/.test(newPassword),
+                    hasUpper: /[A-Z]/.test(newPassword),
+                    hasNumber: /\d/.test(newPassword),
+                    hasSpecial: /[!@#$%^&*(),.?":{}|<>]/.test(newPassword),
+                  };
+
+                  return (
+                    <FormItem>
+                      <FormLabel className="font-medium text-gray-700">
+                        Password
+                      </FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Create a password"
+                            {...field}
+                            value={newPassword}
+                            onChange={(e) => {
+                              setNewPassword(e.target.value);
+                              field.onChange(e);
+                            }}
+                            className="h-11 rounded-md border-gray-300 pr-10 text-base focus:border-green-500 focus:ring-green-500 sm:h-12"
+                            autoComplete="new-password"
+                          />
+                          <button
+                            type="button"
+                            className="absolute top-1/2 right-2 -translate-y-1/2 text-gray-500"
+                            onClick={() => setShowPassword((v) => !v)}
+                          >
+                            {showPassword ? <EyeOff /> : <Eye />}
+                          </button>
+                        </div>
+                      </FormControl>
+
+                      {/* Password checklist */}
+                      {newPassword && (
+                        <div className="mt-2 grid grid-cols-1 gap-1 text-sm">
+                          {[
+                            {
+                              check: checks.minLength,
+                              label: "At least 8 characters",
+                            },
+                            {
+                              check: checks.hasLower,
+                              label: "Lowercase letter",
+                            },
+                            {
+                              check: checks.hasUpper,
+                              label: "Uppercase letter",
+                            },
+                            { check: checks.hasNumber, label: "Number" },
+                            {
+                              check: checks.hasSpecial,
+                              label: "Special character (!@#$...)",
+                            },
+                          ].map((item, idx) => (
+                            <div key={idx} className="flex items-center gap-2">
+                              <span
+                                className={`inline-block h-3 w-3 rounded-full ${
+                                  item.check ? "bg-green-500" : "bg-gray-300"
+                                }`}
+                              />
+                              <span className="text-xs text-gray-600">
+                                {item.label}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </FormItem>
+                  );
+                }}
               />
 
               <FormField

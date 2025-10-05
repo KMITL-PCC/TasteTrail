@@ -59,7 +59,14 @@ export default function EditRestaurantPage() {
       closeTime: "",
     })),
   );
-  const [previewImages, setPreviewImages] = useState<string[]>([]);
+  type PreviewImage = {
+    id: number | null; // id จาก backend, null = รูปใหม่
+    url: string; // preview URL
+    file?: File; // ถ้าเป็นรูปใหม่หรือเปลี่ยน
+  };
+
+  const [previewImages, setPreviewImages] = useState<PreviewImage[]>([]);
+
   const [uploadedImages, setUploadedImages] = useState<File[]>([]);
   const [previewProfileImages, setPreviewProfileImages] = useState<string[]>(
     [],
@@ -69,22 +76,18 @@ export default function EditRestaurantPage() {
 
   // ฟังก์ชันเปลี่ยนรูปตาม index
   const handleReplaceImage = (index: number, file: File) => {
-    // update uploadedImages
-    const newUploaded = [...uploadedImages];
-    newUploaded[index] = file;
-    setUploadedImages(newUploaded);
-
-    // update preview
-    const newPreview = [...previewImages];
-    newPreview[index] = URL.createObjectURL(file);
-    setPreviewImages(newPreview);
+    setPreviewImages((prev) => {
+      const copy = [...prev];
+      copy[index] = { ...copy[index], file, url: URL.createObjectURL(file) };
+      return copy;
+    });
   };
 
   // ฟังก์ชันลบรูป
   const handleRemoveImage = (index: number) => {
-    setUploadedImages((prev) => prev.filter((_, i) => i !== index));
     setPreviewImages((prev) => prev.filter((_, i) => i !== index));
   };
+
   const [profileImages, setProfileImages] = useState<File[]>([]);
   // เปลี่ยนรูปเจ้าของร้านตาม index
   const handleReplaceProfileImage = (file: File) => {
@@ -167,8 +170,12 @@ export default function EditRestaurantPage() {
         // --- images ---
         if (data.image?.restaurantImages)
           setPreviewImages(
-            data.image.restaurantImages.map((img: any) => img.url),
+            data.image.restaurantImages.map((img: any) => ({
+              id: img.id,
+              url: img.url,
+            })),
           );
+
         if (data.image?.profileImage)
           setPreviewProfileImages([data.image.profileImage.url]);
 
@@ -204,9 +211,16 @@ export default function EditRestaurantPage() {
   const handleStoreFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files) return;
-    const selected = Array.from(files).slice(0, 4);
-    setUploadedImages(selected);
-    setPreviewImages(selected.map((f) => URL.createObjectURL(f)));
+
+    const selected = Array.from(files).slice(0, 4 - previewImages.length);
+    setPreviewImages((prev) => [
+      ...prev,
+      ...selected.map((f) => ({
+        id: null,
+        file: f,
+        url: URL.createObjectURL(f),
+      })),
+    ]);
   };
 
   const handleProfileFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -218,18 +232,27 @@ export default function EditRestaurantPage() {
   };
 
   // เปลี่ยนรูป
-  const handleUpdateImage = (id: number, file: File) => {
-    handleReplaceImage(id, file); // อัปเดต previewImages + uploadedImages
-    if (!updateImages.includes(id)) {
-      setUpdateImages((prev) => [...prev, id]);
+  // เปลี่ยนรูป
+  const handleUpdateImage = (index: number, file: File) => {
+    handleReplaceImage(index, file);
+
+    const id = previewImages[index].id;
+    if (id !== null) {
+      setUpdateImages(
+        (prev) => (prev.includes(id) ? prev : [...prev, id]), // ไม่ซ้ำ
+      );
     }
   };
 
   // ลบรูป
-  const handleRemoveUpdateImage = (id: number) => {
-    handleRemoveImage(id); // อัปเดต previewImages + uploadedImages
-    if (!updateImages.includes(id)) {
-      setUpdateImages((prev) => [...prev, id]);
+  const handleRemoveUpdateImage = (index: number) => {
+    const id = previewImages[index].id;
+    handleRemoveImage(index);
+
+    if (id !== null) {
+      setUpdateImages(
+        (prev) => (prev.includes(id) ? prev : [...prev, id]), // ไม่ซ้ำ
+      );
     }
   };
 
@@ -260,11 +283,18 @@ export default function EditRestaurantPage() {
       console.log(openingTimes);
 
       // รูปภาพ
-      uploadedImages.forEach((f) => form.append("restaurantImages", f));
-      profileImages.forEach((f) => form.append("profileImage", f));
+      // รูปใหม่ที่ผู้ใช้เปลี่ยนหรือเพิ่ม
+      previewImages.forEach((img) => {
+        if (img.file) form.append("restaurantImages", img.file);
+      });
 
-      // เฉพาะ updateImages: ส่ง array ของ id ถ้ามีการแก้ไข
-      form.append("updateImage", JSON.stringify(updateImages));
+      // ส่ง id ของรูปที่ถูกเปลี่ยน
+      if (updateImages.length > 0) {
+        form.append("updateImage", JSON.stringify(updateImages));
+      }
+
+      // รูปโปรไฟล์
+      profileImages.forEach((f) => form.append("profileImage", f));
 
       const res = await fetch(SAVE_RESTAURANT_ENDPOINT, {
         method: "PUT",
@@ -596,9 +626,11 @@ export default function EditRestaurantPage() {
                         document.getElementById(`replace-image-${i}`)?.click()
                       }
                     >
-                      <img
-                        src={img}
+                      <Image
+                        src={img.url} // <- ต้องใช้ img.url ไม่ใช่ img object
                         alt={`uploaded-img-${i}`}
+                        width={128}
+                        height={128}
                         className="h-32 w-32 rounded-md object-cover"
                       />
 
@@ -618,8 +650,8 @@ export default function EditRestaurantPage() {
                       <button
                         type="button"
                         onClick={(e) => {
-                          e.stopPropagation(); // ป้องกันคลิกเปิดไฟล์
-                          handleRemoveUpdateImage(i);
+                          e.stopPropagation();
+                          handleRemoveUpdateImage(i); // ส่ง index
                         }}
                         className="absolute top-0 right-0 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs text-white"
                       >
