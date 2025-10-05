@@ -200,7 +200,13 @@ export class accountController {
       });
     }
 
-    const requiredFields = ["information", "price", "time", "fullname"];
+    const requiredFields = [
+      "information",
+      "price",
+      "time",
+      "fullname",
+      "category",
+    ];
     const missing = requiredFields.filter((field) => !req.body[field]);
 
     if (missing.length) {
@@ -218,8 +224,10 @@ export class accountController {
       const price = JSON.parse(req.body.price) as Restaurant.price;
       const fullname = JSON.parse(req.body.fullname) as fullname;
       const time = JSON.parse(req.body.time) as Restaurant.time[];
+      const updateImage = req.body.updateImage
+        ? (JSON.parse(req.body.updateImage) as number[])
+        : [];
       const category = JSON.parse(req.body.category) as string[];
-      const updateImage = JSON.parse(req.body.updateImage) as number[];
 
       const files = req.files as {
         profileImage: Express.Multer.File[];
