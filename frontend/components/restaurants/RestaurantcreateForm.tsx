@@ -71,6 +71,26 @@ export default function SellerInfoWeb() {
   const [contactDetail, setContactDetail] = useState("");
   const [description, setDescription] = useState("");
 
+  const [categoriesSelected, setCategoriesSelected] = useState<string[]>([]);
+
+  // ประเภทร้าน
+  const categories = [
+    "ร้านอาหารตามสั่ง",
+    "คาเฟ่",
+    "ร้านก๊วยเตี๋ยว",
+    "ร้านเครื่องดื่ม",
+    "ร้านอาหารอิสาน",
+    "ร้านของหวาน",
+    "ร้านของกินเล่น",
+    "อาหารฮาลาล",
+  ];
+
+  const toggleCategory = (cat: string) => {
+    setCategoriesSelected((prev) =>
+      prev.includes(cat) ? prev.filter((c) => c !== cat) : [...prev, cat],
+    );
+  };
+
   const toggleService = (id: number) => {
     setServices((prev) =>
       prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id],
@@ -167,6 +187,8 @@ export default function SellerInfoWeb() {
       uploadedImages.forEach((file) => form.append("restaurantImages", file));
       profileImages.forEach((file) => form.append("profileImage", file));
 
+      form.append("category", JSON.stringify(categoriesSelected));
+
       const res = await fetch(SELLER_ENDPOINT, {
         method: "POST",
         body: form,
@@ -238,6 +260,21 @@ export default function SellerInfoWeb() {
                 </FieldBlock>
 
                 <Separator />
+
+                <FieldBlock label="ประเภทร้าน" required>
+                  <div className="grid gap-2 sm:grid-cols-2">
+                    {categories.map((cat, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <Checkbox
+                          id={`category-${idx}`}
+                          checked={categoriesSelected.includes(cat)}
+                          onCheckedChange={() => toggleCategory(cat)}
+                        />
+                        <Label htmlFor={`category-${idx}`}>{cat}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </FieldBlock>
 
                 <FieldBlock label="หน้าร้าน">
                   <div className="flex items-center gap-2">
