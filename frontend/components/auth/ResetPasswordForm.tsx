@@ -109,7 +109,7 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
     }
 
     try {
-      const res = await fetch(`${BACKEND_URL}/auth/reset-password`, {
+      const res = await fetch(`${BACKEND_URL}/auth/updatepass`, {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
@@ -129,7 +129,7 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
       }
 
       setMessage("Password reset successful. Redirecting...");
-      setTimeout(() => router.push("/profile"), 1500);
+      setTimeout(() => router.push("/login"), 1500);
     } catch (err: any) {
       setMessage(
         DOMPurify.sanitize(err?.message || "Failed to reset password."),

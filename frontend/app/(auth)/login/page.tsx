@@ -51,7 +51,7 @@ const GoogleIcon = () => (
 const formSchema = z.object({
   username: z
     .string()
-    .min(2, { message: "Username must be at least 2 characters." }),
+    .min(6, { message: "Username must be at least 6 characters." }),
   password: z
     .string()
     .min(6, { message: "Password must be at least 8 characters." }),
@@ -265,8 +265,7 @@ function LoginPage() {
                     <FormMessage />
                     {hasSuspiciousInput && (
                       <p className="mt-1 text-sm text-red-500">
-                        Suspicious input detected — please remove special
-                        characters or SQL fragments.
+                        Input rejected for security reasons.
                       </p>
                     )}
                   </FormItem>
@@ -278,9 +277,7 @@ function LoginPage() {
                 name="password"
                 render={({ field, fieldState }) => {
                   const passwordValue = form.getValues("password");
-                  const xss = detectXSS(passwordValue);
-                  const sqli = detectSQLi(passwordValue);
-                  const hasSuspiciousPassword = xss || sqli;
+                  // ไม่ตรวจสอบ XSS/SQLi สำหรับ password
 
                   return (
                     <FormItem>
@@ -309,19 +306,10 @@ function LoginPage() {
                       </div>
 
                       {/* รวม error */}
-                      <div className="mt-1 min-h-[22px] space-y-1">
-                        {fieldState.error && (
-                          <p className="text-sm text-red-500">
-                            {fieldState.error.message}
-                          </p>
-                        )}
+                      <div className="mt-1 min-h-[22px]">
                         {loginError && (
-                          <p className="text-sm text-red-500">{loginError}</p>
-                        )}
-                        {hasSuspiciousPassword && (
                           <p className="text-sm text-red-500">
-                            Suspicious input detected! Remove HTML tags or SQL
-                            keywords.
+                            Incorrect password
                           </p>
                         )}
                       </div>
