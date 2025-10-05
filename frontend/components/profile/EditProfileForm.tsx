@@ -210,7 +210,7 @@ export default function EditProfilePage() {
         ch.postMessage({ ts: Date.now() });
         ch.close();
       }
-      router.push("/profile?updated=1");
+      router.push("/login");
     } catch (e: any) {
       toast.error("Connection Error", {
         description: "Unable to save profile. Please try again.",
@@ -269,14 +269,16 @@ export default function EditProfilePage() {
 
       const data = await res.json();
       toast.success("Password updated", {
-        description: data.message || "Your password has been changed.",
+        description:
+          data.message ||
+          "Your password has been changed. Redirecting to login...",
       });
 
       setCurrentPassword("");
       setNewPassword("");
       setConfirmPassword("");
 
-      router.push("/profile?updated=1");
+      router.push("/login");
     } catch (e: any) {
       toast.error("Connection Error", {
         description: "Unable to update password. Please try again.",
@@ -395,17 +397,12 @@ export default function EditProfilePage() {
                           username.length === 0
                             ? "border-gray-300 focus:border-green-500"
                             : isUsernameValid
-                              ? "border-green-500 focus:border-green-500"
+                              ? ""
                               : "border-red-500 focus:border-red-500"
                         }`}
                       />
                       {username.length > 0 && (
                         <>
-                          <p
-                            className={`mt-1 text-sm ${isUsernameValid ? "text-green-600" : "text-red-500"}`}
-                          >
-                            {isUsernameValid ? "Looks good!" : ""}
-                          </p>
                           {(detectXSS(username) || detectSQLi(username)) && (
                             <p className="mt-1 text-sm text-red-600">
                               Input rejected for security reasons.
@@ -592,29 +589,30 @@ function PasswordField({
         </button>
       </div>
 
-      {showWarnings && (
-        <ul className="mt-2 space-y-1 text-sm">
-          <li className={checks.length ? "text-green-600" : "text-red-500"}>
-            {checks.length ? "✅" : "❌"} At least 8 characters
-          </li>
-          <li className={checks.lowercase ? "text-green-600" : "text-red-500"}>
-            {checks.lowercase ? "✅" : "❌"} At least one lowercase letter
-          </li>
-          <li className={checks.uppercase ? "text-green-600" : "text-red-500"}>
-            {checks.uppercase ? "✅" : "❌"} At least one uppercase letter
-          </li>
-          <li className={checks.number ? "text-green-600" : "text-red-500"}>
-            {checks.number ? "✅" : "❌"} At least one number
-          </li>
-          <li className={checks.special ? "text-green-600" : "text-red-500"}>
-            {checks.special ? "✅" : "❌"} At least one special character
-          </li>
-          {matchValue !== undefined && (
-            <li className={checks.match ? "text-green-600" : "text-red-500"}>
-              {checks.match ? "✅" : "❌"} Must match new password
-            </li>
-          )}
-        </ul>
+      {value && (
+        <div className="mt-2 grid grid-cols-1 gap-1 text-sm">
+          {[
+            { check: checks.length, label: "At least 8 characters" },
+            { check: checks.lowercase, label: "Lowercase letter" },
+            { check: checks.uppercase, label: "Uppercase letter" },
+            { check: checks.number, label: "Number" },
+            { check: checks.special, label: "Special character (!@#$...)" },
+            matchValue !== undefined
+              ? { check: checks.match, label: "Must match new password" }
+              : null,
+          ]
+            .filter(Boolean)
+            .map((item, idx) => (
+              <div key={idx} className="flex items-center gap-2">
+                <span
+                  className={`inline-block h-3 w-3 rounded-full ${
+                    item!.check ? "bg-green-500" : "bg-gray-300"
+                  }`}
+                />
+                <span className="text-xs text-gray-600">{item!.label}</span>
+              </div>
+            ))}
+        </div>
       )}
     </div>
   );

@@ -50,7 +50,7 @@ const registerFormSchema = z
       .min(6, { message: "" })
       .max(30, { message: "Username must be at most 30 characters." })
       .regex(/^[A-Za-z0-9]+$/, {
-        message: "Your input contains disallowed content and was blocked.",
+        message: "Input rejected for security reasons.",
       }),
 
     email: z.string().email({ message: "Please enter a valid email address." }),
@@ -541,14 +541,13 @@ export default function RegisterForm() {
                 name="password"
                 render={({ field }) => {
                   const val = field.value || "";
-                  const showWarnings = val.length > 0;
 
                   const checks = {
-                    lowercase: /[a-z]/.test(val),
-                    uppercase: /[A-Z]/.test(val),
-                    number: /\d/.test(val),
-                    special: /[@$!%*?&]/.test(val),
-                    length: val.length >= 8,
+                    minLength: val.length >= 8,
+                    hasLower: /[a-z]/.test(val),
+                    hasUpper: /[A-Z]/.test(val),
+                    hasNumber: /\d/.test(val),
+                    hasSpecial: /[@$!%*?&]/.test(val),
                   };
 
                   const [showPassword, setShowPassword] = useState(false);
@@ -582,56 +581,45 @@ export default function RegisterForm() {
                       </FormControl>
                       <FormMessage className="text-sm text-red-500" />
 
-                      {showWarnings && (
-                        <ul className="mt-2 space-y-1 text-sm">
-                          <li
-                            className={
-                              checks.length ? "text-green-600" : "text-red-500"
-                            }
-                          >
-                            {checks.length ? "✅" : "❌"} At least 8 characters
-                          </li>
-                          <li
-                            className={
-                              checks.lowercase
-                                ? "text-green-600"
-                                : "text-red-500"
-                            }
-                          >
-                            {checks.lowercase ? "✅" : "❌"} At least one
-                            lowercase letter
-                          </li>
-                          <li
-                            className={
-                              checks.uppercase
-                                ? "text-green-600"
-                                : "text-red-500"
-                            }
-                          >
-                            {checks.uppercase ? "✅" : "❌"} At least one
-                            uppercase letter
-                          </li>
-                          <li
-                            className={
-                              checks.number ? "text-green-600" : "text-red-500"
-                            }
-                          >
-                            {checks.number ? "✅" : "❌"} At least one number
-                          </li>
-                          <li
-                            className={
-                              checks.special ? "text-green-600" : "text-red-500"
-                            }
-                          >
-                            {checks.special ? "✅" : "❌"} At least one special
-                            character (@$!%*?&)
-                          </li>
-                        </ul>
+                      {val && (
+                        <div className="mt-2 grid grid-cols-1 gap-1 text-sm">
+                          {[
+                            {
+                              check: checks.minLength,
+                              label: "At least 8 characters",
+                            },
+                            {
+                              check: checks.hasLower,
+                              label: "Lowercase letter",
+                            },
+                            {
+                              check: checks.hasUpper,
+                              label: "Uppercase letter",
+                            },
+                            { check: checks.hasNumber, label: "Number" },
+                            {
+                              check: checks.hasSpecial,
+                              label: "Special character (!@#$...)",
+                            },
+                          ].map((item, idx) => (
+                            <div key={idx} className="flex items-center gap-2">
+                              <span
+                                className={`inline-block h-3 w-3 rounded-full ${
+                                  item.check ? "bg-green-500" : "bg-gray-300"
+                                }`}
+                              />
+                              <span className="text-xs text-gray-600">
+                                {item.label}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
                       )}
                     </FormItem>
                   );
                 }}
               />
+
               <FormField
                 control={registerForm.control}
                 name="confirmPassword"
