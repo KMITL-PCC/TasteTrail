@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 import { ArrowLeft } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Eye, EyeOff } from "lucide-react";
 
 /* ---------------- UI: Google Icon ---------------- */
 const GoogleIcon = () => (
@@ -49,8 +50,7 @@ const registerFormSchema = z
       .min(6, { message: "" })
       .max(30, { message: "Username must be at most 30 characters." })
       .regex(/^[A-Za-z0-9]+$/, {
-        message:
-          "Only English letters and numbers are allowed (no spaces/symbols).",
+        message: "Your input contains disallowed content and was blocked.",
       }),
 
     email: z.string().email({ message: "Please enter a valid email address." }),
@@ -514,7 +514,6 @@ export default function RegisterForm() {
                   </FormItem>
                 )}
               />
-
               <FormField
                 control={registerForm.control}
                 name="email"
@@ -542,6 +541,8 @@ export default function RegisterForm() {
                 name="password"
                 render={({ field }) => {
                   const val = field.value || "";
+                  const showWarnings = val.length > 0;
+
                   const checks = {
                     lowercase: /[a-z]/.test(val),
                     uppercase: /[A-Z]/.test(val),
@@ -550,88 +551,128 @@ export default function RegisterForm() {
                     length: val.length >= 8,
                   };
 
+                  const [showPassword, setShowPassword] = useState(false);
+
                   return (
                     <FormItem>
                       <FormLabel className="font-medium text-gray-700">
                         Password
                       </FormLabel>
                       <FormControl>
-                        <Input
-                          type="password"
-                          placeholder="Create a password"
-                          {...field}
-                          className="focus:border-primary focus:ring-primary h-11 rounded-md border-gray-300 text-base sm:h-12"
-                          autoComplete="new-password"
-                        />
+                        <div className="relative">
+                          <Input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Create a password"
+                            {...field}
+                            className="focus:border-primary focus:ring-primary h-11 rounded-md border-gray-300 pr-10 text-base sm:h-12"
+                            autoComplete="new-password"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowPassword((prev) => !prev)}
+                            className="absolute top-1/2 right-2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                          >
+                            {showPassword ? (
+                              <EyeOff className="h-5 w-5" />
+                            ) : (
+                              <Eye className="h-5 w-5" />
+                            )}
+                          </button>
+                        </div>
                       </FormControl>
                       <FormMessage className="text-sm text-red-500" />
-                      <ul className="mt-2 space-y-1 text-sm">
-                        <li
-                          className={
-                            checks.length ? "text-green-600" : "text-red-500"
-                          }
-                        >
-                          {checks.length ? "✅" : "❌"} At least 8 characters
-                        </li>
-                        <li
-                          className={
-                            checks.lowercase ? "text-green-600" : "text-red-500"
-                          }
-                        >
-                          {checks.lowercase ? "✅" : "❌"} At least one
-                          lowercase letter
-                        </li>
-                        <li
-                          className={
-                            checks.uppercase ? "text-green-600" : "text-red-500"
-                          }
-                        >
-                          {checks.uppercase ? "✅" : "❌"} At least one
-                          uppercase letter
-                        </li>
-                        <li
-                          className={
-                            checks.number ? "text-green-600" : "text-red-500"
-                          }
-                        >
-                          {checks.number ? "✅" : "❌"} At least one number
-                        </li>
-                        <li
-                          className={
-                            checks.special ? "text-green-600" : "text-red-500"
-                          }
-                        >
-                          {checks.special ? "✅" : "❌"} At least one special
-                          character (@$!%*?&)
-                        </li>
-                      </ul>
+
+                      {showWarnings && (
+                        <ul className="mt-2 space-y-1 text-sm">
+                          <li
+                            className={
+                              checks.length ? "text-green-600" : "text-red-500"
+                            }
+                          >
+                            {checks.length ? "✅" : "❌"} At least 8 characters
+                          </li>
+                          <li
+                            className={
+                              checks.lowercase
+                                ? "text-green-600"
+                                : "text-red-500"
+                            }
+                          >
+                            {checks.lowercase ? "✅" : "❌"} At least one
+                            lowercase letter
+                          </li>
+                          <li
+                            className={
+                              checks.uppercase
+                                ? "text-green-600"
+                                : "text-red-500"
+                            }
+                          >
+                            {checks.uppercase ? "✅" : "❌"} At least one
+                            uppercase letter
+                          </li>
+                          <li
+                            className={
+                              checks.number ? "text-green-600" : "text-red-500"
+                            }
+                          >
+                            {checks.number ? "✅" : "❌"} At least one number
+                          </li>
+                          <li
+                            className={
+                              checks.special ? "text-green-600" : "text-red-500"
+                            }
+                          >
+                            {checks.special ? "✅" : "❌"} At least one special
+                            character (@$!%*?&)
+                          </li>
+                        </ul>
+                      )}
                     </FormItem>
                   );
                 }}
               />
-
               <FormField
                 control={registerForm.control}
                 name="confirmPassword"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="font-medium text-gray-700">
-                      Confirm Password
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="Confirm your password"
-                        {...field}
-                        className="focus:border-primary focus:ring-primary h-11 rounded-md border-gray-300 text-base sm:h-12"
-                        autoComplete="new-password"
-                      />
-                    </FormControl>
-                    <FormMessage className="text-sm text-red-500" />
-                  </FormItem>
-                )}
-              />
+                render={({ field }) => {
+                  const [showConfirmPassword, setShowConfirmPassword] =
+                    useState(false);
 
+                  return (
+                    <FormItem>
+                      <FormLabel className="font-medium text-gray-700">
+                        Confirm Password
+                      </FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            type={showConfirmPassword ? "text" : "password"}
+                            placeholder="Confirm your password"
+                            {...field}
+                            className="focus:border-primary focus:ring-primary h-11 rounded-md border-gray-300 pr-10 text-base sm:h-12"
+                            autoComplete="new-password"
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setShowConfirmPassword((prev) => !prev)
+                            }
+                            className="absolute top-1/2 right-2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                          >
+                            {showConfirmPassword ? (
+                              <EyeOff className="h-5 w-5" />
+                            ) : (
+                              <Eye className="h-5 w-5" />
+                            )}
+                          </button>
+                        </div>
+                      </FormControl>
+                      <FormMessage className="text-sm text-red-500" />
+                    </FormItem>
+                  );
+                }}
+              />
               <FormField
                 control={registerForm.control}
                 name="terms"
@@ -666,7 +707,6 @@ export default function RegisterForm() {
                   </FormItem>
                 )}
               />
-
               <Button
                 type="submit"
                 disabled={

@@ -288,14 +288,14 @@ export default function EditRestaurantPage() {
   if (isLoading) return <p className="p-4">กำลังโหลดข้อมูลร้าน...</p>;
 
   return (
-    <div className="max-w-3xl px-4 mx-auto mt-6">
+    <div className="mx-auto mt-6 max-w-3xl px-4">
       <Card>
         <CardContent className="p-6">
           <div className="grid grid-cols-1 gap-6">
             {/* หัวข้ออยู่ด้านบน */}
             <div className="mb-6">
               <h2 className="text-base font-medium">รายละเอียดร้านค้า</h2>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-muted-foreground text-sm">
                 กรอกข้อมูลพื้นฐานของร้านคุณให้ครบถ้วน
               </p>
             </div>
@@ -418,11 +418,11 @@ export default function EditRestaurantPage() {
                     </Label>
 
                     {/* แถวบน 4 วัน */}
-                    <div className="grid grid-cols-1 gap-4 mt-2 md:grid-cols-4">
+                    <div className="mt-2 grid grid-cols-1 gap-4 md:grid-cols-4">
                       {daysOfWeek.slice(0, 4).map((day, index) => (
                         <div
                           key={index}
-                          className="flex flex-col p-3 transition-shadow border border-gray-200 rounded-lg shadow-sm hover:shadow-md"
+                          className="flex flex-col rounded-lg border border-gray-200 p-3 shadow-sm transition-shadow hover:shadow-md"
                         >
                           <p className="mb-2 text-sm font-semibold text-gray-700">
                             {day}
@@ -442,7 +442,7 @@ export default function EditRestaurantPage() {
                                     e.target.value,
                                   )
                                 }
-                                className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md"
+                                className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm"
                                 step={60}
                               />
                             </div>
@@ -458,7 +458,7 @@ export default function EditRestaurantPage() {
                                     e.target.value,
                                   )
                                 }
-                                className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md"
+                                className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm"
                                 step={60}
                               />
                             </div>
@@ -468,13 +468,13 @@ export default function EditRestaurantPage() {
                     </div>
 
                     {/* แถวล่าง 3 วันตรงกลาง */}
-                    <div className="flex flex-col items-center gap-2 mt-2 md:flex-row md:justify-center md:gap-4">
+                    <div className="mt-2 flex flex-col items-center gap-2 md:flex-row md:justify-center md:gap-4">
                       {daysOfWeek.slice(4).map((day, i) => {
                         const index = i + 4;
                         return (
                           <div
                             key={index}
-                            className="flex flex-col w-full p-3 transition-shadow border border-gray-200 rounded-lg shadow-sm hover:shadow-md md:w-40"
+                            className="flex w-full flex-col rounded-lg border border-gray-200 p-3 shadow-sm transition-shadow hover:shadow-md md:w-40"
                           >
                             <p className="mb-2 text-sm font-semibold text-gray-700">
                               {day}
@@ -494,7 +494,7 @@ export default function EditRestaurantPage() {
                                       e.target.value,
                                     )
                                   }
-                                  className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md"
+                                  className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm"
                                   step={60}
                                 />
                               </div>
@@ -512,7 +512,7 @@ export default function EditRestaurantPage() {
                                       e.target.value,
                                     )
                                   }
-                                  className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md"
+                                  className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm"
                                   step={60}
                                 />
                               </div>
@@ -587,7 +587,7 @@ export default function EditRestaurantPage() {
                   onChange={handleStoreFileChange}
                 />
 
-                <div className="flex gap-2 mt-4">
+                <div className="mt-4 flex gap-2">
                   {previewImages.map((img, i) => (
                     <div
                       key={i}
@@ -599,7 +599,7 @@ export default function EditRestaurantPage() {
                       <img
                         src={img}
                         alt={`uploaded-img-${i}`}
-                        className="object-cover w-32 h-32 rounded-md"
+                        className="h-32 w-32 rounded-md object-cover"
                       />
 
                       {/* input สำหรับเปลี่ยนรูปเฉพาะ index */}
@@ -621,7 +621,7 @@ export default function EditRestaurantPage() {
                           e.stopPropagation(); // ป้องกันคลิกเปิดไฟล์
                           handleRemoveUpdateImage(i);
                         }}
-                        className="absolute top-0 right-0 flex items-center justify-center w-6 h-6 text-xs text-white bg-red-500 rounded-full"
+                        className="absolute top-0 right-0 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs text-white"
                       >
                         ✕
                       </button>
@@ -631,7 +631,7 @@ export default function EditRestaurantPage() {
                   {/* ช่องเพิ่มรูปใหม่ ถ้ายังไม่ครบ 4 รูป */}
                   {previewImages.length < 4 && (
                     <div
-                      className="flex items-center justify-center w-32 h-32 text-gray-500 bg-gray-200 rounded-md cursor-pointer"
+                      className="flex h-32 w-32 cursor-pointer items-center justify-center rounded-md bg-gray-200 text-gray-500"
                       onClick={() =>
                         document.getElementById("store-input")?.click()
                       }
@@ -658,7 +658,7 @@ export default function EditRestaurantPage() {
                   }}
                 />
 
-                <div className="flex gap-2 mt-4">
+                <div className="mt-4 flex gap-2">
                   {previewProfileImages.length > 0 ? (
                     <div
                       className="relative cursor-pointer"
@@ -671,7 +671,7 @@ export default function EditRestaurantPage() {
                         alt="owner-profile"
                         width={128}
                         height={128}
-                        className="object-cover rounded-full"
+                        className="rounded-full object-cover"
                       />
                       {/* ปุ่มลบรูป */}
                       <button
@@ -680,14 +680,14 @@ export default function EditRestaurantPage() {
                           e.stopPropagation(); // ป้องกันคลิกเปิดไฟล์
                           handleRemoveProfileImage();
                         }}
-                        className="absolute flex items-center justify-center w-6 h-6 text-xs text-white bg-red-500 rounded-full top-1 right-1"
+                        className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs text-white"
                       >
                         ✕
                       </button>
                     </div>
                   ) : (
                     <div
-                      className="flex items-center justify-center w-32 h-32 text-gray-500 bg-gray-200 rounded-full cursor-pointer"
+                      className="flex h-32 w-32 cursor-pointer items-center justify-center rounded-full bg-gray-200 text-gray-500"
                       onClick={() =>
                         document.getElementById("profile-input")?.click()
                       }
@@ -739,12 +739,20 @@ export default function EditRestaurantPage() {
           </div>
         </CardContent>
 
-        <CardFooter className="flex justify-end p-4 border-t bg-gray-50">
+        <CardFooter className="flex justify-end gap-x-2 border-t bg-gray-50 p-4">
+          <Button
+            variant="outline"
+            onClick={() => router.back()}
+            className="bg-gray-200 text-gray-700 hover:bg-gray-300"
+          >
+            ยกเลิก
+          </Button>
+
           <Button
             className="bg-green-700 hover:bg-green-600"
             onClick={handleSave}
           >
-            <SaveIcon className="w-4 h-4 mr-2" />
+            <SaveIcon className="mr-2 h-4 w-4" />
             บันทึกข้อมูล
           </Button>
         </CardFooter>

@@ -63,7 +63,9 @@ export default function MainMap({
   initialPosition,
   onLocationChange,
 }: MainMapProps) {
-  const DEFAULT_LOCATION: [number, number] = [13, 100];
+  const DEFAULT_LOCATION: [number, number] = [
+    10.72449020382955, 99.37439832697905,
+  ];
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
