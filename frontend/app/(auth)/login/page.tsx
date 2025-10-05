@@ -80,17 +80,52 @@ function LoginPage() {
     return patterns.some((re) => re.test(value));
   };
 
+  // helper: normalize input a bit
+  const normalizeInput = (raw: string) => {
+    if (!raw) return "";
+    // เปลี่ยน smart quotes เป็น plain quotes, ทำ lower-case, trim
+    return raw
+      .replace(/[\u2018\u2019\u201A\u201B\u2032]/g, "'") // smart single quotes -> '
+      .replace(/[\u201C\u201D\u201E\u201F\u2033]/g, '"') // smart double quotes -> "
+      .replace(/\u00A0/g, " ") // non-breaking space -> space
+      .toLowerCase()
+      .trim();
+  };
+
   const detectSQLi = (value: string) => {
+    const v = normalizeInput(value);
+
+    // 1) allowlist check for username (แนะนำให้ใช้จริงสำหรับ username)
+    // ถ้าต้องการอนุญาตแค่ a-z0-9_ ให้ตรวจและคืน true = suspicious ถ้ามีตัวอื่น
+    const usernameAllowPattern = /^[a-z0-9_@.\-]{0,64}$/; // ปรับตาม policy
+    if (v && !usernameAllowPattern.test(v)) return true;
+
+    // 2) patterns ที่ครอบคลุม tautologies / common payloads
     const patterns = [
-      /(\bor\b|\band\b)\s+1\s*=\s*1/i,
-      /union\s+select/i,
-      /select\b.*\bfrom\b/i,
-      /insert\s+into/i,
-      /update\s+\w+\s+set/i,
-      /drop\s+table/i,
-      /--|;|#|\bexec\b/i,
+      // tautologies แบบ ' or '1'='1' / " or "1"="1" / or 1=1
+      /(['"]?\s*or\s+['"]?\s*1\s*=\s*['"]?1['"]?)/i,
+      /\bor\b\s*1\s*=\s*1/i,
+      // union/select blocks
+      /\bunion\b[\s\S]*\bselect\b/i,
+      /\bselect\b[\s\S]*\bfrom\b/i,
+      /\binsert\b[\s\S]*\binto\b/i,
+      /\bupdate\b[\s\S]*\bset\b/i,
+      /\bdrop\b\s+table\b/i,
+      // comment / statement terminator attempts
+      /--|\/\*|\*\//i,
+      /;+/,
+      // exec / xp_ / sp_ stored proc attempts
+      /\bexec\b|\bxp_|sp_/i,
+      // hex-encoded typical patterns (e.g. 0x27 = ')
+      /0x27|0x2d2d/i,
     ];
-    return patterns.some((re) => re.test(value));
+
+    if (patterns.some((re) => re.test(v))) return true;
+
+    // 3) ข้อสังเกตอื่น ๆ (เยอะเกินไป = suspicious)
+    if (v.length > 100) return true; // username ไม่ควอยู่นานขนาดนี้
+
+    return false;
   };
 
   // ---------------- form ----------------
@@ -230,8 +265,8 @@ function LoginPage() {
                     <FormMessage />
                     {hasSuspiciousInput && (
                       <p className="mt-1 text-sm text-red-500">
-                        Suspicious input detected! Remove HTML tags or SQL
-                        keywords.
+                        Suspicious input detected — please remove special
+                        characters or SQL fragments.
                       </p>
                     )}
                   </FormItem>
@@ -298,10 +333,14 @@ function LoginPage() {
               <Button
                 type="submit"
                 className="h-12 w-full text-lg font-semibold"
-                disabled={!csrfToken || isSubmitting}
+                disabled={!csrfToken || isSubmitting || hasSuspiciousInput}
                 aria-busy={isSubmitting}
               >
-                {isSubmitting ? "Logging in..." : "Login"}
+                {isSubmitting
+                  ? "Logging in..."
+                  : hasSuspiciousInput
+                    ? "Invalid input"
+                    : "Login"}
               </Button>
             </form>
           </Form>
