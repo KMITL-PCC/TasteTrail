@@ -63,8 +63,11 @@ export class ReviewControllers {
     const restaurantId = req.query.restaurantId as string;
     const sort = req.query.sort as sort;
     const filter = Number(req.query.filter);
+
+    const userId = (req.user as User)?.id || null;
     try {
       const result = await this.services.get(
+        userId,
         page,
         limit,
         restaurantId,
@@ -72,7 +75,6 @@ export class ReviewControllers {
         filter
       );
 
-      console.log(result);
       res.status(200).json({
         ...result,
       });

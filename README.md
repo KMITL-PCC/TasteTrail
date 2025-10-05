@@ -98,6 +98,12 @@ If you prefer to run services individually:
    npx prisma migrate dev
    npm run seed
    ```
+4. **Install test dependencies**
+   ```sh
+    cd tests
+    npm install
+    npm install -D @playwright/test@1.55.1
+    npx playwright install 
 
 ### Development
 
@@ -114,6 +120,16 @@ npm run dev
 cd frontend
 npm run dev
 ```
+
+#### tests
+run test and testreport
+```sh
+cd tests
+npx playwright test tests/E2E-Tests/Register.spec.js
+npx playwright test tests/E2E-Tests/login.spec.js
+npx playwright test tests/E2E-Tests/UpdatePasswd.spec.js
+
+npx playwright show-report
 
 #### Available Scripts
 
