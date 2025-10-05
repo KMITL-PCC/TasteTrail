@@ -27,7 +27,17 @@ export default {
     //       "weekday",
     //       "openTime",
     //       "closeTime"
-    // }
+    // },
+    //   const categories = [
+    //   { id: 1, name: "ร้านอาหารตามสั่ง" },
+    //   { id: 2, name: "ร้านก๋วยเตี๋ยว" },
+    //   { id: 3, name: "คาเฟ่" },
+    //   { id: 4, name: "ร้านเครื่องดื่ม" },
+    //   { id: 5, name: "ร้านของหวาน" },
+    //   { id: 6, name: "ร้านของกินเล่น" },
+    //   { id: 7, name: "อาหารฮาลาล" },
+    //   { id: 8, name: "ร้านอาหารอีสาน" },
+    // // ];
     // }
     // const { information, price, time, services } = JSON.parse(req.body.info);
     const { information, price, time, services } = req.body.info;
@@ -57,7 +67,8 @@ export default {
         price,
         time,
         pictures,
-        services
+        services,
+        []
       );
 
       if (result && result?.success === false) {

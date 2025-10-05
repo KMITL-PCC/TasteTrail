@@ -96,14 +96,16 @@ export class accountService {
     price: Restaurant.price,
     time: Restaurant.time[],
     restaurantPictures: Express.Multer.File[],
-    profilePicture: Express.Multer.File
+    profilePicture: Express.Multer.File,
+    category: string[]
   ) {
     const restaurant = await RestaurantService.createRestaurant(
       information,
       price,
       time,
       restaurantPictures,
-      information.services || []
+      information.services || [],
+      category
     );
 
     if (!restaurant || !restaurant.id) {
@@ -164,7 +166,8 @@ export class accountService {
     time: Restaurant.time[],
     fullname: fullname,
     id: string,
-    images: updateRestaurantImages
+    images: updateRestaurantImages,
+    category: string[]
   ) {
     //0. update restaurant information
     const updateData = await this.prisma.$transaction(async (tx) => {
@@ -202,6 +205,12 @@ export class accountService {
               lastName: fullname.lastName,
             },
           },
+          // contact: {
+          //   update: {
+          //     contactDetail: information.contactDetail,
+          //     contactType: "phone",
+          //   },
+          // },
         },
       });
 
@@ -236,6 +245,8 @@ export class accountService {
           serviceId: serviceId,
         })),
       });
+
+      //
     });
 
     // console.log(images.profilePicture);

@@ -200,39 +200,25 @@ export default {
     price: Restaurant.price,
     time: any,
     pictures: Express.Multer.File[],
-    services: number[]
+    services: number[],
+    categories: string[]
   ) => {
-    //0. map open hour
-    // const availableTime: Restaurant.time[] = [];
-    // const [start, stop] = time.weekday.split("-").map(Number);
+    const categoriesData = [
+      { id: 1, name: "ร้านอาหารตามสั่ง" },
+      { id: 2, name: "ร้านก๋วยเตี๋ยว" },
+      { id: 3, name: "คาเฟ่" },
+      { id: 4, name: "ร้านเครื่องดื่ม" },
+      { id: 5, name: "ร้านของหวาน" },
+      { id: 6, name: "ร้านของกินเล่น" },
+      { id: 7, name: "อาหารฮาลาล" },
+      { id: 8, name: "ร้านอาหารอีสาน" },
+    ];
 
-    // for (let i = start; i < stop + 1; i++) {
-    //   availableTime.push({
-    //     weekday: i,
-    //     openTime: time.openTime,
-    //     closeTime: time.closeTime,
-    //   });
-    // }
+    const categoryIds = categoriesData
+      .filter((c) => categories.includes(c.name))
+      .map((c) => c.id);
 
-    // const uploadedResults: { url: string; public_id: string }[] = [];
-
-    // //1. upload picture to cloud
-    // for (const pic of pictures) {
-    //   const result = await new Promise<any>((resolve, reject) => {
-    //     const stream = cloudinary.uploader.upload_stream(
-    //       { resource_type: "image" },
-    //       (error, result) => {
-    //         if (error) reject(error);
-    //         else resolve(result);
-    //       }
-    //     );
-    //     stream.end(pic.buffer);
-    //   });
-    //   uploadedResults.push({
-    //     url: result.secure_url,
-    //     public_id: result.public_id,
-    //   });
-    // }
+    console.log("Category IDs:", categoryIds);
 
     const uploadPromises = pictures.map((pic) => {
       return new Promise<{ url: string; public_id: string }>(
@@ -320,6 +306,11 @@ export default {
                   openTime: t.openTime,
                   closeTime: t.closeTime,
                 })),
+              },
+            },
+            categories: {
+              createMany: {
+                data: categoryIds.map((categoryId) => ({ categoryId })),
               },
             },
             images: {
