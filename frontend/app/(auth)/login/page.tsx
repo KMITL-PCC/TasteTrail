@@ -250,20 +250,20 @@ function LoginPage() {
                   return (
                     <FormItem>
                       <FormLabel>Password</FormLabel>
-                      <div className="relative">
-                        <FormControl>
-                          <Input
-                            type={showPassword ? "text" : "password"}
-                            placeholder="Password"
-                            {...field}
-                            className="h-12 pr-10 text-base"
-                          />
-                        </FormControl>
+                      <div className="relative h-12 w-full">
+                        {/* Input เหมือน Username */}
+                        <Input
+                          type={showPassword ? "text" : "password"}
+                          placeholder="Password"
+                          {...field}
+                          className="h-full flex-1 border-none p-0 pl-3 text-base"
+                        />
 
+                        {/* Eye/EyeOff อยู่ตรงกลางแนวตั้ง */}
                         <button
                           type="button"
                           onClick={() => setShowPassword((prev) => !prev)}
-                          className="absolute inset-y-0 right-2 flex items-center p-1 text-gray-500 hover:text-gray-800 focus:outline-none"
+                          className="absolute top-1/2 right-3 flex -translate-y-1/2 items-center justify-center text-gray-500 hover:text-gray-800 focus:outline-none"
                         >
                           {showPassword ? (
                             <EyeOff className="h-5 w-5" />
@@ -271,35 +271,25 @@ function LoginPage() {
                             <Eye className="h-5 w-5" />
                           )}
                         </button>
-                        {/* แสดง error จาก Zod */}
+                      </div>
+
+                      {/* รวม error */}
+                      <div className="mt-1 min-h-[22px] space-y-1">
                         {fieldState.error && (
-                          <p className="mt-1 text-sm text-red-500">
+                          <p className="text-sm text-red-500">
                             {fieldState.error.message}
                           </p>
                         )}
-
-                        {/* แสดง login error */}
                         {loginError && (
-                          <p className="mt-1 text-sm text-red-500">
-                            {loginError}
+                          <p className="text-sm text-red-500">{loginError}</p>
+                        )}
+                        {hasSuspiciousPassword && (
+                          <p className="text-sm text-red-500">
+                            Suspicious input detected! Remove HTML tags or SQL
+                            keywords.
                           </p>
                         )}
                       </div>
-
-                      {/* แสดง error จาก Zod */}
-                      {fieldState.error && (
-                        <p className="mt-1 text-sm text-red-500">
-                          {fieldState.error.message}
-                        </p>
-                      )}
-
-                      {/* แสดงเตือน XSS/SQLi */}
-                      {hasSuspiciousPassword && (
-                        <p className="mt-1 text-sm text-red-500">
-                          Suspicious input detected! Remove HTML tags or SQL
-                          keywords.
-                        </p>
-                      )}
                     </FormItem>
                   );
                 }}
