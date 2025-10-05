@@ -3,6 +3,23 @@ import { faker } from "@faker-js/faker";
 
 const prisma = new PrismaClient();
 
+function getRandomTime() {
+  // สุ่มชั่วโมงเปิดระหว่าง 6 โมงเช้า ถึง 18.00 (6PM)
+  const openHour = Math.floor(Math.random() * (18 - 6)) + 6;
+  const openMinute = Math.random() < 0.5 ? "00" : "30";
+
+  // สุ่มเวลาปิด หลังจากเปิดอย่างน้อย 1–6 ชั่วโมง
+  const closeHour = Math.min(openHour + Math.floor(Math.random() * 6) + 1, 23);
+  const closeMinute = Math.random() < 0.5 ? "00" : "30";
+
+  // แปลงเป็น "HH:mm"
+  const format = (h: any) => h.toString().padStart(2, "0");
+  return {
+    openTime: `${format(openHour)}:${openMinute}`,
+    closeTime: `${format(closeHour)}:${closeMinute}`,
+  };
+}
+
 async function main() {
   //truncate all tables
   // await prisma.$executeRaw`IF EXISTS (SELECT 1 FROM "Category") THEN TRUNCATE TABLE "Category" RESTART IDENTITY CASCADE;`;
@@ -74,12 +91,13 @@ async function main() {
 
       // Opening Hours (ทุกวันจันทร์-อาทิตย์)
       for (let weekday = 0; weekday < 7; weekday++) {
+        const { openTime, closeTime } = getRandomTime();
         await prisma.openingHour.create({
           data: {
             restaurantId: restaurant.id,
             weekday,
-            openTime: "09:00",
-            closeTime: "21:00",
+            openTime,
+            closeTime,
           },
         });
       }

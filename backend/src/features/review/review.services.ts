@@ -2,11 +2,26 @@ import { PrismaClient } from "@prisma/client";
 import cloudinary from "../../config/cloudinary.config";
 import { HttpError } from "../../utils/httpError.util";
 import { sort } from "./review.controllers";
+import { Decimal } from "@prisma/client/runtime/library";
 
 type orderBy = { createdAt?: "asc" | "desc" } | { rating?: "asc" | "desc" };
 type whereClause = {
   restaurantId: string;
   rating?: number;
+};
+
+type review = {
+  user: {
+    username: string;
+    profilePictureUrl: string | null;
+  };
+  createdAt: Date;
+  rating: Decimal;
+  id: number;
+  reviewText: string | null;
+  images: {
+    imageUrl: string;
+  }[];
 };
 
 export class ReviewServices {
@@ -55,6 +70,20 @@ export class ReviewServices {
     );
 
     return uploadPromises;
+  }
+
+  private mapReview(reviews: review[]) {
+    return reviews.map((review) => ({
+      id: review.id,
+      user: {
+        name: review.user.username,
+        avatar: review.user.profilePictureUrl,
+      },
+      rating: review.rating,
+      date: this.formatTime(review.createdAt),
+      content: review.reviewText,
+      images: review.images.map((images) => images.imageUrl),
+    }));
   }
 
   async create(
@@ -137,6 +166,7 @@ export class ReviewServices {
   }
 
   async get(
+    userId: string | null,
     page: number,
     limit: number,
     restaurantId: string,
@@ -174,7 +204,7 @@ export class ReviewServices {
     const offset = (page - 1) * limit;
 
     //4. query review
-    const [reviews, total] = await this.prisma.$transaction([
+    const [reviews, total, grouped, avgData, myReview] = await Promise.all([
       this.prisma.review.findMany({
         where: whereClause,
         orderBy,
@@ -197,32 +227,82 @@ export class ReviewServices {
           },
         },
       }),
+
       this.prisma.review.count({
         where: {
           restaurantId,
         },
       }),
+
+      this.prisma.review.groupBy({
+        by: ["rating"],
+        _count: { rating: true },
+      }),
+
+      this.prisma.review.aggregate({
+        _avg: { rating: true },
+      }),
+
+      userId
+        ? this.prisma.review.findFirst({
+            where: { AND: [{ userId }, { restaurantId }] },
+            select: {
+              id: true,
+              rating: true,
+              reviewText: true,
+              createdAt: true,
+              user: {
+                select: {
+                  username: true,
+                  profilePictureUrl: true,
+                },
+              },
+              images: {
+                select: {
+                  imageUrl: true,
+                },
+              },
+            },
+          })
+        : null,
     ]);
 
+    const breakdown = [5, 4, 3, 2, 1].map((stars) => {
+      const found = grouped.find((g) => Number(g.rating) === stars);
+      const count = found?._count.rating || 0;
+      const percentage = total > 0 ? (count / total) * 100 : 0;
+      return { stars, count, percentage: Number(percentage.toFixed(2)) };
+    });
+
     //5. map review
-    const reviewMap = reviews.map((review) => ({
-      id: review.id,
-      user: {
-        name: review.user.username,
-        avatar: review.user.profilePictureUrl,
-      },
-      rating: review.rating,
-      date: this.formatTime(review.createdAt),
-      content: review.reviewText,
-      images: review.images.map((images) => images.imageUrl),
-    }));
+    // const reviewMap = reviews.map((review) => ({
+    //   id: review.id,
+    //   user: {
+    //     name: review.user.username,
+    //     avatar: review.user.profilePictureUrl,
+    //   },
+    //   rating: review.rating,
+    //   date: this.formatTime(review.createdAt),
+    //   content: review.reviewText,
+    //   images: review.images.map((images) => images.imageUrl),
+    // }));
+    const reviewMap = this.mapReview(reviews);
+    const myReviewMap = myReview ? this.mapReview([myReview])[0] : null;
 
     const totalPages = Math.ceil(total / limit);
     const hasNextPage = page < totalPages;
     const hasPrevPage = page > 1;
 
     return {
+      reviewData: {
+        totalReviews: total,
+        averageRating: avgData._avg.rating
+          ? Number(avgData._avg.rating.toFixed(2))
+          : 0,
+        ratingBreakdown: breakdown,
+      },
       reviews: reviewMap,
+      myReview: myReviewMap,
       pagination: {
         currentPage: page,
         totalPages: totalPages,

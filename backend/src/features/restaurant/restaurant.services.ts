@@ -6,15 +6,68 @@ import { Restaurant } from "../../types/restaurant";
 import { error } from "console";
 import { get } from "http";
 
-const weekArrayFromat = (openninghour: Restaurant.time[]) => {
-  const day = ["อาทิตย์", "จันทร์", "อังคาร", "พุธ", "พฤหัส", "ศุกร์", "เสาร์"];
-  const firstday = day[openninghour[0].weekday];
-  const lastday = day[openninghour[openninghour.length - 1].weekday];
-  return {
-    day: `${firstday} - ${lastday}`,
-    time: `${openninghour[0].openTime} - ${openninghour[0].closeTime}`,
-  };
-};
+function formatBusinessHours(hours: Restaurant.time[]) {
+  const days = [
+    "อาทิตย์",
+    "จันทร์",
+    "อังคาร",
+    "พุธ",
+    "พฤหัสบดี",
+    "ศุกร์",
+    "เสาร์",
+  ];
+
+  // กรองเฉพาะวันที่มีเวลาเปิดจริง
+  const openDays = hours
+    .map((h, i) => ({ ...h, dayName: days[i] }))
+    .filter((h) => h.openTime && h.closeTime);
+
+  if (openDays.length === 0) return "ปิดทุกวัน";
+
+  // จัดกลุ่มตามช่วงเวลาเปิด-ปิด
+  const grouped = [];
+  let current = [openDays[0]];
+
+  for (let i = 1; i < openDays.length; i++) {
+    const prev = current[current.length - 1];
+    const curr = openDays[i];
+
+    if (prev.openTime === curr.openTime && prev.closeTime === curr.closeTime) {
+      current.push(curr);
+    } else {
+      grouped.push(current);
+      current = [curr];
+    }
+  }
+  grouped.push(current);
+
+  // แปลงกลุ่มเป็นข้อความ
+  const result = grouped.map((g) => {
+    const firstDay = g[0].dayName;
+    const lastDay = g[g.length - 1].dayName;
+    const timeRange = `${g[0].openTime} - ${g[0].closeTime}`;
+
+    if (g.length === 1) return `วัน${firstDay} ${timeRange}`;
+    return `วัน${firstDay}-${lastDay} ${timeRange}`;
+  });
+
+  // return result.length === 1 ? `เปิด${result[0]}` : `เปิด ${result.join(", ")}`;
+  if (result.length === 1) {
+    return {
+      day: result[0].split(" ")[0].replace("วัน", ""),
+      time: result[0].split(" ").slice(-3).join(" "),
+    };
+  } else {
+    return hours
+      .map((h, i) => {
+        const open = h.openTime?.trim();
+        const close = h.closeTime?.trim();
+        if (!open || !close) return null; // ถ้าไม่มีเวลา เปิด/ปิด ข้ามเลย
+        return { day: days[i], time: `${open} - ${close}` };
+      })
+      .filter(Boolean);
+  }
+}
 
 export default {
   getRestaurants: async (data: Restaurant.query) => {
@@ -314,6 +367,9 @@ export default {
         minPrice: true,
         maxPrice: true,
         images: {
+          where: {
+            profilePic: false,
+          },
           select: {
             imageUrl: true,
           },
@@ -349,9 +405,9 @@ export default {
     }
 
     //2. map open hour
-    const openingHour = weekArrayFromat(
-      information?.openninghour as Restaurant.time[]
-    );
+    const openingHour = formatBusinessHours(information.openninghour);
+
+    // console.log(formatBusinessHours(information.openninghour));
 
     //map all data
     const restaurantInformation = {

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import DOMPurify from "dompurify";
 import { Eye, EyeOff } from "lucide-react";
+import { toast } from "sonner";
 
 // Backend URL
 const backendURL = process.env.NEXT_PUBLIC_BACKEND_URL;
@@ -13,8 +14,6 @@ const ForgotPasswordForm = () => {
   const router = useRouter();
 
   const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState<"success" | "error">("error");
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -39,7 +38,7 @@ const ForgotPasswordForm = () => {
           credentials: "include",
         });
         if (!res.ok) {
-          setProviderChecked(true); // ไม่ login ก็ใช้ forgot password ได้
+          setProviderChecked(true);
           return;
         }
         const data = await res.json();
@@ -74,16 +73,6 @@ const ForgotPasswordForm = () => {
   const isStrongPassword = (pwd: string) =>
     pwd.length >= 8 && /[A-Z]/.test(pwd) && /[a-z]/.test(pwd) && /\d/.test(pwd);
 
-  // Hide message after 3s
-  useEffect(() => {
-    if (message) {
-      const timer = setTimeout(() => {
-        setMessage("");
-      }, 3000);
-      return () => clearTimeout(timer);
-    }
-  }, [message]);
-
   // Fetch CSRF token on mount
   useEffect(() => {
     const fetchCsrfToken = async () => {
@@ -97,8 +86,7 @@ const ForgotPasswordForm = () => {
         setCsrfToken(data.csrfToken);
       } catch (error) {
         console.error("Failed to fetch CSRF token:", error);
-        setMessage("Connection error. Please try again later.");
-        setMessageType("error");
+        toast.error("Connection error. Please try again later.");
       }
     };
     fetchCsrfToken();
@@ -119,16 +107,14 @@ const ForgotPasswordForm = () => {
     setIsLoading(true);
 
     if (!csrfToken) {
-      setMessage("Security token is missing. Please refresh the page.");
-      setMessageType("error");
+      toast.error("Security token is missing. Please refresh the page.");
       setIsLoading(false);
       return;
     }
 
     const safeEmail = sanitizeInput(email);
     if (!safeEmail || !isValidEmail(safeEmail)) {
-      setMessage("Please enter a valid email address.");
-      setMessageType("error");
+      toast.error("Please enter a valid email address.");
       setIsLoading(false);
       return;
     }
@@ -145,18 +131,13 @@ const ForgotPasswordForm = () => {
       });
 
       const data = await response.json();
-      if (!response.ok)
-        throw new Error(data.message || "Failed to send reset link.");
+      if (!response.ok) throw new Error(data.message || "");
 
       setFormStep("otp");
-      setMessage(
-        data.message || `A 5-digit code has been sent to ${safeEmail}.`,
-      );
-      setMessageType("success");
+      toast.success(`A 5-digit code has been sent to ${safeEmail}.`);
       setCountdown(50);
     } catch (error: any) {
-      setMessage(error.message || "An unexpected error occurred.");
-      setMessageType("error");
+      toast.error(error.message || "An unexpected error occurred.");
     } finally {
       setIsLoading(false);
     }
@@ -169,15 +150,13 @@ const ForgotPasswordForm = () => {
 
     const safeOtp = sanitizeInput(otp);
     if (!/^\d{5}$/.test(safeOtp)) {
-      setMessage("Please enter a valid 5-digit OTP.");
-      setMessageType("error");
+      toast.error("Please enter a valid 5-digit OTP.");
       setIsLoading(false);
       return;
     }
 
     if (!csrfToken) {
-      setMessage("Security token is missing. Please refresh the page.");
-      setMessageType("error");
+      toast.error("Security token is missing. Please refresh the page.");
       setIsLoading(false);
       return;
     }
@@ -194,14 +173,12 @@ const ForgotPasswordForm = () => {
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Invalid OTP.");
+      if (!response.ok) throw new Error(data.message || "");
 
       setFormStep("resetPassword");
-      setMessage("OTP verified. Please set your new password.");
-      setMessageType("success");
+      toast.success("OTP verified. Please set your new password.");
     } catch (error: any) {
-      setMessage(error.message || "Invalid OTP. Please try again.");
-      setMessageType("error");
+      toast.error(error.message || "Failed to verify OTP.");
     } finally {
       setIsLoading(false);
     }
@@ -221,17 +198,15 @@ const ForgotPasswordForm = () => {
       !isStrongPassword(safePassword) ||
       safePassword !== safeConfirmPassword
     ) {
-      setMessage(
+      toast.error(
         "Passwords must match and be at least 8 chars with uppercase, lowercase, and numbers.",
       );
-      setMessageType("error");
       setIsLoading(false);
       return;
     }
 
     if (!csrfToken) {
-      setMessage("Security token is missing. Please refresh the page.");
-      setMessageType("error");
+      toast.error("Security token is missing. Please refresh the page.");
       setIsLoading(false);
       return;
     }
@@ -248,22 +223,19 @@ const ForgotPasswordForm = () => {
       });
 
       const data = await response.json();
-      if (!response.ok)
-        throw new Error(data.message || "Failed to reset password.");
+      if (!response.ok) throw new Error(data.message || "");
 
-      setMessage(
+      toast.success(
         "Password has been reset successfully! Redirecting to login...",
       );
-      setMessageType("success");
 
       setTimeout(() => {
         window.location.href = "/login";
       }, 2000);
     } catch (error: any) {
-      setMessage(
+      toast.error(
         error.message || "Failed to reset password. Please try again.",
       );
-      setMessageType("error");
     } finally {
       setIsLoading(false);
     }
@@ -274,10 +246,8 @@ const ForgotPasswordForm = () => {
     if (countdown > 0) return;
 
     setIsLoading(true);
-    setMessage("");
     if (!csrfToken) {
-      setMessage("Security token is missing. Please refresh the page.");
-      setMessageType("error");
+      toast.error("Security token is missing. Please refresh the page.");
       setIsLoading(false);
       return;
     }
@@ -294,15 +264,12 @@ const ForgotPasswordForm = () => {
       });
 
       const data = await response.json();
-      if (!response.ok)
-        throw new Error(data.message || "Failed to resend code.");
+      if (!response.ok) throw new Error(data.message || "");
 
-      setMessage(data.message || "A new code has been sent.");
-      setMessageType("success");
+      toast.success(data.message || "A new code has been sent.");
       setCountdown(50);
     } catch (error: any) {
-      setMessage(error.message || "Failed to resend code.");
-      setMessageType("error");
+      toast.error(error.message || "Failed to resend OTP.");
     } finally {
       setIsLoading(false);
     }
@@ -311,7 +278,6 @@ const ForgotPasswordForm = () => {
   // Back to email step
   const handleBackToEmail = () => {
     setFormStep("email");
-    setMessage("");
     setOtp("");
   };
 
@@ -326,19 +292,6 @@ const ForgotPasswordForm = () => {
 
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center bg-gray-50 p-10 pb-64 font-sans">
-      {/* Popup Message */}
-      {message && (
-        <div
-          className={`absolute top-20 rounded-md px-4 py-3 text-sm font-medium ${
-            messageType === "success"
-              ? "bg-green-100 text-green-800"
-              : "bg-red-100 text-red-800"
-          }`}
-        >
-          {message}
-        </div>
-      )}
-
       {/* Email Form */}
       {formStep === "email" && (
         <div className="w-full max-w-md">
@@ -515,7 +468,7 @@ const ForgotPasswordForm = () => {
                 required
               />
               <button
-                type="button" // ป้องกันปุ่ม submit โดยไม่ตั้งใจ
+                type="button"
                 onClick={() => setShowConfirmPassword((s) => !s)}
                 className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-1 text-gray-500 hover:text-gray-800 focus:outline-none"
               >

@@ -19,12 +19,10 @@ export class ReviewControllers {
         review: "string", 
         */
 
-    console.log(req.body);
     const user = req.user as User;
     const userId = user.id;
     const pictures = req.files as Express.Multer.File[];
 
-    console.log(req.files);
     try {
       const restaurantId = req.body.restaurantId;
       const rating = parseInt(req.body.rating);
@@ -65,8 +63,11 @@ export class ReviewControllers {
     const restaurantId = req.query.restaurantId as string;
     const sort = req.query.sort as sort;
     const filter = Number(req.query.filter);
+
+    const userId = (req.user as User)?.id || null;
     try {
       const result = await this.services.get(
+        userId,
         page,
         limit,
         restaurantId,
@@ -74,7 +75,6 @@ export class ReviewControllers {
         filter
       );
 
-      console.log(result);
       res.status(200).json({
         ...result,
       });

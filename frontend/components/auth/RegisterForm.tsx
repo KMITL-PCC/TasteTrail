@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 
 /* ---------------- UI: Google Icon ---------------- */
@@ -180,6 +180,9 @@ export default function RegisterForm() {
   const [registrationEmail, setRegistrationEmail] = useState("");
   const [csrfToken, setCsrfToken] = useState<string | null>(null);
 
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   // resend & countdown state
   const [countdown, setCountdown] = useState(0);
   const [isResending, setIsResending] = useState(false);
@@ -230,7 +233,7 @@ export default function RegisterForm() {
       confirmPassword: "",
       terms: false,
     },
-    mode: "onChange",
+    mode: "onSubmit",
   });
 
   // ฟอร์ม OTP
@@ -535,23 +538,86 @@ export default function RegisterForm() {
               <FormField
                 control={registerForm.control}
                 name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="font-medium text-gray-700">
-                      Password
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="Create a password"
-                        {...field}
-                        className="h-11 rounded-md border-gray-300 text-base focus:border-green-500 focus:ring-green-500 sm:h-12"
-                        autoComplete="new-password"
-                      />
-                    </FormControl>
-                    <FormMessage className="text-sm text-red-500" />
-                  </FormItem>
-                )}
+                render={({ field }) => {
+                  const [newPassword, setNewPassword] = useState(
+                    field.value || "",
+                  );
+
+                  const checks = {
+                    minLength: newPassword.length >= 8,
+                    hasLower: /[a-z]/.test(newPassword),
+                    hasUpper: /[A-Z]/.test(newPassword),
+                    hasNumber: /\d/.test(newPassword),
+                    hasSpecial: /[!@#$%^&*(),.?":{}|<>]/.test(newPassword),
+                  };
+
+                  return (
+                    <FormItem>
+                      <FormLabel className="font-medium text-gray-700">
+                        Password
+                      </FormLabel>
+                      <FormControl>
+                        <div className="relative">
+                          <Input
+                            type={showPassword ? "text" : "password"}
+                            placeholder="Create a password"
+                            {...field}
+                            value={newPassword}
+                            onChange={(e) => {
+                              setNewPassword(e.target.value);
+                              field.onChange(e);
+                            }}
+                            className="h-11 rounded-md border-gray-300 pr-10 text-base focus:border-green-500 focus:ring-green-500 sm:h-12"
+                            autoComplete="new-password"
+                          />
+                          <button
+                            type="button"
+                            className="absolute top-1/2 right-2 -translate-y-1/2 text-gray-500"
+                            onClick={() => setShowPassword((v) => !v)}
+                          >
+                            {showPassword ? <EyeOff /> : <Eye />}
+                          </button>
+                        </div>
+                      </FormControl>
+
+                      {/* Password checklist */}
+                      {newPassword && (
+                        <div className="mt-2 grid grid-cols-1 gap-1 text-sm">
+                          {[
+                            {
+                              check: checks.minLength,
+                              label: "At least 8 characters",
+                            },
+                            {
+                              check: checks.hasLower,
+                              label: "Lowercase letter",
+                            },
+                            {
+                              check: checks.hasUpper,
+                              label: "Uppercase letter",
+                            },
+                            { check: checks.hasNumber, label: "Number" },
+                            {
+                              check: checks.hasSpecial,
+                              label: "Special character (!@#$...)",
+                            },
+                          ].map((item, idx) => (
+                            <div key={idx} className="flex items-center gap-2">
+                              <span
+                                className={`inline-block h-3 w-3 rounded-full ${
+                                  item.check ? "bg-green-500" : "bg-gray-300"
+                                }`}
+                              />
+                              <span className="text-xs text-gray-600">
+                                {item.label}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </FormItem>
+                  );
+                }}
               />
 
               <FormField
@@ -563,13 +629,22 @@ export default function RegisterForm() {
                       Confirm Password
                     </FormLabel>
                     <FormControl>
-                      <Input
-                        type="password"
-                        placeholder="Confirm your password"
-                        {...field}
-                        className="h-11 rounded-md border-gray-300 text-base focus:border-green-500 focus:ring-green-500 sm:h-12"
-                        autoComplete="new-password"
-                      />
+                      <div className="relative">
+                        <Input
+                          type={showConfirmPassword ? "text" : "password"}
+                          placeholder="Confirm your password"
+                          {...field}
+                          className="h-11 rounded-md border-gray-300 pr-10 text-base focus:border-green-500 focus:ring-green-500 sm:h-12"
+                          autoComplete="new-password"
+                        />
+                        <button
+                          type="button"
+                          className="absolute top-1/2 right-2 -translate-y-1/2 text-gray-500"
+                          onClick={() => setShowConfirmPassword((v) => !v)}
+                        >
+                          {showConfirmPassword ? <EyeOff /> : <Eye />}
+                        </button>
+                      </div>
                     </FormControl>
                     <FormMessage className="text-sm text-red-500" />
                   </FormItem>
