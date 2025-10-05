@@ -235,11 +235,13 @@ export class ReviewServices {
       }),
 
       this.prisma.review.groupBy({
+        where: { restaurantId },
         by: ["rating"],
         _count: { rating: true },
       }),
 
       this.prisma.review.aggregate({
+        where: { restaurantId },
         _avg: { rating: true },
       }),
 
