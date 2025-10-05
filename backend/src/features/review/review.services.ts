@@ -275,17 +275,6 @@ export class ReviewServices {
     });
 
     //5. map review
-    // const reviewMap = reviews.map((review) => ({
-    //   id: review.id,
-    //   user: {
-    //     name: review.user.username,
-    //     avatar: review.user.profilePictureUrl,
-    //   },
-    //   rating: review.rating,
-    //   date: this.formatTime(review.createdAt),
-    //   content: review.reviewText,
-    //   images: review.images.map((images) => images.imageUrl),
-    // }));
     const reviewMap = this.mapReview(reviews);
     const myReviewMap = myReview ? this.mapReview([myReview])[0] : null;
 
