@@ -35,7 +35,11 @@ const daysOfWeek = [
 
 type OpeningTime = { weekday: number; openTime: string; closeTime: string };
 
-export default function EditRestaurantPage() {
+export default function EditRestaurantPage({
+  restaurantId,
+}: {
+  restaurantId: string;
+}) {
   const [isLoading, setIsLoading] = useState(true);
   const [csrfToken, setCsrfToken] = useState<string | null>(null);
 
@@ -309,7 +313,7 @@ export default function EditRestaurantPage() {
       }
 
       toast.success("บันทึกสำเร็จ");
-      router.back();
+      router.push(`/restaurants/${restaurantId}`);
     } catch {
       toast.error("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้");
     }
@@ -318,14 +322,14 @@ export default function EditRestaurantPage() {
   if (isLoading) return <p className="p-4">กำลังโหลดข้อมูลร้าน...</p>;
 
   return (
-    <div className="mx-auto mt-6 max-w-3xl px-4">
+    <div className="max-w-3xl px-4 mx-auto mt-6">
       <Card>
         <CardContent className="p-6">
           <div className="grid grid-cols-1 gap-6">
             {/* หัวข้ออยู่ด้านบน */}
             <div className="mb-6">
               <h2 className="text-base font-medium">รายละเอียดร้านค้า</h2>
-              <p className="text-muted-foreground text-sm">
+              <p className="text-sm text-muted-foreground">
                 กรอกข้อมูลพื้นฐานของร้านคุณให้ครบถ้วน
               </p>
             </div>
@@ -448,11 +452,11 @@ export default function EditRestaurantPage() {
                     </Label>
 
                     {/* แถวบน 4 วัน */}
-                    <div className="mt-2 grid grid-cols-1 gap-4 md:grid-cols-4">
+                    <div className="grid grid-cols-1 gap-4 mt-2 md:grid-cols-4">
                       {daysOfWeek.slice(0, 4).map((day, index) => (
                         <div
                           key={index}
-                          className="flex flex-col rounded-lg border border-gray-200 p-3 shadow-sm transition-shadow hover:shadow-md"
+                          className="flex flex-col p-3 transition-shadow border border-gray-200 rounded-lg shadow-sm hover:shadow-md"
                         >
                           <p className="mb-2 text-sm font-semibold text-gray-700">
                             {day}
@@ -472,7 +476,7 @@ export default function EditRestaurantPage() {
                                     e.target.value,
                                   )
                                 }
-                                className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm"
+                                className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md"
                                 step={60}
                               />
                             </div>
@@ -488,7 +492,7 @@ export default function EditRestaurantPage() {
                                     e.target.value,
                                   )
                                 }
-                                className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm"
+                                className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md"
                                 step={60}
                               />
                             </div>
@@ -498,13 +502,13 @@ export default function EditRestaurantPage() {
                     </div>
 
                     {/* แถวล่าง 3 วันตรงกลาง */}
-                    <div className="mt-2 flex flex-col items-center gap-2 md:flex-row md:justify-center md:gap-4">
+                    <div className="flex flex-col items-center gap-2 mt-2 md:flex-row md:justify-center md:gap-4">
                       {daysOfWeek.slice(4).map((day, i) => {
                         const index = i + 4;
                         return (
                           <div
                             key={index}
-                            className="flex w-full flex-col rounded-lg border border-gray-200 p-3 shadow-sm transition-shadow hover:shadow-md md:w-40"
+                            className="flex flex-col w-full p-3 transition-shadow border border-gray-200 rounded-lg shadow-sm hover:shadow-md md:w-40"
                           >
                             <p className="mb-2 text-sm font-semibold text-gray-700">
                               {day}
@@ -524,7 +528,7 @@ export default function EditRestaurantPage() {
                                       e.target.value,
                                     )
                                   }
-                                  className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm"
+                                  className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md"
                                   step={60}
                                 />
                               </div>
@@ -542,7 +546,7 @@ export default function EditRestaurantPage() {
                                       e.target.value,
                                     )
                                   }
-                                  className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm"
+                                  className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md"
                                   step={60}
                                 />
                               </div>
@@ -617,7 +621,7 @@ export default function EditRestaurantPage() {
                   onChange={handleStoreFileChange}
                 />
 
-                <div className="mt-4 flex gap-2">
+                <div className="flex gap-2 mt-4">
                   {previewImages.map((img, i) => (
                     <div
                       key={i}
@@ -631,7 +635,7 @@ export default function EditRestaurantPage() {
                         alt={`uploaded-img-${i}`}
                         width={128}
                         height={128}
-                        className="h-32 w-32 rounded-md object-cover"
+                        className="object-cover w-32 h-32 rounded-md"
                       />
 
                       {/* input สำหรับเปลี่ยนรูปเฉพาะ index */}
@@ -653,7 +657,7 @@ export default function EditRestaurantPage() {
                           e.stopPropagation();
                           handleRemoveUpdateImage(i); // ส่ง index
                         }}
-                        className="absolute top-0 right-0 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs text-white"
+                        className="absolute top-0 right-0 flex items-center justify-center w-6 h-6 text-xs text-white bg-red-500 rounded-full"
                       >
                         ✕
                       </button>
@@ -663,7 +667,7 @@ export default function EditRestaurantPage() {
                   {/* ช่องเพิ่มรูปใหม่ ถ้ายังไม่ครบ 4 รูป */}
                   {previewImages.length < 4 && (
                     <div
-                      className="flex h-32 w-32 cursor-pointer items-center justify-center rounded-md bg-gray-200 text-gray-500"
+                      className="flex items-center justify-center w-32 h-32 text-gray-500 bg-gray-200 rounded-md cursor-pointer"
                       onClick={() =>
                         document.getElementById("store-input")?.click()
                       }
@@ -690,7 +694,7 @@ export default function EditRestaurantPage() {
                   }}
                 />
 
-                <div className="mt-4 flex gap-2">
+                <div className="flex gap-2 mt-4">
                   {previewProfileImages.length > 0 ? (
                     <div
                       className="relative cursor-pointer"
@@ -703,7 +707,7 @@ export default function EditRestaurantPage() {
                         alt="owner-profile"
                         width={128}
                         height={128}
-                        className="rounded-full object-cover"
+                        className="size-[128px] rounded-full object-cover"
                       />
                       {/* ปุ่มลบรูป */}
                       <button
@@ -712,14 +716,14 @@ export default function EditRestaurantPage() {
                           e.stopPropagation(); // ป้องกันคลิกเปิดไฟล์
                           handleRemoveProfileImage();
                         }}
-                        className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs text-white"
+                        className="absolute flex items-center justify-center w-6 h-6 text-xs text-white bg-red-500 rounded-full top-1 right-1"
                       >
                         ✕
                       </button>
                     </div>
                   ) : (
                     <div
-                      className="flex h-32 w-32 cursor-pointer items-center justify-center rounded-full bg-gray-200 text-gray-500"
+                      className="flex items-center justify-center w-32 h-32 text-gray-500 bg-gray-200 rounded-full cursor-pointer"
                       onClick={() =>
                         document.getElementById("profile-input")?.click()
                       }
@@ -771,20 +775,17 @@ export default function EditRestaurantPage() {
           </div>
         </CardContent>
 
-        <CardFooter className="flex justify-end gap-x-2 border-t bg-gray-50 p-4">
+        <CardFooter className="flex justify-end p-4 border-t gap-x-2 bg-gray-50">
           <Button
             variant="outline"
             onClick={() => router.back()}
-            className="bg-gray-200 text-gray-700 hover:bg-gray-300"
+            className="text-gray-700 bg-gray-200 hover:bg-gray-300"
           >
             ยกเลิก
           </Button>
 
-          <Button
-            className="bg-green-700 hover:bg-green-600"
-            onClick={handleSave}
-          >
-            <SaveIcon className="mr-2 h-4 w-4" />
+          <Button onClick={handleSave}>
+            <SaveIcon className="w-4 h-4 mr-2" />
             บันทึกข้อมูล
           </Button>
         </CardFooter>

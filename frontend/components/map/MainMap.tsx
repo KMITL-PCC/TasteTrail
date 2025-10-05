@@ -42,7 +42,7 @@ function LocationMarker({
   }, [initialPosition]);
 
   const map = useMapEvents({
-    click(e) {
+    click(e: any) {
       const pos: [number, number] = [e.latlng.lat, e.latlng.lng];
       setPosition(pos);
       map.flyTo(pos, map.getZoom());

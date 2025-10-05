@@ -37,3 +37,11 @@ export type RestaurantInfo = {
   };
   services: string[];
 };
+
+export type PaginationData = {
+  totalPages: number;
+  currentPage: number;
+  itemPerPage: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+};

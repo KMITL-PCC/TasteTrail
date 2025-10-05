@@ -290,7 +290,7 @@ export default function EditProfilePage() {
 
   if (!profileChecked) {
     return (
-      <div className="flex h-screen items-center justify-center">
+      <div className="flex items-center justify-center h-screen">
         <p>Loading profile...</p>
       </div>
     );
@@ -301,11 +301,11 @@ export default function EditProfilePage() {
       <Tabs defaultValue={defaultTab} className="space-y-6">
         <TabsList className="m-0">
           <TabsTrigger value="profile">
-            <User className="mr-2 h-4 w-4" /> Profile
+            <User className="w-4 h-4 mr-2" /> Profile
           </TabsTrigger>
           {thirdPartyOnly === false && (
             <TabsTrigger value="password">
-              <Lock className="mr-2 h-4 w-4" />
+              <Lock className="w-4 h-4 mr-2" />
               Password
             </TabsTrigger>
           )}
@@ -315,7 +315,7 @@ export default function EditProfilePage() {
           <form
             id="profile-form"
             onSubmit={onSaveProfile}
-            className="max-h-l w-full max-w-6xl overflow-hidden rounded-2xl border py-0 shadow-sm"
+            className="w-full max-w-6xl py-0 overflow-hidden border shadow-sm max-h-l rounded-2xl"
           >
             <Card className="space-y-6 border-0 shadow-sm">
               <CardContent className="grid grid-cols-1 gap-6 py-10 md:grid-cols-12 md:items-center">
@@ -323,7 +323,7 @@ export default function EditProfilePage() {
                 <div className="flex justify-center md:col-span-5">
                   <div className="relative size-36">
                     {/* Avatar */}
-                    <Avatar className="ring-muted-foreground/20 h-50 w-50 cursor-pointer ring-2">
+                    <Avatar className="cursor-pointer ring-muted-foreground/20 h-50 w-50 ring-2">
                       {avatarPreview ? (
                         <AvatarImage src={avatarPreview} alt="avatar" />
                       ) : (
@@ -344,7 +344,7 @@ export default function EditProfilePage() {
                           if (fileInputRef.current)
                             fileInputRef.current.value = "";
                         }}
-                        className="absolute top-0 -right-16 -translate-x-1/4 -translate-y-1/4 rounded-full bg-red-600 p-1 text-white hover:bg-red-700"
+                        className="absolute top-0 p-1 text-white bg-red-600 rounded-full -right-16 -translate-x-1/4 -translate-y-1/4 hover:bg-red-700"
                         title="Remove"
                       >
                         <X />
@@ -368,8 +368,8 @@ export default function EditProfilePage() {
 
                     {/* ข้อความ error ถ้าไฟล์ใหญ่เกิน 4MB */}
                     {avatarError && (
-                      <div className="mt-2 flex w-50 justify-center">
-                        <p className="text-center text-sm text-red-500">
+                      <div className="flex justify-center mt-2 w-50">
+                        <p className="text-sm text-center text-red-500">
                           {avatarError}
                         </p>
                       </div>
@@ -386,7 +386,7 @@ export default function EditProfilePage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    <div className="space-y-2 pt-5 md:col-span-2">
+                    <div className="pt-5 space-y-2 md:col-span-2">
                       <Label htmlFor="username">Username</Label>
                       <Input
                         id="username"
@@ -417,7 +417,7 @@ export default function EditProfilePage() {
 
               <CardFooter className="flex items-center justify-end px-10">
                 <Button type="submit" disabled={savingProfile}>
-                  <Save className="h-4 w-4" /> Save profile
+                  <Save className="w-4 h-4" /> Save profile
                 </Button>
               </CardFooter>
             </Card>
@@ -568,16 +568,16 @@ function PasswordField({
 
   return (
     <div className="mb-4">
-      <Label htmlFor={id} className="mb-2 block">
+      <Label htmlFor={id} className="block mb-2">
         {label}
       </Label>
-      <div className="flex h-11 items-center rounded-md border border-gray-300 px-3">
+      <div className="flex items-center px-3 border border-gray-300 rounded-md h-11">
         <input
           id={id}
           type={show ? "text" : "password"}
           value={value}
           onChange={(e) => onChange(sanitizePassword(e.target.value))}
-          className="flex-1 bg-transparent text-base outline-none"
+          className="flex-1 text-base bg-transparent outline-none"
           autoComplete={autoComplete}
         />
         <button
@@ -585,12 +585,12 @@ function PasswordField({
           onClick={() => setShow((prev) => !prev)}
           className="p-1 text-gray-500 hover:text-gray-800 focus:outline-none"
         >
-          {show ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+          {show ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
         </button>
       </div>
 
       {value && (
-        <div className="mt-2 grid grid-cols-1 gap-1 text-sm">
+        <div className="grid grid-cols-1 gap-1 mt-2 text-sm">
           {[
             { check: checks.length, label: "At least 8 characters" },
             { check: checks.lowercase, label: "Lowercase letter" },

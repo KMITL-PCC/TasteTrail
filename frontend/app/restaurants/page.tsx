@@ -1,4 +1,10 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { PopularRestaurant, Restaurant } from "@/types/restaurant";
 import { Button } from "@/components/ui/button";
@@ -9,16 +15,19 @@ import RecommendFilterButton from "@/components/restaurants/RecommendFilterButto
 import SecondaryRestaurantCard from "@/components/restaurants/SecondaryRestaurantCard";
 import Link from "next/link";
 import BreadcrumbComponent from "@/components/BreadcrumbComponent";
+import RestaurantPagination from "@/components/restaurants/RestaurantPagination";
 
 const getRestaurants = async (
   search: string,
   categories: string,
   ratings: string,
   prices: string,
+  page: string,
+  limit: string,
 ) => {
   try {
     const res = await fetch(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/restaurant/get?search=${search || ""}&category=${categories || ""}&rating=${ratings || ""}&priceRate=${prices || ""}`,
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/restaurant/get?search=${search || ""}&category=${categories || ""}&rating=${ratings || ""}&priceRate=${prices || ""}&page=${page || "1"}&limit=${limit || "10"}`,
     );
 
     if (!res.ok) {
@@ -56,20 +65,23 @@ const RestaurantsPage = async ({
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) => {
   const searchParamsData = await searchParams;
-  const { categories, ratings, prices, search } = searchParamsData as {
-    categories: string;
-    ratings: string;
-    prices: string;
-    search: string;
-  };
-  const { restaurant } = await getRestaurants(
+  const { categories, ratings, prices, search, page, limit } =
+    searchParamsData as {
+      categories: string;
+      ratings: string;
+      prices: string;
+      search: string;
+      page: string;
+      limit: string;
+    };
+  const { restaurant, pagination } = await getRestaurants(
     search,
     categories,
     ratings,
     prices,
+    page,
+    limit,
   );
-
-  console.log(restaurant);
 
   const { popularRestaurants } = await getPopularRestaurants();
 
@@ -104,19 +116,6 @@ const RestaurantsPage = async ({
             </CardContent>
           </Card>
 
-          {/* Map */}
-          {/* <div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Map</CardTitle>
-            </CardHeader>
-            <Separator />
-            <CardContent>
-              <p>Card Content</p>
-            </CardContent>
-          </Card>
-        </div> */}
-
           {/* Restaurants List*/}
           <div>
             <Card>
@@ -138,6 +137,9 @@ const RestaurantsPage = async ({
                   </Link>
                 ))}
               </CardContent>
+              <CardFooter>
+                <RestaurantPagination pagination={pagination} />
+              </CardFooter>
             </Card>
           </div>
         </div>

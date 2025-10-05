@@ -1,6 +1,14 @@
 "use client";
 
-import { Home, LogIn, Menu, Search, User, UserPlus } from "lucide-react";
+import {
+  CirclePlus,
+  House,
+  LogIn,
+  Menu,
+  Search,
+  User,
+  UserPlus,
+} from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -102,7 +110,6 @@ const Header = () => {
         <Logo width={50} height={50} />
 
         <nav className="items-center hidden gap-4 text-sm font-medium md:flex">
-          {/* <Link href="/">หน้าหลัก</Link> */}
           <Link href="/restaurants">ร้านอาหาร</Link>
         </nav>
         {/* Search */}
@@ -119,7 +126,7 @@ const Header = () => {
         </form>
 
         {/* Auth action */}
-        {/* desktop */}
+        {/* Desktop */}
         <div className="items-center justify-end hidden gap-2 md:flex">
           {loading ? (
             <div className="flex items-center gap-2">
@@ -130,18 +137,11 @@ const Header = () => {
             <DropdownMenu>
               <DropdownMenuTrigger className="focus-visible:ring-0">
                 <Avatar className="border rounded-full cursor-pointer border-border">
-                  <AvatarImage src={user?.profilePictureUrl} />
+                  <AvatarImage src={user.profilePictureUrl} />
                   <AvatarFallback>{user.username.charAt(0)}</AvatarFallback>
                 </Avatar>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="mt-2">
-                <DropdownMenuItem>
-                  <Link href="/profile" className="flex items-center gap-2">
-                    <User size={20} />
-                    <span>ข้อมูลส่วนตัว</span>
-                  </Link>
-                </DropdownMenuItem>
-
                 {user?.role === "RestaurantOwner" ? (
                   <DropdownMenuItem>
                     <Link
@@ -158,11 +158,19 @@ const Header = () => {
                       href="/restaurants/create"
                       className="flex items-center gap-2"
                     >
-                      <Utensils size={20} />
+                      <CirclePlus size={20} />
                       <span>สร้างร้านค้า</span>
                     </Link>
                   </DropdownMenuItem>
                 )}
+
+                <DropdownMenuItem>
+                  <Link href="/profile" className="flex items-center gap-2">
+                    <User size={20} />
+                    <span>ข้อมูลส่วนตัว</span>
+                  </Link>
+                </DropdownMenuItem>
+
                 <DropdownMenuItem
                   className="flex items-center gap-2"
                   onClick={handleLogout}
@@ -192,19 +200,12 @@ const Header = () => {
           )}
         </div>
 
-        {/* mobile */}
+        {/* Mobile */}
         <DropdownMenu>
           <DropdownMenuTrigger className="md:hidden">
             <Menu size={20} />
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="mt-5">
-            {/* <DropdownMenuItem>
-              <Link href="/" className="flex items-center gap-2">
-                <Home size={20} />
-                <span>หน้าหลัก</span>
-              </Link>
-            </DropdownMenuItem> */}
-            <DropdownMenuSeparator />
             <DropdownMenuItem>
               <Link href="/restaurants" className="flex items-center gap-2">
                 <Utensils size={20} />
@@ -215,24 +216,13 @@ const Header = () => {
             {user ? (
               // Show user options when authenticated
               <>
-                <DropdownMenuItem>
-                  <Link href="/profile" className="flex items-center gap-2">
-                    <User
-                      size={20}
-                      className="border rounded-full border-border"
-                    />
-                    <span>ข้อมูลส่วนตัว</span>
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-
                 {user?.role === "RestaurantOwner" ? (
                   <DropdownMenuItem>
                     <Link
                       href={`/restaurants/${user.restaurantId}`}
                       className="flex items-center gap-2"
                     >
-                      <Utensils size={20} />
+                      <House size={20} />
                       <span>ร้านค้าของฉัน</span>
                     </Link>
                   </DropdownMenuItem>
@@ -242,11 +232,22 @@ const Header = () => {
                       href="/restaurants/create"
                       className="flex items-center gap-2"
                     >
-                      <Utensils size={20} />
+                      <CirclePlus size={20} />
                       <span>สร้างร้านค้า</span>
                     </Link>
                   </DropdownMenuItem>
                 )}
+                <DropdownMenuSeparator />
+
+                <DropdownMenuItem>
+                  <Link href="/profile" className="flex items-center gap-2">
+                    <User
+                      size={20}
+                      className="border rounded-full border-border"
+                    />
+                    <span>ข้อมูลส่วนตัว</span>
+                  </Link>
+                </DropdownMenuItem>
                 <DropdownMenuSeparator />
 
                 <DropdownMenuItem
