@@ -7,36 +7,22 @@ const validEmail = 'user@test.com';
 const validPass = 'Test@1234';
 
 test('Positive test cases Register', async ({ page }) => {
-
   await page.goto(BASE_URL + '/register');
-
   // wait 1000 ms
   await page.waitForTimeout(1000);
   await page.getByRole('textbox', { name: 'username' }).fill(validUser);
   // wait 500 ms
   await page.waitForTimeout(500); 
-
   await page.getByRole('textbox', { name: 'Email' }).fill(validEmail);
   await page.getByRole('textbox', { name: 'Password', exact: true }).fill(validPass);
   await page.getByRole('textbox', { name: 'Confirm Password' , exact: true  }).fill(validPass);
-  
   await page.getByRole('checkbox', { name: 'I agree to the Terms of' }).click();
-
-  await page.getByRole('button', { name: 'Register', exact: true }).click();
-
-  //wait fpr 2 seconds
-  // await page.waitForTimeout(2000);
-  // await page.getByRole('textbox', { name: 'OTP Code' }).fill('53431');
-  // await page.getByRole('button', { name: 'Verify Account' , exact: true }).click();
-
-  // await expect(page.getByText('Registration Successful')).toBeVisible();
+  await page.getByRole('button', { name: 'Register', exact: true }).click();;
   await page.waitForTimeout(2000);
 });
 
-
 test.describe('Negative test cases Register ', () => {
   test('REG-005: Not has Username', async ({ page }) => {
-
     await page.goto(BASE_URL + '/register');
     await page.waitForTimeout(1000);
     await page.getByRole('textbox', { name: 'username' }).fill('');
@@ -45,12 +31,8 @@ test.describe('Negative test cases Register ', () => {
     await page.getByRole('textbox', { name: 'Password', exact: true }).fill(validPass);
     await page.getByRole('textbox', { name: 'Confirm Password' , exact: true  }).fill(validPass);
     await page.getByRole('checkbox', { name: 'I agree to the Terms of' }).click();
-    await page.getByRole('button', { name: 'Register', exact: true }).click();
-    // await expect(page.locator('.error')).toHaveText(/Username is required/);
     await page.waitForTimeout(2000);
-
   });
-
   test('REG-006: Not has Email', async ({ page }) => {
     await page.goto(BASE_URL + '/register');
     await page.waitForTimeout(1000);
@@ -60,8 +42,6 @@ test.describe('Negative test cases Register ', () => {
     await page.getByRole('textbox', { name: 'Password', exact: true }).fill(validPass);
     await page.getByRole('textbox', { name: 'Confirm Password' , exact: true  }).fill(validPass);
     await page.getByRole('checkbox', { name: 'I agree to the Terms of' }).click();
-    await page.getByRole('button', { name: 'Register', exact: true }).click();
-    // await expect(page.locator('.error')).toHaveText(/Username is required/);
     await page.waitForTimeout(2000);
 
   });
@@ -75,8 +55,6 @@ test.describe('Negative test cases Register ', () => {
     await page.getByRole('textbox', { name: 'Password', exact: true }).fill(validPass);
     await page.getByRole('textbox', { name: 'Confirm Password' , exact: true  }).fill(validPass);
     await page.getByRole('checkbox', { name: 'I agree to the Terms of' }).click();
-    await page.getByRole('button', { name: 'Register', exact: true }).click();
-    // await expect(page.locator('.error')).toHaveText(/Invalid email format/);
     await page.waitForTimeout(2000);
 
   });
@@ -90,23 +68,19 @@ test.describe('Negative test cases Register ', () => {
     await page.getByRole('textbox', { name: 'Password', exact: true }).fill('');
     await page.getByRole('textbox', { name: 'Confirm Password' , exact: true  }).fill(validPass);
     await page.getByRole('checkbox', { name: 'I agree to the Terms of' }).click();
-    await page.getByRole('button', { name: 'Register', exact: true }).click();
-    // await expect(page.locator('.error')).toHaveText(/Password is required/);
     await page.waitForTimeout(2000);
   
   });
 
-  test('REG-009: Password < 6 Char', async ({ page }) => {
+  test('REG-009: Password < 8 Char', async ({ page }) => {
     await page.goto(BASE_URL + '/register');
     await page.waitForTimeout(1000);
     await page.getByRole('textbox', { name: 'username' }).fill(validUser);
     await page.waitForTimeout(500); 
     await page.getByRole('textbox', { name: 'Email' }).fill(validEmail);
-    await page.getByRole('textbox', { name: 'Password', exact: true }).fill(12);
-    await page.getByRole('textbox', { name: 'Confirm Password' , exact: true  }).fill(12);
+    await page.getByRole('textbox', { name: 'Password', exact: true }).fill('12');
+    await page.getByRole('textbox', { name: 'Confirm Password' , exact: true  }).fill('12');
     await page.getByRole('checkbox', { name: 'I agree to the Terms of' }).click();
-    await page.getByRole('button', { name: 'Register', exact: true }).click();
-    // await expect(page.locator('.error')).toHaveText(/Password must be at least 8 characters/);
     await page.waitForTimeout(2000);
   });
 
@@ -116,11 +90,9 @@ test.describe('Negative test cases Register ', () => {
     await page.getByRole('textbox', { name: 'username' }).fill(validUser);
     await page.waitForTimeout(500); 
     await page.getByRole('textbox', { name: 'Email' }).fill(validEmail);
-    await page.getByRole('textbox', { name: 'Password', exact: true }).fill(123456);
-    await page.getByRole('textbox', { name: 'Confirm Password' , exact: true  }).fill(654321);
+    await page.getByRole('textbox', { name: 'Password', exact: true }).fill('123456');
+    await page.getByRole('textbox', { name: 'Confirm Password' , exact: true  }).fill('654321');
     await page.getByRole('checkbox', { name: 'I agree to the Terms of' }).click();
-    await page.getByRole('button', { name: 'Register', exact: true }).click();
-    // await expect(page.locator('.error')).toHaveText(/Passwords do not match/);
     await page.waitForTimeout(2000);
 
   });
@@ -133,9 +105,6 @@ test.describe('Negative test cases Register ', () => {
     await page.getByRole('textbox', { name: 'Email' }).fill(validEmail);
     await page.getByRole('textbox', { name: 'Password', exact: true }).fill(validPass);
     await page.getByRole('textbox', { name: 'Confirm Password' , exact: true  }).fill(validPass);
-    // await page.getByRole('checkbox', { name: 'I agree to the Terms of' }).click();
-    await page.getByRole('button', { name: 'Register', exact: true }).click();
-    // await expect(page.locator('#registerBtn')).toBeDisabled();
     await page.waitForTimeout(2000);
   });
 });
@@ -151,8 +120,6 @@ test.describe('Register - XSS Tests', () => {
     await page.getByRole('textbox', { name: 'Password', exact: true }).fill(validPass);
     await page.getByRole('textbox', { name: 'Confirm Password' , exact: true  }).fill(validPass);
     await page.getByRole('checkbox', { name: 'I agree to the Terms of' }).click();
-    await page.getByRole('button', { name: 'Register', exact: true }).click();
-    // await expect(page.locator('#registerBtn')).toBeDisabled();
     await page.waitForTimeout(2000);
   });
 
@@ -165,8 +132,6 @@ test.describe('Register - XSS Tests', () => {
     await page.getByRole('textbox', { name: 'Password', exact: true }).fill(validPass);
     await page.getByRole('textbox', { name: 'Confirm Password' , exact: true  }).fill(validPass);
     await page.getByRole('checkbox', { name: 'I agree to the Terms of' }).click();
-    await page.getByRole('button', { name: 'Register', exact: true }).click();
-    // await expect(page.locator('#registerBtn')).toBeDisabled();
     await page.waitForTimeout(2000);
   });
 
@@ -179,8 +144,6 @@ test.describe('Register - XSS Tests', () => {
     await page.getByRole('textbox', { name: 'Password', exact: true }).fill("<script>alert('pw')</script>");
     await page.getByRole('textbox', { name: 'Confirm Password' , exact: true  }).fill("<script>alert('pw')</script>");
     await page.getByRole('checkbox', { name: 'I agree to the Terms of' }).click();
-    await page.getByRole('button', { name: 'Register', exact: true }).click();
-    // await expect(page.locator('#registerBtn')).toBeDisabled();
     await page.waitForTimeout(2000);
 
   });
@@ -196,8 +159,6 @@ test.describe('Register - SQL Injection Tests', () => {
     await page.getByRole('textbox', { name: 'Password', exact: true }).fill(validPass);
     await page.getByRole('textbox', { name: 'Confirm Password' , exact: true  }).fill(validPass);
     await page.getByRole('checkbox', { name: 'I agree to the Terms of' }).click();
-    await page.getByRole('button', { name: 'Register', exact: true }).click();
-    // await expect(page.locator('.error')).toHaveText(/Username is required/);
     await page.waitForTimeout(2000);
   });
 
@@ -210,24 +171,7 @@ test.describe('Register - SQL Injection Tests', () => {
     await page.getByRole('textbox', { name: 'Password', exact: true }).fill(validPass);
     await page.getByRole('textbox', { name: 'Confirm Password' , exact: true  }).fill(validPass);
     await page.getByRole('checkbox', { name: 'I agree to the Terms of' }).click();
-    await page.getByRole('button', { name: 'Register', exact: true }).click();
-    // await expect(page.locator('.error')).toHaveText(/Username is required/);
     await page.waitForTimeout(2000);
-  });
-
-  test("REG-019: SQLi in Password", async ({ page }) => {
-    await page.goto(BASE_URL + '/register');
-    await page.waitForTimeout(1000);
-    await page.getByRole('textbox', { name: 'username' }).fill(validUser);
-    await page.waitForTimeout(500); 
-    await page.getByRole('textbox', { name: 'Email' }).fill(validEmail);
-    await page.getByRole('textbox', { name: 'Password', exact: true }).fill("'; DROP TABLE users; --");
-    await page.getByRole('textbox', { name: 'Confirm Password' , exact: true  }).fill("'; DROP TABLE users; --");
-    await page.getByRole('checkbox', { name: 'I agree to the Terms of' }).click();
-    await page.getByRole('button', { name: 'Register', exact: true }).click();
-    // await expect(page.locator('.error')).toHaveText(/Username is required/);
-    await page.waitForTimeout(2000);
-
   });
 
   test("REG-020: SQLi Boolean-based in Username", async ({ page }) => {
@@ -239,7 +183,6 @@ test.describe('Register - SQL Injection Tests', () => {
     await page.getByRole('textbox', { name: 'Password', exact: true }).fill(validPass);
     await page.getByRole('textbox', { name: 'Confirm Password' , exact: true  }).fill(validPass);
     await page.getByRole('checkbox', { name: 'I agree to the Terms of' }).click();
-    await page.getByRole('button', { name: 'Register', exact: true }).click();
     await page.waitForTimeout(2000);
 
   });

@@ -1,194 +1,88 @@
 import {test, expect} from '@playwright/test';
-const BASE_URL = 'http://localhost:3000';
 
-const validUser = 'Testuser108';
-const validPass = 'Test1234';
+//คุณต้องตั้งค่า Password เป็นค่าเริ่มต้นก่อนที่สามารถ Login ได้
+const validUser = 'Test2231';
+const validPass = 'Admin1234@';
+const newpasswd = 'P@ssw0rd';
+const Confirmpasswd = 'P@ssw0rd';
 
-test('Positive test cases Login', async ({page}) => {
-    await page.goto('http://localhost:3000/login');
+test('Positive test cases UpdatePassword', async ({page}) => {
+  await page.goto('http://localhost:3000/');
+  //wait for 2 seconds
+  await page.waitForTimeout(2000);
+  await page.getByRole('link', { name: 'เข้าสู่ระบบ' }).click();
+  await page.getByRole('textbox', { name: 'Username' }).fill(validUser);
+  await page.getByRole('textbox', { name: 'Password' }).fill(validPass);
+  await page.getByRole('button', { name: 'Login', exact: true }).click();
+  await page.getByRole('button', { name: 'T', exact: true }).click();
+  await page.getByRole('link', { name: 'ข้อมูลส่วนตัว' }).click();
+  await page.locator('html').click();
+  await page.getByRole('link', { name: 'Edit' }).click();
+  await page.getByRole('tab', { name: 'Password' }).click();
+  await page.getByRole('textbox', { name: 'Current password' }).fill(validPass);
+  await page.getByRole('textbox', { name: 'New password' }).fill(newpasswd);
+  await page.getByRole('textbox', { name: 'Confirm password' }).fill(Confirmpasswd);
+  await page.getByRole('button', { name: 'Update password' }).click();
+  await page.getByRole('button', { name: 'T', exact: true }).click();
+  await page.getByText('ออกจากระบบ').click();
+})
+
+test('Negative test cases UpdatePassword', async ({page}) => {
     //wait for 2 seconds
     await page.waitForTimeout(2000);
-    // await page.getByRole('link', { name: 'เข้าสู่ระบบ' }).click();
+    await page.goto('http://localhost:3000/');
     //wait for 2 seconds
     await page.waitForTimeout(2000);
-    
+    await page.getByRole('link', { name: 'เข้าสู่ระบบ' }).click();
     await page.getByRole('textbox', { name: 'Username' }).fill(validUser);
     await page.getByRole('textbox', { name: 'Password' }).fill(validPass);
-
-    //wiat for 500 ms
-    await page.waitForTimeout(500);
     await page.getByRole('button', { name: 'Login', exact: true }).click();
-    //wait for 4 seconds
-    await page.waitForTimeout(4000);
+    await page.getByRole('button', { name: 'T', exact: true }).click();
+    await page.getByRole('link', { name: 'ข้อมูลส่วนตัว' }).click();
+    await page.locator('html').click();
+    await page.getByRole('link', { name: 'Edit' }).click();
+    await page.getByRole('tab', { name: 'Password' }).click();
 
-    // await page.locator('#radix-_r_9_').click();
-    // await page.getByRole('menuitem', { name: 'ออกจากระบบ' }).click();
+    //Password Empty
+    //wait for 3 seconds
+    await page.waitForTimeout(3000);
+    await page.getByRole('textbox', { name: 'Current password' }).fill('');
+    await page.getByRole('textbox', { name: 'New password' }).fill('Admin1234');
+    await page.getByRole('textbox', { name: 'Confirm password' }).fill('Admin1234');
+    await page.getByRole('button', { name: 'Update password' }).click();
 
+    //New Password Empty
+    //wait for 3 seconds
+    await page.waitForTimeout(3000);
+    await page.getByRole('textbox', { name: 'Current password' }).fill(newpasswd);
+    await page.getByRole('textbox', { name: 'New password' }).fill('');
+    await page.getByRole('textbox', { name: 'Confirm password' }).fill('Admin1234@');
+    await page.getByRole('button', { name: 'Update password' }).click();
 
-    //wait for 2 seconds
-    await page.waitForTimeout(2000);
+    //Confirm Password Empty
+    //wait for 3 seconds
+    await page.waitForTimeout(3000);
+    await page.getByRole('textbox', { name: 'Current password' }).fill(newpasswd);
+    await page.getByRole('textbox', { name: 'New password' }).fill('P@ssw0rd');
+    await page.getByRole('textbox', { name: 'Confirm password' }).fill('');
+    await page.getByRole('button', { name: 'Update password' }).click();
+
+    //New Password and Confirm Password Missmath
+    //wait for 3 seconds
+    await page.waitForTimeout(3000);
+    await page.getByRole('textbox', { name: 'Current password' }).fill(newpasswd);
+    await page.getByRole('textbox', { name: 'New password' }).fill('P@ssw0rd');
+    await page.getByRole('textbox', { name: 'Confirm password' }).fill('Admin1234@');
+    await page.getByRole('button', { name: 'Update password' }).click();
+
+    //Password < 8 Char
+    //wait for 3 seconds
+    await page.waitForTimeout(3000);
+    await page.getByRole('textbox', { name: 'Current password' }).fill(newpasswd);
+    await page.getByRole('textbox', { name: 'New password' }).fill('Admin1');
+    await page.getByRole('textbox', { name: 'Confirm password' }).fill('Admin1');
+    await page.getByRole('button', { name: 'Update password' }).click();
+    //wait for 3 seconds
+    await page.waitForTimeout(3000);
 });
 
-// Negative Test Cases
-
-test.describe('Negative Test Cases Login', () => {
-  test('TC-005: Username Empty', async ({ page }) => {
-    //wait for 2 seconds
-    await page.waitForTimeout(2000);
-    await page.goto('http://localhost:3000/login');
-    await page.getByRole('textbox', { name: 'Username' }).fill('');
-    await page.getByRole('textbox', { name: 'Password' }).fill(validPass);
-    await page.getByRole('button', { name: 'Login', exact: true }).click();
-    // await for 2 seconds
-    await page.waitForTimeout(2000);
-
-  });
-
-  test('TC-006: Password Empty', async ({ page }) => {
-
-    await page.waitForTimeout(2000);
-    await page.goto('http://localhost:3000/login');
-    await page.getByRole('textbox', { name: 'Username' }).fill(validUser);
-    await page.getByRole('textbox', { name: 'Password' }).fill('');
-    await page.getByRole('button', { name: 'Login', exact: true }).click();
-    // await for 2 seconds
-    await page.waitForTimeout(2000);
-  });
-
-  test('TC-007: All Empty', async ({ page }) => {
-    //wait for 2 seconds
-    await page.waitForTimeout(2000);
-    await page.goto('http://localhost:3000/login');
-    await page.getByRole('textbox', { name: 'Username' }).fill('');
-    await page.getByRole('textbox', { name: 'Password' }).fill('');
-    await page.getByRole('button', { name: 'Login', exact: true }).click();
-    // await for 2 seconds
-    await page.waitForTimeout(2000);
-  });
-
-  test('TC-008: Username or Password Missmath', async ({ page }) => {
-        //wait for 2 seconds
-    await page.waitForTimeout(2000);
-    await page.goto('http://localhost:3000/login');
-    await page.getByRole('textbox', { name: 'Username' }).fill(validUser);
-    await page.getByRole('textbox', { name: 'Password' }).fill('wrongPass');
-    await page.getByRole('button', { name: 'Login', exact: true }).click();
-    // await for 2 seconds
-    await page.waitForTimeout(2000);
-    // await expect(page.locator('.error')).toHaveText(/Invalid username or password/);
-
-  });
-
-  test('TC-009: Password < 6 Char', async ({ page }) => {
-    //wait for 2 seconds
-    await page.waitForTimeout(2000);
-    await page.goto('http://localhost:3000/login');
-    await page.getByRole('textbox', { name: 'Username' }).fill(validUser);
-    await page.getByRole('textbox', { name: 'Password' }).fill('123');
-    await page.getByRole('button', { name: 'Login', exact: true }).click();
-    // await for 2 seconds
-    await page.waitForTimeout(2000);
-    // await expect(page.locator('.error')).toHaveText(/Password must be at least 6 characters/);
-
-  });
-});
-
-
-// XSS Test Cases
-
-test.describe('XSS Test Cases', () => {
-  test('TC-010: XSS in Username', async ({ page }) => {
-
-    //wait for 2 seconds
-    await page.waitForTimeout(2000);
-    await page.goto('http://localhost:3000/login');
-    await page.getByRole('textbox', { name: 'Username' }).fill("<script>alert('XSS')</script>");
-    await page.getByRole('textbox', { name: 'Password' }).fill(validPass);
-    await page.getByRole('button', { name: 'Login', exact: true }).click();
-    // await for 2 seconds
-    await page.waitForTimeout(2000);
-    // await expect(page.locator('.error')).toBeVisible();
-
-  });
-
-  test('TC-011: XSS in Password', async ({ page }) => {
-    
-    //wait for 2 seconds
-    await page.waitForTimeout(2000);
-    await page.goto('http://localhost:3000/login');
-    await page.getByRole('textbox', { name: 'Username' }).fill(validUser);
-    await page.getByRole('textbox', { name: 'Password' }).fill("<img src=x onerror=alert('XSS')>");
-    await page.getByRole('button', { name: 'Login', exact: true }).click();
-    // await for 2 seconds
-    await page.waitForTimeout(2000);
-    // await expect(page.locator('.error')).toBeVisible();
-
-  });
-
-  test('TC-012: Reflected XSS (URL)', async ({ page }) => {
-    //wait for 2 seconds
-    await page.waitForTimeout(2000);
-    await page.goto('http://localhost:3000/login');
-    await page.getByRole('textbox', { name: 'Username' }).fill("<script>alert(1)</script>");
-    await page.getByRole('textbox', { name: 'Password' }).fill(validPass);
-    await page.getByRole('button', { name: 'Login', exact: true }).click();
-    // await for 2 seconds
-    await page.waitForTimeout(2000);
-    // await expect(page.locator('.error')).toBeVisible();
-
-  });
-  });
-
-// 🛡 SQL Injection Test Cases
-// ----------------------
-test.describe('SQL Injection Tests cases', () => {
-  test("TC-013: SQLi - ' OR '1'='1", async ({ page }) => {
-    //wait for 2 seconds
-    await page.waitForTimeout(2000);
-    await page.goto('http://localhost:3000/login');
-    await page.getByRole('textbox', { name: 'Username' }).fill("' OR '1'='1");
-    await page.getByRole('textbox', { name: 'Password' }).fill (validPass);
-    await page.getByRole('button', { name: 'Login', exact: true }).click();
-    // await expect(page.locator('.error')).toHaveText(/Invalid username or password/);
-    // wait for 2 seconds
-    await page.waitForTimeout(2000);
-
-  });
-
-  test("TC-014: SQLi - admin' --", async ({ page }) => {
-    await page.goto( 'http://localhost:3000/login');
-    //wait for 2 seconds
-    await page.waitForTimeout(2000);
-    await page.getByRole('textbox', { name: 'Username' }).fill("admin' --");
-    await page.getByRole('textbox', { name: 'Password' }).fill(validPass);
-    await page.getByRole('button', { name: 'Login', exact: true }).click();
-    // await expect(page.locator('.error')).toBeVisible();
-    // wait for 2 seconds
-    await page.waitForTimeout(2000);
-
-  });
-
-  test("TC-015: SQLi - '; DROP TABLE users; --", async ({ page }) => {
-    await page.goto( 'http://localhost:3000/login');
-    //wait for 2 seconds
-    await page.waitForTimeout(2000);
-    await page.getByRole('textbox', { name: 'Username' }).fill(validUser);
-    await page.getByRole('textbox', { name: 'Password' }).fill("'; DROP TABLE users; --");
-    await page.getByRole('button', { name: 'Login', exact: true }).click();
-    // wait for 2 seconds
-    await page.waitForTimeout(2000);
-
-  });
-
-  test("TC-016: SQLi - Boolean-based", async ({ page }) => {
-    await page.goto( 'http://localhost:3000/login');
-    //wait for 2 seconds
-    await page.waitForTimeout(2000);
-    await page.getByRole('textbox', { name: 'Username' }).fill("test' AND '1'='1");
-    await page.getByRole('textbox', { name: 'Password' }).fill(validPass);
-    await page.getByRole('button', { name: 'Login', exact: true }).click();
-    // wait for 2 seconds
-    await page.waitForTimeout(2000);
-  });
-
-});

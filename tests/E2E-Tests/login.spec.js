@@ -1,6 +1,5 @@
 import {test, expect} from '@playwright/test';
 const BASE_URL = 'http://localhost:3000';
-
 const validUser = 'Testuser108';
 const validPass = 'Test1234';
 
@@ -8,29 +7,17 @@ test('Positive test cases Login', async ({page}) => {
     await page.goto('http://localhost:3000/login');
     //wait for 2 seconds
     await page.waitForTimeout(2000);
-    // await page.getByRole('link', { name: 'เข้าสู่ระบบ' }).click();
     //wait for 2 seconds
     await page.waitForTimeout(2000);
-    
     await page.getByRole('textbox', { name: 'Username' }).fill(validUser);
     await page.getByRole('textbox', { name: 'Password' }).fill(validPass);
-
     //wiat for 500 ms
     await page.waitForTimeout(500);
     await page.getByRole('button', { name: 'Login', exact: true }).click();
     //wait for 4 seconds
     await page.waitForTimeout(4000);
-
-    // await page.locator('#radix-_r_9_').click();
-    // await page.getByRole('menuitem', { name: 'ออกจากระบบ' }).click();
-
-
-    //wait for 2 seconds
-    await page.waitForTimeout(2000);
 });
-
 // Negative Test Cases
-
 test.describe('Negative Test Cases Login', () => {
   test('TC-005: Username Empty', async ({ page }) => {
     //wait for 2 seconds
@@ -45,7 +32,6 @@ test.describe('Negative Test Cases Login', () => {
   });
 
   test('TC-006: Password Empty', async ({ page }) => {
-
     await page.waitForTimeout(2000);
     await page.goto('http://localhost:3000/login');
     await page.getByRole('textbox', { name: 'Username' }).fill(validUser);
@@ -75,11 +61,10 @@ test.describe('Negative Test Cases Login', () => {
     await page.getByRole('button', { name: 'Login', exact: true }).click();
     // await for 2 seconds
     await page.waitForTimeout(2000);
-    // await expect(page.locator('.error')).toHaveText(/Invalid username or password/);
 
   });
 
-  test('TC-009: Password < 6 Char', async ({ page }) => {
+  test('TC-009: Password < 8 Char', async ({ page }) => {
     //wait for 2 seconds
     await page.waitForTimeout(2000);
     await page.goto('http://localhost:3000/login');
@@ -88,17 +73,12 @@ test.describe('Negative Test Cases Login', () => {
     await page.getByRole('button', { name: 'Login', exact: true }).click();
     // await for 2 seconds
     await page.waitForTimeout(2000);
-    // await expect(page.locator('.error')).toHaveText(/Password must be at least 6 characters/);
-
   });
 });
-
-
 // XSS Test Cases
 
 test.describe('XSS Test Cases', () => {
   test('TC-010: XSS in Username', async ({ page }) => {
-
     //wait for 2 seconds
     await page.waitForTimeout(2000);
     await page.goto('http://localhost:3000/login');
@@ -107,12 +87,9 @@ test.describe('XSS Test Cases', () => {
     await page.getByRole('button', { name: 'Login', exact: true }).click();
     // await for 2 seconds
     await page.waitForTimeout(2000);
-    // await expect(page.locator('.error')).toBeVisible();
-
   });
 
   test('TC-011: XSS in Password', async ({ page }) => {
-    
     //wait for 2 seconds
     await page.waitForTimeout(2000);
     await page.goto('http://localhost:3000/login');
@@ -135,12 +112,9 @@ test.describe('XSS Test Cases', () => {
     // await for 2 seconds
     await page.waitForTimeout(2000);
     // await expect(page.locator('.error')).toBeVisible();
-
   });
   });
-
-// 🛡 SQL Injection Test Cases
-// ----------------------
+// SQL Injection Test Cases
 test.describe('SQL Injection Tests cases', () => {
   test("TC-013: SQLi - ' OR '1'='1", async ({ page }) => {
     //wait for 2 seconds
@@ -149,7 +123,6 @@ test.describe('SQL Injection Tests cases', () => {
     await page.getByRole('textbox', { name: 'Username' }).fill("' OR '1'='1");
     await page.getByRole('textbox', { name: 'Password' }).fill (validPass);
     await page.getByRole('button', { name: 'Login', exact: true }).click();
-    // await expect(page.locator('.error')).toHaveText(/Invalid username or password/);
     // wait for 2 seconds
     await page.waitForTimeout(2000);
 
@@ -162,7 +135,6 @@ test.describe('SQL Injection Tests cases', () => {
     await page.getByRole('textbox', { name: 'Username' }).fill("admin' --");
     await page.getByRole('textbox', { name: 'Password' }).fill(validPass);
     await page.getByRole('button', { name: 'Login', exact: true }).click();
-    // await expect(page.locator('.error')).toBeVisible();
     // wait for 2 seconds
     await page.waitForTimeout(2000);
 
