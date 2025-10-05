@@ -47,6 +47,8 @@ export default function EditRestaurantPage() {
   const [pickupAddress, setPickupAddress] = useState("");
   const [hasPhysicalStore, setHasPhysicalStore] = useState(true);
   const [contactDetail, setContactDetail] = useState("");
+  const [categoriesSelected, setCategoriesSelected] = useState<string[]>([]);
+
   const [minPrice, setMinPrice] = useState<number | "">("");
   const [maxPrice, setMaxPrice] = useState<number | "">("");
   const [latitude, setLatitude] = useState<number | null>(null);
@@ -82,6 +84,17 @@ export default function EditRestaurantPage() {
       return copy;
     });
   };
+
+  const categoryOptions = [
+    "ร้านอาหารตามสั่ง",
+    "คาเฟ่",
+    "ร้านก๊วยเตี๋ยว",
+    "ร้านเครื่องดื่ม",
+    "ร้านอาหารอิสาน",
+    "ร้านของหวาน",
+    "ร้านของกินเล่น",
+    "อาหารฮาลาล",
+  ];
 
   // ฟังก์ชันลบรูป
   const handleRemoveImage = (index: number) => {
@@ -279,6 +292,9 @@ export default function EditRestaurantPage() {
         "price",
         JSON.stringify({ minPrice: minPrice || 0, maxPrice: maxPrice || 0 }),
       );
+
+      form.append("category", JSON.stringify(categoriesSelected));
+
       form.append("time", JSON.stringify(openingTimes));
       console.log(openingTimes);
 
@@ -398,6 +414,24 @@ export default function EditRestaurantPage() {
               </FieldBlock>
 
               <Separator />
+
+              <FieldBlock label="หมวดหมู่ร้าน">
+                <div className="grid gap-2 sm:grid-cols-2">
+                  {categoryOptions.map((cat) => (
+                    <div key={cat} className="flex items-center gap-2">
+                      <Checkbox
+                        checked={categoriesSelected.includes(cat)}
+                        onCheckedChange={(v) => {
+                          setCategoriesSelected((prev) =>
+                            v ? [...prev, cat] : prev.filter((c) => c !== cat),
+                          );
+                        }}
+                      />
+                      <Label>{cat}</Label>
+                    </div>
+                  ))}
+                </div>
+              </FieldBlock>
 
               {/* หน้าร้าน */}
               <FieldBlock label="หน้าร้าน">
