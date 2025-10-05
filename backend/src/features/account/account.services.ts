@@ -96,14 +96,16 @@ export class accountService {
     price: Restaurant.price,
     time: Restaurant.time[],
     restaurantPictures: Express.Multer.File[],
-    profilePicture: Express.Multer.File
+    profilePicture: Express.Multer.File,
+    category: string[]
   ) {
     const restaurant = await RestaurantService.createRestaurant(
       information,
       price,
       time,
       restaurantPictures,
-      information.services || []
+      information.services || [],
+      category
     );
 
     if (!restaurant || !restaurant.id) {
@@ -164,10 +166,27 @@ export class accountService {
     time: Restaurant.time[],
     fullname: fullname,
     id: string,
-    images: updateRestaurantImages
+    images: updateRestaurantImages,
+    categories: string[]
   ) {
     //0. update restaurant information
     const updateData = await this.prisma.$transaction(async (tx) => {
+      const categoryData = [
+        { id: 1, name: "ร้านอาหารตามสั่ง" },
+        { id: 2, name: "ร้านก๋วยเตี๋ยว" },
+        { id: 3, name: "คาเฟ่" },
+        { id: 4, name: "ร้านเครื่องดื่ม" },
+        { id: 5, name: "ร้านของหวาน" },
+        { id: 6, name: "ร้านของกินเล่น" },
+        { id: 7, name: "อาหารฮาลาล" },
+        { id: 8, name: "ร้านอาหารอีสาน" },
+      ];
+
+      console.log("category: ", categories);
+      const categoryIds = categoryData
+        .filter((c) => categories.includes(c.name))
+        .map((c) => c.id);
+
       //1. find restaurant id by owner id
       const restaurant = await tx.restaurant.findFirst({
         where: {
@@ -202,6 +221,17 @@ export class accountService {
               lastName: fullname.lastName,
             },
           },
+          contact: {
+            updateMany: {
+              where: {
+                restaurantId: restaurant?.id,
+                contactType: "phone",
+              },
+              data: {
+                contactDetail: information.contactDetail,
+              },
+            },
+          },
         },
       });
 
@@ -234,6 +264,20 @@ export class accountService {
         data: (information.services || []).map((serviceId) => ({
           restaurantId: restaurant?.id,
           serviceId: serviceId,
+        })),
+      });
+
+      //5. delete all category and create new one
+      await tx.restaurantCategory.deleteMany({
+        where: {
+          restaurantId: restaurant?.id,
+        },
+      });
+
+      await tx.restaurantCategory.createMany({
+        data: categoryIds.map((categoryId) => ({
+          restaurantId: restaurant?.id,
+          categoryId: categoryId,
         })),
       });
     });
@@ -392,6 +436,13 @@ export class accountService {
             contactType: true,
           },
         },
+        categories: {
+          select: {
+            category: {
+              select: { name: true },
+            },
+          },
+        },
       },
     });
 
@@ -443,6 +494,7 @@ export class accountService {
       services: information.restaurantServices.map(
         (service) => service.service.service
       ),
+      category: information.categories.map((c) => c.category.name),
     };
 
     return restaurantInformation;

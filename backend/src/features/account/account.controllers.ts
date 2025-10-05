@@ -92,10 +92,15 @@ export class accountController {
     //5 pic
     //4 for Restaurant page and 1 for Owner selfie picture
     const user = req.user as User;
-    const role = user.role;
     const id = user.id;
 
-    const requiredFields = ["information", "price", "time", "fullname"];
+    const requiredFields = [
+      "information",
+      "price",
+      "time",
+      "fullname",
+      "category",
+    ];
     const missing = requiredFields.filter(
       (field) => !req.body[field] && req.body[field] === null
     );
@@ -121,6 +126,7 @@ export class accountController {
       const price = JSON.parse(req.body.price) as Restaurant.price;
       const time = JSON.parse(req.body.time) as Restaurant.time[];
       const fullname = JSON.parse(req.body.fullname) as fullname;
+      const category = JSON.parse(req.body.category) as string[];
 
       await this.service.updateToRestaurantOwner(
         id,
@@ -129,7 +135,8 @@ export class accountController {
         price,
         time,
         restaurantPictures,
-        profilePicture
+        profilePicture,
+        category
       );
 
       return res.status(200).json({
@@ -193,7 +200,13 @@ export class accountController {
       });
     }
 
-    const requiredFields = ["information", "price", "time", "fullname"];
+    const requiredFields = [
+      "information",
+      "price",
+      "time",
+      "fullname",
+      "category",
+    ];
     const missing = requiredFields.filter((field) => !req.body[field]);
 
     if (missing.length) {
@@ -211,7 +224,10 @@ export class accountController {
       const price = JSON.parse(req.body.price) as Restaurant.price;
       const fullname = JSON.parse(req.body.fullname) as fullname;
       const time = JSON.parse(req.body.time) as Restaurant.time[];
-      const updateImage = JSON.parse(req.body.updateImage) as number[];
+      const updateImage = req.body.updateImage
+        ? (JSON.parse(req.body.updateImage) as number[])
+        : [];
+      const category = JSON.parse(req.body.category) as string[];
 
       const files = req.files as {
         profileImage: Express.Multer.File[];
@@ -239,7 +255,8 @@ export class accountController {
         time,
         fullname,
         user.id,
-        images
+        images,
+        category
       );
 
       res.sendStatus(200);
