@@ -64,6 +64,7 @@ export default function RestaurantImagesCarousel({
                   src={image}
                   alt={restaurantInfo.name}
                   fill
+                  sizes="350px"
                   objectFit="cover"
                 />
               </CardContent>

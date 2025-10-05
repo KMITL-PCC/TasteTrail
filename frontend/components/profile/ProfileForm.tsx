@@ -10,6 +10,7 @@ import "react-medium-image-zoom/dist/styles.css";
 import Link from "next/link";
 import Image from "next/image";
 import { Skeleton } from "../ui/skeleton";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 
 const ProfileForm = () => {
   const { user } = useUser();
@@ -19,32 +20,25 @@ const ProfileForm = () => {
   const profilePictureUrl = user?.profilePictureUrl;
 
   return (
-    <Card className="mx-auto w-full overflow-hidden rounded-2xl border py-0 shadow-sm">
+    <Card className="w-full py-0 mx-auto overflow-hidden border shadow-sm rounded-2xl">
       <CardContent className="flex items-center gap-4 p-4">
-        <div className="relative h-[100px] w-[100px]">
-          {profilePictureUrl ? (
+        <div className="relative size-[80px]">
+          <Avatar className="size-full">
             <Zoom zoomMargin={200}>
-              <Image
-                src={profilePictureUrl}
-                alt="User"
-                fill
-                className="rounded-full object-cover"
-                sizes="100px"
-              />
+              <AvatarImage src={profilePictureUrl} alt="User" />
             </Zoom>
-          ) : (
-            <Skeleton className="size-full rounded-full" />
-          )}
+            <AvatarFallback>{username.charAt(0)}</AvatarFallback>
+          </Avatar>
         </div>
 
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-lg font-semibold">{username}</p>
-          <p className="text-muted-foreground truncate text-sm">
+        <div className="flex-1 min-w-0">
+          <p className="text-lg font-semibold truncate">{username}</p>
+          <p className="text-sm truncate text-muted-foreground">
             Email : {email}
           </p>
         </div>
 
-        <div className="ml-auto self-center">
+        <div className="self-center ml-auto">
           <Button variant="outline" size="sm" asChild>
             <Link href="/edit-profile">Edit</Link>
           </Button>

@@ -99,12 +99,12 @@ const RestaurantStatus = ({ status }: { status: RestaurantInfo["status"] }) => {
             "rounded-md px-2 py-1 text-sm",
           )}
         >
-          <SelectValue placeholder="Status" />
+          <SelectValue placeholder="สถานะ" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="Open">Open</SelectItem>
-          <SelectItem value="Closed">Closed</SelectItem>
-          <SelectItem value="Temporarily_Closed">Temporarily Closed</SelectItem>
+          <SelectItem value="Open">เปิด</SelectItem>
+          <SelectItem value="Closed">ปิด</SelectItem>
+          <SelectItem value="Temporarily_Closed">ปิดชั่วคราว</SelectItem>
         </SelectContent>
       </Select>
     );
@@ -126,7 +126,7 @@ const RestaurantStatus = ({ status }: { status: RestaurantInfo["status"] }) => {
           ? "เปิด"
           : restaurantStatus === "Closed"
             ? "ปิด"
-            : "ปิดชั่วคลาว"}
+            : "ปิดชั่วคราว"}
       </span>
     </div>
   );

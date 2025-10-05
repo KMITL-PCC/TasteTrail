@@ -14,7 +14,7 @@ const RestaurantEditPage = async ({
   return (
     <div className="mx-auto flex w-full max-w-[1150px] flex-col gap-2 p-4 pt-2 md:p-8 md:pt-2">
       <BreadcrumbComponent restaurantName={restaurantInfo.name} />
-      <RestaurantEditForm />
+      <RestaurantEditForm restaurantId={id} />
     </div>
   );
 };

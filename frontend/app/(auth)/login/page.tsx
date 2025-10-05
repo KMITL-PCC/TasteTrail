@@ -20,7 +20,7 @@ import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 
 const GoogleIcon = () => (
-  <svg className="mr-3 h-5 w-5" viewBox="0 0 48 48">
+  <svg className="w-5 h-5 mr-3" viewBox="0 0 48 48">
     <path
       fill="#FFC107"
       d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8
@@ -215,6 +215,7 @@ function LoginPage() {
           errorData.message ||
           "Invalid username or password. Please try again.";
         setLoginError(message); // เก็บข้อความไว้ใน state
+        toast.error("Login Failed");
       }
     } catch {
       setLoginError("Unable to connect to the server.");
@@ -224,8 +225,8 @@ function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-60 flex-1 flex-col items-center justify-center p-10">
-      <div className="items-top flex justify-center">
+    <div className="flex flex-col items-center justify-center flex-1 p-10 min-h-60">
+      <div className="flex justify-center items-top">
         <div className="w-full max-w-sm space-y-6">
           <div className="text-center">
             <h1 className="text-4xl font-bold text-black">Welcome</h1>
@@ -234,7 +235,7 @@ function LoginPage() {
 
           <Button
             variant="outline"
-            className="h-12 w-full text-base"
+            className="w-full h-12 text-base"
             onClick={handleGoogleLogin}
           >
             <GoogleIcon />
@@ -282,25 +283,25 @@ function LoginPage() {
                   return (
                     <FormItem>
                       <FormLabel>Password</FormLabel>
-                      <div className="relative h-12 w-full">
+                      <div className="relative w-full h-12">
                         {/* Input เหมือน Username */}
                         <Input
                           type={showPassword ? "text" : "password"}
                           placeholder="Password"
                           {...field}
-                          className="h-full flex-1 border-none p-0 pl-3 text-base"
+                          className="flex-1 h-full p-0 pl-3 text-base border-none"
                         />
 
                         {/* Eye/EyeOff อยู่ตรงกลางแนวตั้ง */}
                         <button
                           type="button"
                           onClick={() => setShowPassword((prev) => !prev)}
-                          className="absolute top-1/2 right-3 flex -translate-y-1/2 items-center justify-center text-gray-500 hover:text-gray-800 focus:outline-none"
+                          className="absolute flex items-center justify-center text-gray-500 -translate-y-1/2 top-1/2 right-3 hover:text-gray-800 focus:outline-none"
                         >
                           {showPassword ? (
-                            <EyeOff className="h-5 w-5" />
+                            <EyeOff className="w-5 h-5" />
                           ) : (
-                            <Eye className="h-5 w-5" />
+                            <Eye className="w-5 h-5" />
                           )}
                         </button>
                       </div>
@@ -320,7 +321,7 @@ function LoginPage() {
 
               <Button
                 type="submit"
-                className="h-12 w-full text-lg font-semibold"
+                className="w-full h-12 text-lg font-semibold"
                 disabled={!csrfToken || isSubmitting || hasSuspiciousInput}
                 aria-busy={isSubmitting}
               >
@@ -348,7 +349,7 @@ function LoginPage() {
             </Link>
           </div>
 
-          <p className="text-center text-xs text-gray-500">
+          <p className="text-xs text-center text-gray-500">
             By continuing, you agree to Supabase&apos;s{" "}
             <a href="/terms" className="underline hover:text-black">
               Terms of Service
