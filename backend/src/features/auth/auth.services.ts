@@ -123,17 +123,11 @@ export class AuthServices {
     //1. check user exists
     const userCheck = await this.checkUserNotExistence("", email);
 
-    if (userCheck === null) {
+    if (userCheck === null || userCheck) {
       return {
         success: false,
         status: 400,
         message: "Email not registered or only login with social account",
-      };
-    } else if (userCheck) {
-      return {
-        success: false,
-        status: 400,
-        message: "Email not registered",
       };
     }
 
