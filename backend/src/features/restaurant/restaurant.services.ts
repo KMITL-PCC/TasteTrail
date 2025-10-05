@@ -6,16 +6,6 @@ import { Restaurant } from "../../types/restaurant";
 import { error } from "console";
 import { get } from "http";
 
-const weekArrayFormat = (openninghour: Restaurant.time[]) => {
-  const day = ["อาทิตย์", "จันทร์", "อังคาร", "พุธ", "พฤหัส", "ศุกร์", "เสาร์"];
-  const firstday = day[openninghour[0].weekday];
-  const lastday = day[openninghour[openninghour.length - 1].weekday];
-  return {
-    day: `${firstday} - ${lastday}`,
-    time: `${openninghour[0].openTime} - ${openninghour[0].closeTime}`,
-  };
-};
-
 function formatBusinessHours(hours: Restaurant.time[]) {
   const days = [
     "อาทิตย์",

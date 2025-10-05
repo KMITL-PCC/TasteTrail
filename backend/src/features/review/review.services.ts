@@ -174,7 +174,7 @@ export class ReviewServices {
     const offset = (page - 1) * limit;
 
     //4. query review
-    const [reviews, total] = await this.prisma.$transaction([
+    const [reviews, total, grouped, avgData] = await Promise.all([
       this.prisma.review.findMany({
         where: whereClause,
         orderBy,
@@ -197,12 +197,31 @@ export class ReviewServices {
           },
         },
       }),
+
       this.prisma.review.count({
         where: {
           restaurantId,
         },
       }),
+
+      this.prisma.review.groupBy({
+        by: ["rating"],
+        _count: { rating: true },
+      }),
+
+      this.prisma.review.aggregate({
+        _avg: { rating: true },
+      }),
     ]);
+
+    const breakdown = [5, 4, 3, 2, 1].map((stars) => {
+      const found = grouped.find((g) => Number(g.rating) === stars);
+      const count = found?._count.rating || 0;
+      const percentage = total > 0 ? (count / total) * 100 : 0;
+      return { stars, count, percentage: Number(percentage.toFixed(2)) };
+    });
+
+    console.log(breakdown);
 
     //5. map review
     const reviewMap = reviews.map((review) => ({
@@ -222,6 +241,13 @@ export class ReviewServices {
     const hasPrevPage = page > 1;
 
     return {
+      reviewData: {
+        totalReviews: total,
+        averageRating: avgData._avg.rating
+          ? Number(avgData._avg.rating.toFixed(2))
+          : 0,
+        ratingBreakdown: breakdown,
+      },
       reviews: reviewMap,
       pagination: {
         currentPage: page,
