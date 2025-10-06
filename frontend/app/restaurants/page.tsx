@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Card,
   CardContent,
@@ -6,16 +8,24 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { PopularRestaurant, Restaurant } from "@/types/restaurant";
+import {
+  PopularRestaurant,
+  Restaurant,
+  PaginationData,
+} from "@/types/restaurant";
 import { Button } from "@/components/ui/button";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 
 import FilterRestaurant from "@/components/restaurants/FilterRestaurant";
 import PrimaryRestaurantCard from "@/components/restaurants/PrimaryRestaurantCard.tsx";
+import PrimaryRestaurantCardSkeleton from "@/components/restaurants/PrimaryRestaurantCardSkeleton";
 import RecommendFilterButton from "@/components/restaurants/RecommendFilterButton";
 import SecondaryRestaurantCard from "@/components/restaurants/SecondaryRestaurantCard";
-import Link from "next/link";
+import SecondaryRestaurantCardSkeleton from "@/components/restaurants/SecondaryRestaurantCardSkeleton";
 import BreadcrumbComponent from "@/components/BreadcrumbComponent";
 import RestaurantPagination from "@/components/restaurants/RestaurantPagination";
+import Link from "next/link";
 
 const getRestaurants = async (
   search: string,
@@ -32,13 +42,13 @@ const getRestaurants = async (
 
     if (!res.ok) {
       console.error("Failed to fetch restaurants" + res.status);
-      return { restaurant: [] };
+      return { restaurant: [], pagination: null };
     }
 
     return await res.json();
   } catch (error) {
     console.error("Error fetching restaurants:", error);
-    return { restaurant: [] };
+    return { restaurant: [], pagination: null };
   }
 };
 
@@ -59,31 +69,70 @@ const getPopularRestaurants = async () => {
   }
 };
 
-const RestaurantsPage = async ({
-  searchParams,
-}: {
-  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
-}) => {
-  const searchParamsData = await searchParams;
-  const { categories, ratings, prices, search, page, limit } =
-    searchParamsData as {
-      categories: string;
-      ratings: string;
-      prices: string;
-      search: string;
-      page: string;
-      limit: string;
-    };
-  const { restaurant, pagination } = await getRestaurants(
-    search,
-    categories,
-    ratings,
-    prices,
-    page,
-    limit,
-  );
+const RestaurantsPage = () => {
+  const searchParams = useSearchParams();
 
-  const { popularRestaurants } = await getPopularRestaurants();
+  const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
+  const [popularRestaurants, setPopularRestaurants] = useState<
+    PopularRestaurant[]
+  >([]);
+  const [pagination, setPagination] = useState<PaginationData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [popularLoading, setPopularLoading] = useState(true);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Read filters from URL parameters
+  const filters = {
+    search: searchParams.get("search") || "",
+    categories: searchParams.get("categories") || "",
+    ratings: searchParams.get("ratings") || "",
+    prices: searchParams.get("prices") || "",
+    limit: "10",
+  };
+
+  const fetchRestaurants = async (page = currentPage) => {
+    setLoading(true);
+    try {
+      const { restaurant, pagination: paginationData } = await getRestaurants(
+        filters.search,
+        filters.categories,
+        filters.ratings,
+        filters.prices,
+        page.toString(),
+        filters.limit,
+      );
+      setRestaurants(restaurant);
+      setPagination(paginationData);
+    } catch (error) {
+      console.error("Error fetching restaurants:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchPopularRestaurants = async () => {
+    setPopularLoading(true);
+    try {
+      const { popularRestaurants: popular } = await getPopularRestaurants();
+      setPopularRestaurants(popular);
+    } catch (error) {
+      console.error("Error fetching popular restaurants:", error);
+    } finally {
+      setPopularLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // Reset to page 1 when filters change
+    setCurrentPage(1);
+    fetchRestaurants(1);
+    fetchPopularRestaurants();
+  }, [searchParams]);
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+    fetchRestaurants(page);
+  };
 
   return (
     <div className="mx-auto flex w-full max-w-[1150px] flex-col gap-2 p-4 pt-0 md:flex-row md:p-8 md:pt-2 xl:px-16">
@@ -105,14 +154,19 @@ const RestaurantsPage = async ({
             </CardHeader>
             <Separator />
             <CardContent className="grid grid-cols-2 gap-4 lg:grid-cols-3">
-              {popularRestaurants.map((restaurant: PopularRestaurant) => (
-                <Link
-                  href={`/restaurants/${restaurant.restaurant_id}`}
-                  key={restaurant.restaurant_id}
-                >
-                  <SecondaryRestaurantCard popularRestaurant={restaurant} />
-                </Link>
-              ))}
+              {popularLoading
+                ? // Show skeleton loading for popular restaurants
+                  Array.from({ length: 3 }).map((_, index) => (
+                    <SecondaryRestaurantCardSkeleton key={index} />
+                  ))
+                : popularRestaurants.map((restaurant: PopularRestaurant) => (
+                    <Link
+                      href={`/restaurants/${restaurant.restaurant_id}`}
+                      key={restaurant.restaurant_id}
+                    >
+                      <SecondaryRestaurantCard popularRestaurant={restaurant} />
+                    </Link>
+                  ))}
             </CardContent>
           </Card>
 
@@ -128,18 +182,28 @@ const RestaurantsPage = async ({
               </CardHeader>
               <Separator />
               <CardContent className="grid gap-4">
-                {restaurant.map((restaurant: Restaurant) => (
-                  <Link
-                    href={`/restaurants/${restaurant.id}`}
-                    key={restaurant.id}
-                  >
-                    <PrimaryRestaurantCard restaurant={restaurant} />
-                  </Link>
-                ))}
+                {loading
+                  ? // Show skeleton loading for restaurants
+                    Array.from({ length: 5 }).map((_, index) => (
+                      <PrimaryRestaurantCardSkeleton key={index} />
+                    ))
+                  : restaurants.map((restaurant: Restaurant) => (
+                      <Link
+                        href={`/restaurants/${restaurant.id}`}
+                        key={restaurant.id}
+                      >
+                        <PrimaryRestaurantCard restaurant={restaurant} />
+                      </Link>
+                    ))}
               </CardContent>
-              <CardFooter>
-                <RestaurantPagination pagination={pagination} />
-              </CardFooter>
+              {pagination && (
+                <CardFooter>
+                  <RestaurantPagination
+                    pagination={pagination}
+                    onPageChange={handlePageChange}
+                  />
+                </CardFooter>
+              )}
             </Card>
           </div>
         </div>

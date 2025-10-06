@@ -1,6 +1,6 @@
 "use client";
 
-import { Star, Info, X, Camera, Loader2, Link } from "lucide-react";
+import { Star, Info, X, Camera, Loader2, Link, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -27,11 +27,12 @@ import { z } from "zod";
 import { useState, useRef, useEffect } from "react";
 import { toast } from "sonner";
 import { useUser } from "@/store/user-store";
+import { Separator } from "../ui/separator";
 
 import Image from "next/image";
 
 type Review = {
-  Images: string[];
+  images: string[];
   date: string;
   id: string;
   rating: number;
@@ -55,6 +56,21 @@ type ReviewData = {
   ratingBreakdown: { stars: number; count: number; percentage: number }[];
 };
 
+const getCsrfToken = async () => {
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/csrf-token`,
+    {
+      credentials: "include",
+    },
+  );
+
+  if (!res.ok) {
+    throw new Error("Failed to fetch csrf token");
+  }
+
+  return res.json();
+};
+
 const getReviews = async (
   restaurantId: string,
   filter?: string,
@@ -63,7 +79,10 @@ const getReviews = async (
   limit?: number,
 ) => {
   const res = await fetch(
-    `${process.env.NEXT_PUBLIC_BACKEND_URL}/review/get?restaurantId=${restaurantId}&filter=${filter || ""}&sort=${sort || "newest"}&page=${page || 1}&limit=${limit || 10}`,
+    `${process.env.NEXT_PUBLIC_BACKEND_URL}/review/get?restaurantId=${restaurantId}&filter=${filter || ""}&sort=${sort || "newest"}&page=${page || 1}&limit=${limit || 5}`,
+    {
+      credentials: "include",
+    },
   );
 
   if (!res.ok) {
@@ -73,54 +92,57 @@ const getReviews = async (
   return res.json();
 };
 
-const postReview = async (review: ReviewForm) => {
-  try {
-    const csrfRes = await fetch(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/csrf-token`,
-      {
-        credentials: "include",
+const postReview = async (review: ReviewForm, csrfToken: string) => {
+  const formData = new FormData();
+
+  formData.append("restaurantId", review.restaurantId);
+  formData.append("rating", review.rating.toString());
+  formData.append("review", review.review);
+
+  review.reviewImages.forEach((file) => {
+    formData.append("reviewImages", file);
+  });
+
+  const reviewRes = await fetch(
+    `${process.env.NEXT_PUBLIC_BACKEND_URL}/review/create`,
+    {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "X-CSRF-Token": csrfToken,
       },
-    );
+      body: formData,
+    },
+  );
 
-    if (!csrfRes.ok) {
-      throw new Error("Failed to fetch csrf token");
-    }
-
-    const { csrfToken } = await csrfRes.json();
-
-    const formData = new FormData();
-
-    formData.append("restaurantId", review.restaurantId);
-    formData.append("rating", review.rating.toString());
-    formData.append("review", review.review);
-
-    review.reviewImages.forEach((file) => {
-      formData.append("reviewImages", file);
-    });
-
-    const reviewRes = await fetch(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/review/create`,
-      {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "X-CSRF-Token": csrfToken,
-        },
-        body: formData,
-      },
-    );
-
-    if (!reviewRes.ok) {
-      const errorText = await reviewRes.text();
-      throw new Error(
-        `Failed to post review: ${reviewRes.status} ${errorText}`,
-      );
-    }
-
-    return;
-  } catch (error) {
-    throw new Error("Failed to post review: " + error);
+  if (!reviewRes.ok) {
+    const errorText = await reviewRes.text();
+    throw new Error(`Failed to post review: ${reviewRes.status} ${errorText}`);
   }
+
+  return;
+};
+
+const deleteReview = async (restaurantId: string, csrfToken: string) => {
+  const reviewRes = await fetch(
+    `${process.env.NEXT_PUBLIC_BACKEND_URL}/review/delete?restaurantId=${restaurantId}`,
+    {
+      method: "DELETE",
+      headers: {
+        "X-CSRF-Token": csrfToken,
+      },
+      credentials: "include",
+    },
+  );
+
+  if (!reviewRes.ok) {
+    const errorText = await reviewRes.text();
+    throw new Error(
+      `Failed to delete review: ${reviewRes.status} ${errorText}`,
+    );
+  }
+
+  return;
 };
 
 const formSchema = z.object({
@@ -174,7 +196,7 @@ function StarRating({
 
 function RatingBreakdown({ reviewData }: { reviewData: ReviewData }) {
   return (
-    <div className="flex items-center gap-8 px-16 rating-breakdown-wrapper">
+    <div className="flex items-center gap-8 rating-breakdown-wrapper">
       <div className="text-center">
         <div className="mb-1 text-5xl text-foreground rating-score">
           {reviewData.averageRating}
@@ -203,7 +225,13 @@ function RatingBreakdown({ reviewData }: { reviewData: ReviewData }) {
   );
 }
 
-function RateThisPlace({ restaurantId }: { restaurantId: string }) {
+function RateThisPlace({
+  restaurantId,
+  csrfToken,
+}: {
+  restaurantId: string;
+  csrfToken: string;
+}) {
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -254,8 +282,8 @@ function RateThisPlace({ restaurantId }: { restaurantId: string }) {
   };
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    setIsSubmitting(true);
     try {
+      setIsSubmitting(true);
       const reviewData: ReviewForm = {
         restaurantId,
         rating: values.rating,
@@ -263,20 +291,16 @@ function RateThisPlace({ restaurantId }: { restaurantId: string }) {
         reviewImages: values.reviewImages || [],
       };
 
-      await postReview(reviewData);
+      await postReview(reviewData, csrfToken);
 
-      toast.success("รีวิวของคุณถูกส่งเรียบร้อยแล้ว!", {
-        description: "ขอบคุณสำหรับการรีวิวร้านนี้",
-      });
+      toast.success("ขอบคุณสำหรับการรีวิวร้านนี้!");
 
       form.reset();
       setSelectedImages([]);
       window.location.reload();
     } catch (error) {
       console.error("Review submission error:", error);
-      toast.error("เกิดข้อผิดพลาด", {
-        description: "ไม่สามารถส่งรีวิวได้ กรุณาลองใหม่อีกครั้ง",
-      });
+      toast.error("ไม่สามารถส่งรีวิวได้ กรุณาลองใหม่อีกครั้ง");
     } finally {
       setIsSubmitting(false);
     }
@@ -489,7 +513,7 @@ function ReviewCard({ review }: { review: Review }) {
     <div className="flex items-start gap-3 max-[425px]:gap-2">
       <Avatar className="h-12 w-12 max-[425px]:h-10 max-[425px]:w-10">
         <AvatarImage
-          src={review.user.avatar || undefined}
+          src={review?.user?.avatar || undefined}
           alt={review.user.name}
         />
         <AvatarFallback>{review.user.name[0]}</AvatarFallback>
@@ -513,16 +537,16 @@ function ReviewCard({ review }: { review: Review }) {
           {review.content || "ไม่มีข้อความรีวิว"}
         </p>
 
-        {review.Images && review.Images.length > 0 && (
-          <div className="grid grid-cols-2 gap-2 mb-4">
-            {review.Images.map((imageUrl, index) => (
+        {review.images && review.images.length > 0 && (
+          <div className="grid grid-cols-4 gap-2 mb-4">
+            {review.images.map((imageUrl, index) => (
               <Image
                 key={index}
                 src={imageUrl}
                 alt={`Review image ${index + 1}`}
                 width={100}
                 height={100}
-                className="object-cover rounded-lg"
+                className="object-cover rounded-lg size-full lg:size-40"
               />
             ))}
           </div>
@@ -532,8 +556,49 @@ function ReviewCard({ review }: { review: Review }) {
   );
 }
 
-function OwnReviewSection({ review }: { review?: Review }) {
-  return <div>OwnReviewSection</div>;
+function MyReview({
+  review,
+  restaurantId,
+  csrfToken,
+  reviews,
+  setReviews,
+  setMyReview,
+}: {
+  review: Review;
+  restaurantId: string;
+  csrfToken: string;
+  reviews: Review[];
+  setReviews: (reviews: Review[]) => void;
+  setMyReview: (myReview: Review | null) => void;
+}) {
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDeleteReview = async () => {
+    try {
+      setIsDeleting(true);
+      await deleteReview(restaurantId, csrfToken);
+      setReviews(reviews.filter((r) => r.id !== review.id));
+      setMyReview(null);
+      toast.success("รีวิวของคุณถูกลบเรียบร้อยแล้ว!");
+    } catch (error) {
+      console.error("Error deleting review:", error);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  return (
+    <div className="flex items-start justify-between gap-2">
+      <ReviewCard review={review} />
+      <Button
+        variant="destructive"
+        onClick={handleDeleteReview}
+        disabled={isDeleting}
+      >
+        <Trash />
+      </Button>
+    </div>
+  );
 }
 
 export function ReviewSection({ restaurantId }: { restaurantId: string }) {
@@ -543,33 +608,35 @@ export function ReviewSection({ restaurantId }: { restaurantId: string }) {
   const [pagination, setPagination] = useState({
     currentPage: 1,
     totalPages: 1,
-    limit: 10,
+    limit: 5,
     hasNextPage: false,
     hasPreviousPage: false,
     totalReviews: 0,
   });
+  const [myReview, setMyReview] = useState<Review | null>(null);
   const [reviewData, setReviewData] = useState<ReviewData>({
     totalReviews: 0,
     averageRating: 0,
     ratingBreakdown: [],
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [csrfToken, setCsrfToken] = useState("");
   const { user } = useUser();
 
   useEffect(() => {
     const fetchReviews = async () => {
       try {
         setIsLoading(true);
-        const { reviews, pagination, reviewData } = await getReviews(
+        const { reviews, pagination, reviewData, myReview } = await getReviews(
           restaurantId,
           filter,
           sort,
         );
-
         console.log(reviewData);
         setReviews(reviews);
         setPagination(pagination);
         setReviewData(reviewData);
+        setMyReview(myReview);
       } catch (error) {
         console.error("Error fetching reviews:", error);
       } finally {
@@ -579,6 +646,18 @@ export function ReviewSection({ restaurantId }: { restaurantId: string }) {
 
     fetchReviews();
   }, [restaurantId, filter, sort]);
+
+  useEffect(() => {
+    const fetchCsrfToken = async () => {
+      try {
+        const { csrfToken } = await getCsrfToken();
+        setCsrfToken(csrfToken);
+      } catch (error) {
+        console.error("Error fetching csrf token:", error);
+      }
+    };
+    fetchCsrfToken();
+  }, []);
 
   return (
     <div className="max-w-4xl gap-4 mx-auto review-section-container">
@@ -594,20 +673,27 @@ export function ReviewSection({ restaurantId }: { restaurantId: string }) {
         <RatingBreakdown reviewData={reviewData} />
       </div>
 
+      <Separator className="my-4" />
+
       {/* <RankingSection /> */}
       {user ? (
-        reviews.find((review) => review.user.name === user.username) ? (
-          <OwnReviewSection
-            review={reviews.find(
-              (review) => review.user.name === user.username,
-            )}
+        myReview ? (
+          <MyReview
+            restaurantId={restaurantId}
+            csrfToken={csrfToken}
+            review={myReview}
+            reviews={reviews}
+            setReviews={setReviews}
+            setMyReview={setMyReview}
           />
         ) : (
-          <RateThisPlace restaurantId={restaurantId} />
+          <RateThisPlace restaurantId={restaurantId} csrfToken={csrfToken} />
         )
       ) : (
         ""
       )}
+
+      <Separator />
 
       <FilterSection
         onFilter={setFilter}
@@ -619,7 +705,11 @@ export function ReviewSection({ restaurantId }: { restaurantId: string }) {
       {/* Reviews List */}
 
       <div className="min-h-[100px] space-y-4">
-        {reviews.length > 0 ? (
+        {isLoading ? (
+          <div className="flex items-center justify-center">
+            <Loader2 className="size-8 animate-spin" />
+          </div>
+        ) : reviews.length > 0 ? (
           reviews.map((review) => (
             <ReviewCard key={review.id} review={review} />
           ))
