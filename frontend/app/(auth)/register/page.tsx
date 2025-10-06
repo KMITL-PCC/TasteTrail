@@ -185,7 +185,7 @@ const OtpCodeField = memo(function OtpCodeField({
 });
 
 /* ---------------- Page Component ---------------- */
-export default function RegisterForm() {
+export default function RegisterPage() {
   const router = useRouter();
   const [showOtpForm, setShowOtpForm] = useState(false);
   const [registrationEmail, setRegistrationEmail] = useState("");

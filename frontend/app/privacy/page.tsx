@@ -1,11 +1,17 @@
-import GoBackButton from "@/components/GoBackButton";
+"use client";
 
-const PrivacyPage = () => {
+import GoBackButton from "@/components/GoBackButton";
+import { Suspense } from "react";
+import { useSearchParams } from "next/navigation";
+
+function PrivacyContent() {
+  const params = useSearchParams();
+  const ref = params.get("ref"); // ตัวอย่างการอ่านค่าจาก URL
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4 sm:p-6 md:p-10">
+    <div className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 md:p-10">
       <GoBackButton className="fixed top-28 left-6 md:top-24 md:left-2" />
-      <div className="w-full max-w-4xl p-16 py-12 bg-white rounded-lg shadow-lg">
-        <header className="pb-4 mb-6 border-b border-gray-200">
+      <div className="w-full max-w-4xl rounded-lg bg-white p-16 py-12 shadow-lg">
+        <header className="mb-6 border-b border-gray-200 pb-4">
           <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">
             Privacy Policy
           </h1>
@@ -14,7 +20,7 @@ const PrivacyPage = () => {
           </p>
         </header>
 
-        <div className="space-y-4 prose text-gray-700 max-w-none">
+        <div className="prose max-w-none space-y-4 text-gray-700">
           <p>
             Welcome to our Privacy Policy. Your privacy is critically important
             to us. This policy outlines how we collect, use, protect, and handle
@@ -28,7 +34,7 @@ const PrivacyPage = () => {
             We collect information to provide and improve our Service. The types
             of information we may collect include:
           </p>
-          <ul className="pl-6 space-y-2 list-disc">
+          <ul className="list-disc space-y-2 pl-6">
             <li>
               <strong>Personal Identification Information:</strong> Name, email
               address, username, and password when you register for an account.
@@ -51,7 +57,7 @@ const PrivacyPage = () => {
             2. How We Use Your Information
           </h2>
           <p>We use the collected data for various purposes:</p>
-          <ul className="pl-6 space-y-2 list-disc">
+          <ul className="list-disc space-y-2 pl-6">
             <li>To provide and maintain our Service.</li>
             <li>To notify you about changes to our Service.</li>
             <li>
@@ -140,6 +146,15 @@ const PrivacyPage = () => {
       </div>
     </div>
   );
-};
+}
 
-export default PrivacyPage;
+export default function PrivacyPage() {
+  return (
+    <div className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 md:p-10">
+      <GoBackButton className="fixed top-28 left-6 md:top-24 md:left-2" />
+      <Suspense fallback={<div>Loading...</div>}>
+        <PrivacyContent />
+      </Suspense>
+    </div>
+  );
+}
