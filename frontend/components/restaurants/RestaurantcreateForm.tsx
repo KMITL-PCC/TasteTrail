@@ -160,13 +160,18 @@ export default function SellerInfoWeb({
     }
   };
 
+  const [isSaving, setIsSaving] = useState(false);
+
   const handleSave = async () => {
+    if (isSaving) return; // ป้องกันกดซ้ำ
     if (!csrfToken) {
       toast.error("Session not ready", {
         description: "กรุณารอสักครู่เพื่อเตรียมข้อมูล",
       });
       return;
     }
+
+    setIsSaving(true); // เริ่มบันทึก
 
     try {
       const form = new FormData();
@@ -193,7 +198,6 @@ export default function SellerInfoWeb({
       form.append("time", JSON.stringify(openingTimes));
       uploadedImages.forEach((file) => form.append("restaurantImages", file));
       profileImages.forEach((file) => form.append("profileImage", file));
-
       form.append("category", JSON.stringify(categoriesSelected));
 
       const res = await fetch(SELLER_ENDPOINT, {
@@ -208,6 +212,7 @@ export default function SellerInfoWeb({
         toast.error("บันทึกล้มเหลว", {
           description: msg?.message || "เกิดข้อผิดพลาด",
         });
+        setIsSaving(false); // ให้กดได้อีกครั้ง
         return;
       }
 
@@ -217,10 +222,11 @@ export default function SellerInfoWeb({
       });
 
       router.back();
-    } catch (err) {
+    } catch {
       toast.error("Connection Error", {
         description: "ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้",
       });
+      setIsSaving(false); // ให้กดได้อีกครั้ง
     }
   };
 
@@ -231,7 +237,7 @@ export default function SellerInfoWeb({
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="mx-auto max-w-3xl p-4 md:p-8 xl:px-16">
+      <div className="mx-auto max-w-4xl p-4 md:p-8 xl:px-16">
         <Card>
           <CardContent className="p-6">
             <div className="grid grid-cols-1 gap-6">
@@ -319,6 +325,7 @@ export default function SellerInfoWeb({
 
                 <Separator />
 
+                {/* วันและเวลาเปิด-ปิด */}
                 <div className="mb-4">
                   <Label className="text-sm font-medium">
                     วันและเวลาเปิด-ปิด
@@ -331,9 +338,28 @@ export default function SellerInfoWeb({
                         key={index}
                         className="flex flex-col rounded-lg border border-gray-200 p-3 shadow-sm transition-shadow hover:shadow-md"
                       >
-                        <p className="mb-2 text-sm font-semibold text-gray-700">
-                          {day}
-                        </p>
+                        <div className="mb-2 flex items-center justify-between">
+                          <p className="text-sm font-semibold text-gray-700">
+                            {day}
+                          </p>
+                          <button
+                            type="button"
+                            className="text-xs text-red-500 hover:underline"
+                            onClick={() =>
+                              setOpeningTimes((prev) => {
+                                const updated = [...prev];
+                                updated[index] = {
+                                  ...updated[index],
+                                  openTime: "",
+                                  closeTime: "",
+                                };
+                                return updated;
+                              })
+                            }
+                          >
+                            ล้าง
+                          </button>
+                        </div>
                         <div className="flex flex-col gap-1">
                           <div className="flex items-center gap-2">
                             <span className="text-xs text-gray-500">เปิด</span>
@@ -372,7 +398,7 @@ export default function SellerInfoWeb({
                     ))}
                   </div>
 
-                  {/* แถวล่าง 3 วันตรงกลาง */}
+                  {/* แถวล่าง 3 วัน */}
                   <div className="mt-2 flex flex-col items-center gap-2 md:flex-row md:justify-center md:gap-4">
                     {daysOfWeek.slice(4).map((day, i) => {
                       const index = i + 4;
@@ -381,9 +407,28 @@ export default function SellerInfoWeb({
                           key={index}
                           className="flex w-full flex-col rounded-lg border border-gray-200 p-3 shadow-sm transition-shadow hover:shadow-md md:w-40"
                         >
-                          <p className="mb-2 text-sm font-semibold text-gray-700">
-                            {day}
-                          </p>
+                          <div className="mb-2 flex items-center justify-between">
+                            <p className="text-sm font-semibold text-gray-700">
+                              {day}
+                            </p>
+                            <button
+                              type="button"
+                              className="text-xs text-red-500 hover:underline"
+                              onClick={() =>
+                                setOpeningTimes((prev) => {
+                                  const updated = [...prev];
+                                  updated[index] = {
+                                    ...updated[index],
+                                    openTime: "",
+                                    closeTime: "",
+                                  };
+                                  return updated;
+                                })
+                              }
+                            >
+                              ล้าง
+                            </button>
+                          </div>
                           <div className="flex flex-col gap-1">
                             <div className="flex items-center gap-2">
                               <span className="text-xs text-gray-500">
@@ -622,9 +667,9 @@ export default function SellerInfoWeb({
               ยกเลิก
             </Button>
 
-            <Button onClick={handleSave}>
+            <Button onClick={handleSave} disabled={isSaving}>
               <SaveIcon className="mr-2 h-4 w-4" />
-              บันทึกข้อมูล
+              {isSaving ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
             </Button>
           </CardFooter>
         </Card>
