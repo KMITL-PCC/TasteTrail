@@ -1,5 +1,3 @@
-"use client";
-
 import BreadcrumbComponent from "@/components/BreadcrumbComponent";
 import EditProfileForm from "@/components/profile/EditProfileForm";
 
