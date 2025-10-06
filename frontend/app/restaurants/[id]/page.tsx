@@ -72,7 +72,7 @@ export const RestaurantDetailPage = async ({
       {/* Restaurant Info */}
       {/* Desktop */}
       <div className="hidden gap-4 px-4 lg:flex">
-        <div className="flex flex-1 flex-col gap-4">
+        <div className="flex flex-col flex-1 gap-4">
           <Card>
             <CardHeader>
               <CardTitle className="text-2xl font-normal">
@@ -93,7 +93,7 @@ export const RestaurantDetailPage = async ({
 
           {restaurantInfo.address && (
             <Card className="flex items-center justify-center">
-              <CardContent className="flex w-full flex-row items-center justify-between gap-14">
+              <CardContent className="flex flex-row items-center justify-between w-full gap-14">
                 <Link
                   href={`https://www.google.com/maps?q=${restaurantInfo.latitude},${restaurantInfo.longitude}`}
                   target="_blank"
@@ -105,7 +105,7 @@ export const RestaurantDetailPage = async ({
                       fill="oklch(0.5523 0.1927 32.7272)"
                       width="45"
                       height="45"
-                      className="absolute top-1/2 left-1/2 z-10 -translate-x-1/2 -translate-y-1/2"
+                      className="absolute z-10 -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2"
                     >
                       <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
                       <circle cx="12" cy="9" r="2.5" fill="white" />
@@ -114,11 +114,11 @@ export const RestaurantDetailPage = async ({
                       src="/google-map.webp"
                       alt="map"
                       fill
-                      className="rounded-xl object-cover"
+                      className="object-cover rounded-xl"
                     />
                   </div>
                 </Link>
-                <div className="flex w-full flex-col gap-2">
+                <div className="flex flex-col w-full gap-2">
                   <div className="flex items-center justify-between gap-2">
                     <p>{restaurantInfo.address}</p>
                     <Button variant="secondary" asChild>
@@ -153,26 +153,26 @@ export const RestaurantDetailPage = async ({
           <Card>
             <CardContent className="flex flex-col gap-2">
               <div className="flex flex-col gap-2">
-                <h1 className="w-full text-left text-base font-medium">
+                <h1 className="w-full text-base font-medium text-left">
                   เวลาเปิดร้าน
                 </h1>
-                <div className="text-muted-foreground flex items-center justify-between gap-2 text-sm">
+                <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
                   <p>{restaurantInfo.openingHour.day}</p>
                   <p>{restaurantInfo.openingHour.time}</p>
                 </div>
               </div>
               <div className="flex flex-col items-start gap-2">
-                <h1 className="w-full text-left text-base font-medium">
+                <h1 className="w-full text-base font-medium text-left">
                   ช่วงราคา
                 </h1>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-sm text-muted-foreground">
                   {restaurantInfo.minPrice} - {restaurantInfo.maxPrice} ฿
                 </p>
               </div>
               <ul>
                 {restaurantInfo.services.map((service: string) => (
                   <li className="flex items-center gap-2" key={service}>
-                    <SquareCheck className="size-6 fill-green-500 text-white" />
+                    <SquareCheck className="text-white size-6 fill-green-500" />
                     <span>{service}</span>
                   </li>
                 ))}
@@ -183,13 +183,13 @@ export const RestaurantDetailPage = async ({
       </div>
 
       {/* Mobile */}
-      <div className="flex flex-1 flex-col gap-6 px-4 lg:hidden">
+      <div className="flex flex-col flex-1 gap-6 px-4 lg:hidden">
         <div className="flex flex-col gap-2">
           <div className="flex items-center justify-between">
             <h1 className="text-xl">{restaurantInfo.name}</h1>
             <EditRestaurantButton />
           </div>
-          <p className="text-muted-foreground text-base">
+          <p className="text-base text-muted-foreground">
             {restaurantInfo.description}
           </p>
           <div className="flex items-center justify-between gap-2">
@@ -199,7 +199,7 @@ export const RestaurantDetailPage = async ({
               <DialogTrigger asChild>
                 <Button
                   variant="ghost"
-                  className="text-muted-foreground flex items-center gap-2"
+                  className="flex items-center gap-2 text-muted-foreground"
                 >
                   ข้อมูลเพิ่มเติม
                   <span>
@@ -212,26 +212,26 @@ export const RestaurantDetailPage = async ({
                   <DialogTitle>ข้อมูลเพิ่มเติม</DialogTitle>
                   <Separator />
                   <div className="flex flex-col gap-2">
-                    <h1 className="w-full text-left text-base font-medium">
+                    <h1 className="w-full text-base font-medium text-left">
                       เวลาเปิดร้าน
                     </h1>
-                    <div className="text-muted-foreground flex items-center justify-between gap-2 text-sm">
+                    <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
                       <p>{restaurantInfo.openingHour.day}</p>
                       <p>{restaurantInfo.openingHour.time}</p>
                     </div>
                   </div>
                   <div className="flex flex-col items-start gap-2">
-                    <h1 className="w-full text-left text-base font-medium">
+                    <h1 className="w-full text-base font-medium text-left">
                       ช่วงราคา
                     </h1>
-                    <p className="text-muted-foreground text-sm">
+                    <p className="text-sm text-muted-foreground">
                       {restaurantInfo.minPrice} - {restaurantInfo.maxPrice} ฿
                     </p>
                   </div>
                   <ul>
                     {restaurantInfo.services.map((service: string) => (
                       <li className="flex items-center gap-2" key={service}>
-                        <SquareCheck className="size-6 fill-green-500 text-white" />
+                        <SquareCheck className="text-white size-6 fill-green-500" />
                         <span>{service}</span>
                       </li>
                     ))}
@@ -249,14 +249,14 @@ export const RestaurantDetailPage = async ({
               href={`https://www.google.com/maps?q=${restaurantInfo.latitude},${restaurantInfo.longitude}`}
               target="_blank"
             >
-              <div className="relative h-25 w-full">
+              <div className="relative w-full h-25">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 24 24"
                   fill="oklch(0.5523 0.1927 32.7272)"
                   width="45"
                   height="45"
-                  className="absolute top-1/2 left-1/2 z-10 -translate-x-1/2 -translate-y-1/2"
+                  className="absolute z-10 -translate-x-1/2 -translate-y-1/2 top-1/2 left-1/2"
                 >
                   <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z" />
                   <circle cx="12" cy="9" r="2.5" fill="white" />
@@ -265,12 +265,12 @@ export const RestaurantDetailPage = async ({
                   src="/google-map.webp"
                   alt="map"
                   fill
-                  className="rounded-xl object-cover"
+                  className="object-cover rounded-xl"
                 />
               </div>
             </Link>
 
-            <ul className="flex w-full items-center justify-between gap-2 px-10 text-sm md:px-18">
+            <ul className="flex items-center justify-between w-full gap-2 px-10 text-sm md:px-18">
               <li className="flex flex-col items-center gap-2 rounded-full">
                 <Link
                   href={`https://www.google.com/maps?q=${restaurantInfo.latitude},${restaurantInfo.longitude}`}
