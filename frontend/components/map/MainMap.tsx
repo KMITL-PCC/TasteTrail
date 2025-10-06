@@ -42,8 +42,10 @@ function LocationMarker({
   }, [initialPosition]);
 
   const map = useMapEvents({
-    click(e: any) {
-      const pos: [number, number] = [e.latlng.lat, e.latlng.lng];
+    click(e: unknown) {
+      // cast ให้ TS รู้ว่ามี latlng และ lat/lng เป็น number
+      const event = e as { latlng: { lat: number; lng: number } };
+      const pos: [number, number] = [event.latlng.lat, event.latlng.lng];
       setPosition(pos);
       map.flyTo(pos, map.getZoom());
       onLocationChange?.(pos);
@@ -87,9 +89,10 @@ export default function MainMap({
         zoom={13}
         scrollWheelZoom
         style={{ height: "100%", width: "100%" }}
+        attributionControl={true} // เปิด/ปิดปุ่ม attribution ได้ตรงน
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          // attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <LocationMarker

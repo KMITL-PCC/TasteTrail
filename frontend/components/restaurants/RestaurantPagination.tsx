@@ -10,26 +10,14 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import { PaginationData } from "@/types/restaurant";
-import { useRouter, useSearchParams } from "next/navigation";
 
 const RestaurantPagination = ({
   pagination,
+  onPageChange,
 }: {
   pagination: PaginationData;
+  onPageChange: (page: number) => void;
 }) => {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
-  const createPageUrl = (page: number) => {
-    const params = new URLSearchParams(searchParams);
-    params.set("page", page.toString());
-    return `?${params.toString()}`;
-  };
-
-  const handlePageChange = (page: number) => {
-    router.push(createPageUrl(page));
-  };
-
   const { currentPage, totalPages, hasNextPage, hasPreviousPage } = pagination;
 
   // Don't show pagination if there's only one page or no pages
@@ -78,11 +66,11 @@ const RestaurantPagination = ({
       <PaginationContent>
         <PaginationItem>
           <PaginationPrevious
-            onClick={() => hasPreviousPage && handlePageChange(currentPage - 1)}
+            onClick={() => hasPreviousPage && onPageChange(currentPage - 1)}
             className={
               !hasPreviousPage
-                ? "pointer-events-none opacity-50"
-                : "cursor-pointer"
+                ? "text-muted-foreground pointer-events-none opacity-50"
+                : "hover:bg-primary hover:text-primary-foreground cursor-pointer transition-colors"
             }
           />
         </PaginationItem>
@@ -90,12 +78,16 @@ const RestaurantPagination = ({
         {getVisiblePages().map((page, index) => (
           <PaginationItem key={index}>
             {page === "ellipsis-start" || page === "ellipsis-end" ? (
-              <PaginationEllipsis />
+              <PaginationEllipsis className="text-muted-foreground" />
             ) : (
               <PaginationLink
-                onClick={() => handlePageChange(page as number)}
+                onClick={() => onPageChange(page as number)}
                 isActive={currentPage === page}
-                className="cursor-pointer"
+                className={`cursor-pointer transition-colors ${
+                  currentPage === page
+                    ? "bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground cursor-not-allowed"
+                    : "hover:bg-accent hover:text-accent-foreground"
+                }`}
               >
                 {page}
               </PaginationLink>
@@ -105,9 +97,11 @@ const RestaurantPagination = ({
 
         <PaginationItem>
           <PaginationNext
-            onClick={() => hasNextPage && handlePageChange(currentPage + 1)}
+            onClick={() => hasNextPage && onPageChange(currentPage + 1)}
             className={
-              !hasNextPage ? "pointer-events-none opacity-50" : "cursor-pointer"
+              !hasNextPage
+                ? "text-muted-foreground pointer-events-none opacity-50"
+                : "hover:bg-primary hover:text-primary-foreground cursor-pointer transition-colors"
             }
           />
         </PaginationItem>

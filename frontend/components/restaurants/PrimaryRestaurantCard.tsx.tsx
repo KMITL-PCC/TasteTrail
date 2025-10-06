@@ -71,7 +71,7 @@ const PrimaryRestaurantCard = ({ restaurant }: { restaurant: Restaurant }) => {
         ) : restaurant.status === "Closed" ? (
           <p className="text-destructive">ปิด</p>
         ) : (
-          <p className="text-yellow-500">ปิดชั่วคลาว</p>
+          <p className="text-yellow-500">ปิดชั่วคราว</p>
         )}
       </CardContent>
     </Card>

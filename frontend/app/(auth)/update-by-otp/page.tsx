@@ -1,7 +1,12 @@
+"use client";
+
+import { Suspense } from "react";
 import UpdateByOtpForm from "@/components/auth/UpdateByOtpForm";
 
-const UpdateByOtpPage = () => {
-  return <UpdateByOtpForm />;
-};
-
-export default UpdateByOtpPage;
+export default function UpdateByOtpPage() {
+  return (
+    <Suspense fallback={<div>Loading form...</div>}>
+      <UpdateByOtpForm />
+    </Suspense>
+  );
+}

@@ -47,9 +47,9 @@ const FilterRestaurant = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const initialCategories = searchParams.get("category")?.split(",") || [];
-  const initialRatings = searchParams.get("rating") || "";
-  const initialPrices = searchParams.get("price") || "";
+  const initialCategories = searchParams.get("categories")?.split(",") || [];
+  const initialRatings = searchParams.get("ratings") || "";
+  const initialPrices = searchParams.get("prices") || "";
 
   const [selectedCategories, setSelectedCategories] =
     useState<string[]>(initialCategories);
@@ -80,8 +80,9 @@ const FilterRestaurant = () => {
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
 
+    // Update filter parameters but exclude pagination
     if (selectedCategories.length > 0) {
-      params.set("categories", selectedCategories.join());
+      params.set("categories", selectedCategories.join(","));
     } else {
       params.delete("categories");
     }
@@ -95,6 +96,10 @@ const FilterRestaurant = () => {
     } else {
       params.delete("prices");
     }
+
+    // Remove pagination parameter when filters change
+    params.delete("page");
+
     router.push(`${pathname}?${params.toString()}`);
   }, [
     selectedCategories,

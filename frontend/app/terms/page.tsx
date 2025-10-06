@@ -2,11 +2,11 @@ import GoBackButton from "@/components/GoBackButton";
 
 const TermsPage = () => {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-4 sm:p-6 md:p-10">
+    <div className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 md:p-10">
       <GoBackButton className="fixed top-28 left-6 md:top-24 md:left-4" />
 
-      <div className="relative w-full max-w-4xl p-16 py-12 bg-white rounded-lg shadow-lg">
-        <header className="pb-4 mb-6 border-b border-gray-200">
+      <div className="relative w-full max-w-4xl rounded-lg bg-white p-16 py-12 shadow-lg">
+        <header className="mb-6 border-b border-gray-200 pb-4">
           <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">
             Terms of Service
           </h1>
@@ -15,7 +15,7 @@ const TermsPage = () => {
           </p>
         </header>
 
-        <div className="space-y-4 prose text-gray-700 max-w-none">
+        <div className="prose max-w-none space-y-4 text-gray-700">
           <p>
             Welcome to our service! These Terms of Service (&quot;Terms&quot;)
             govern your use of our website, applications, and services
@@ -58,8 +58,8 @@ const TermsPage = () => {
           </h2>
           <p>
             We may modify the Terms at any time, in our sole discretion. If we
-            do so, we’ll let you know either by posting the modified Terms on
-            the Site or through other communications.
+            do so, we&apos;ll let you know either by posting the modified Terms
+            on the Site or through other communications.
           </p>
 
           <h2 className="text-2xl font-semibold text-gray-800">
@@ -104,8 +104,8 @@ const TermsPage = () => {
           </h2>
           <p>
             You agree not to post any User Content that is illegal, threatening,
-            defamatory, obscene, or infringes on any third party's intellectual
-            property rights.
+            defamatory, obscene, or infringes on any third party&apos;s
+            intellectual property rights.
           </p>
 
           <h2 className="text-2xl font-semibold text-gray-800">
@@ -201,8 +201,8 @@ const TermsPage = () => {
             20. Disclaimer of Warranties
           </h2>
           <p>
-            The Service is provided on an "AS IS" and "AS AVAILABLE" basis. Your
-            use of the Service is at your sole risk.
+            The Service is provided on an &quot;AS IS&quot; and &quot;AS
+            AVAILABLE&quot; basis. Your use of the Service is at your sole risk.
           </p>
 
           <h2 className="text-2xl font-semibold text-gray-800">
