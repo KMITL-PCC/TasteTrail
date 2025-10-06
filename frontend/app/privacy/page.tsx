@@ -1,12 +1,6 @@
-"use client";
-
 import GoBackButton from "@/components/GoBackButton";
-import { Suspense } from "react";
-import { useSearchParams } from "next/navigation";
 
-function PrivacyContent() {
-  const params = useSearchParams();
-  const ref = params.get("ref"); // ตัวอย่างการอ่านค่าจาก URL
+export default function PrivacyPage() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 md:p-10">
       <GoBackButton className="fixed top-28 left-6 md:top-24 md:left-2" />
@@ -144,17 +138,6 @@ function PrivacyContent() {
           </p>
         </div>
       </div>
-    </div>
-  );
-}
-
-export default function PrivacyPage() {
-  return (
-    <div className="flex min-h-screen flex-col items-center justify-center p-4 sm:p-6 md:p-10">
-      <GoBackButton className="fixed top-28 left-6 md:top-24 md:left-2" />
-      <Suspense fallback={<div>Loading...</div>}>
-        <PrivacyContent />
-      </Suspense>
     </div>
   );
 }

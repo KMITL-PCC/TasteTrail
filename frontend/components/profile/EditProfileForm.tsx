@@ -15,7 +15,7 @@ import { Label } from "@/components/ui/label";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Save, User, Lock, EyeOff, Eye, X } from "lucide-react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import z from "zod";
 
@@ -39,10 +39,7 @@ function detectSQLi(input: string) {
 }
 
 export default function EditProfilePage() {
-  const searchParams = useSearchParams();
   const router = useRouter();
-  const defaultTab =
-    (searchParams.get("tab") as "profile" | "password") ?? "profile";
 
   const passwordSchema = z
     .string()
@@ -310,7 +307,7 @@ export default function EditProfilePage() {
 
   return (
     <div>
-      <Tabs defaultValue={defaultTab} className="space-y-6">
+      <Tabs defaultValue="profile" className="space-y-6">
         <TabsList className="m-0">
           <TabsTrigger value="profile">
             <User className="mr-2 h-4 w-4" /> Profile

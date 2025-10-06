@@ -1,10 +1,9 @@
 "use client";
 
-import { Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 
-function NotFoundContent() {
+const NotFound = () => {
   const router = useRouter();
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-4">
@@ -13,12 +12,5 @@ function NotFoundContent() {
       <Button onClick={() => router.push("/")}>Go to Home</Button>
     </div>
   );
-}
-
-export default function NotFound() {
-  return (
-    <Suspense fallback={<div>Loading...</div>}>
-      <NotFoundContent />
-    </Suspense>
-  );
-}
+};
+export default NotFound;
