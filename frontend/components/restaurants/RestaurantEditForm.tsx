@@ -361,11 +361,10 @@ export default function EditRestaurantPage({
                   value={firstName}
                   onChange={(e) => {
                     const allowed = e.target.value.replace(
-                      /[^ก-ฮa-zA-Z0-9\s]/g,
+                      /[^ก-๙a-zA-Z0-9\s]/g, // ก-๙ ครอบคลุมตัวอักษรไทย + สระ + วรรณยุกต์
                       "",
                     );
-                    // อนุญาตตัวอักษรไทย อังกฤษ ตัวเลข และเว้นวรรค
-                    setShopName(allowed);
+                    setFirstName(allowed);
                   }}
                   maxLength={30}
                   placeholder="ชื่อจริง"
@@ -374,10 +373,10 @@ export default function EditRestaurantPage({
                   value={lastName}
                   onChange={(e) => {
                     const allowed = e.target.value.replace(
-                      /[^ก-ฮa-zA-Z0-9\s]/g,
+                      /[^ก-๙a-zA-Z0-9\s]/g,
                       "",
                     );
-                    setDescription(allowed);
+                    setLastName(allowed);
                   }}
                   maxLength={30}
                   placeholder="นามสกุลจริง"
