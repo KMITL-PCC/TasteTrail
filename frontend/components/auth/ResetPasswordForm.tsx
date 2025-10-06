@@ -92,12 +92,17 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
 
     try {
       passwordSchema.parse(safeNew);
-    } catch (err: any) {
-      const first =
-        Array.isArray(err?.errors) && err.errors.length > 0
-          ? err.errors[0].message
-          : "Invalid password.";
-      setMessage(String(first));
+    } catch (err: unknown) {
+      let firstMessage = "Invalid password.";
+
+      if (err && typeof err === "object" && "errors" in err) {
+        const e = err as { errors?: { message: string }[] };
+        if (Array.isArray(e.errors) && e.errors.length > 0) {
+          firstMessage = e.errors[0].message;
+        }
+      }
+
+      setMessage(String(firstMessage));
       setIsLoading(false);
       return;
     }
@@ -130,10 +135,14 @@ const ResetPasswordForm: React.FC<ResetPasswordFormProps> = ({
 
       setMessage("Password reset successful. Redirecting...");
       setTimeout(() => router.push("/login"), 1500);
-    } catch (err: any) {
-      setMessage(
-        DOMPurify.sanitize(err?.message || "Failed to reset password."),
-      );
+    } catch (err: unknown) {
+      let msg = "Failed to reset password.";
+
+      if (err && typeof err === "object" && "message" in err) {
+        msg = (err as { message?: string }).message ?? msg;
+      }
+
+      setMessage(DOMPurify.sanitize(msg));
     } finally {
       setIsLoading(false);
     }

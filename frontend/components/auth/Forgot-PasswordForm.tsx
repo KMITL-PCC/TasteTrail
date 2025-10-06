@@ -136,8 +136,7 @@ const ForgotPasswordForm = () => {
       setFormStep("otp");
       toast.success(`A 5-digit code has been sent to ${safeEmail}.`);
       setCountdown(50);
-    } catch (error: any) {
-      toast.error(error.message || "An unexpected error occurred.");
+    } catch {
     } finally {
       setIsLoading(false);
     }
@@ -177,8 +176,7 @@ const ForgotPasswordForm = () => {
 
       setFormStep("resetPassword");
       toast.success("OTP verified. Please set your new password.");
-    } catch (error: any) {
-      toast.error(error.message || "Failed to verify OTP.");
+    } catch {
     } finally {
       setIsLoading(false);
     }
@@ -232,10 +230,7 @@ const ForgotPasswordForm = () => {
       setTimeout(() => {
         window.location.href = "/login";
       }, 2000);
-    } catch (error: any) {
-      toast.error(
-        error.message || "Failed to reset password. Please try again.",
-      );
+    } catch {
     } finally {
       setIsLoading(false);
     }
@@ -268,8 +263,7 @@ const ForgotPasswordForm = () => {
 
       toast.success(data.message || "A new code has been sent.");
       setCountdown(50);
-    } catch (error: any) {
-      toast.error(error.message || "Failed to resend OTP.");
+    } catch {
     } finally {
       setIsLoading(false);
     }
@@ -394,7 +388,7 @@ const ForgotPasswordForm = () => {
 
           <div className="mt-6 space-y-4 text-center text-sm">
             <p className="text-gray-600">
-              Didn't receive the code?{" "}
+              Didn&apos;t receive the code?{" "}
               {countdown > 0 ? (
                 <span className="font-medium text-gray-400">
                   You can resend in {countdown}s

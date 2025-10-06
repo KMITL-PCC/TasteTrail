@@ -13,6 +13,11 @@ import { toast } from "sonner";
 import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useRouter } from "next/navigation"; // เพิ่ม import ข้างบน
+import { useSearchParams } from "next/navigation";
+
+interface RestaurantcreateFormProps {
+  initialTab?: string; // 🔹 ต้องประกาศ props เพื่อรับจาก parent
+}
 
 const Mainmap = dynamic(() => import("../map/MainMap"), { ssr: false });
 
@@ -31,7 +36,9 @@ const daysOfWeek = [
   "เสาร์",
 ];
 
-export default function SellerInfoWeb() {
+export default function SellerInfoWeb({
+  initialTab,
+}: RestaurantcreateFormProps) {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [shopName, setShopName] = useState("");

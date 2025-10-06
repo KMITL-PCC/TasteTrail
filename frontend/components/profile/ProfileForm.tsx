@@ -20,7 +20,7 @@ const ProfileForm = () => {
   const profilePictureUrl = user?.profilePictureUrl;
 
   return (
-    <Card className="w-full py-0 mx-auto overflow-hidden border shadow-sm rounded-2xl">
+    <Card className="mx-auto w-full overflow-hidden rounded-2xl border py-0 shadow-sm">
       <CardContent className="flex items-center gap-4 p-4">
         <div className="relative size-[80px]">
           <Avatar className="size-full">
@@ -31,14 +31,14 @@ const ProfileForm = () => {
           </Avatar>
         </div>
 
-        <div className="flex-1 min-w-0">
-          <p className="text-lg font-semibold truncate">{username}</p>
-          <p className="text-sm truncate text-muted-foreground">
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-lg font-semibold">{username}</p>
+          <p className="text-muted-foreground truncate text-sm">
             Email : {email}
           </p>
         </div>
 
-        <div className="self-center ml-auto">
+        <div className="ml-auto self-center">
           <Button variant="outline" size="sm" asChild>
             <Link href="/edit-profile">Edit</Link>
           </Button>
