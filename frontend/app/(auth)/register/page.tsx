@@ -117,7 +117,7 @@ const ResendSection = memo(function ResendSection({
 }) {
   return (
     <div className="mt-4 text-center text-sm text-gray-600">
-      Didn't receive the code?{" "}
+      Didn&apos;t receive the code?{" "}
       {countdown > 0 ? (
         <span className="font-semibold text-gray-500">
           Resend in {countdown}s
@@ -185,7 +185,7 @@ const OtpCodeField = memo(function OtpCodeField({
 });
 
 /* ---------------- Page Component ---------------- */
-export default function RegisterForm() {
+export default function RegisterPage() {
   const router = useRouter();
   const [showOtpForm, setShowOtpForm] = useState(false);
   const [registrationEmail, setRegistrationEmail] = useState("");
@@ -215,7 +215,7 @@ export default function RegisterForm() {
         }
         const data = await r.json();
         setCsrfToken(data.csrfToken);
-      } catch (err) {
+      } catch {
         toast.error("Connection Error", {
           description: "Could not connect to the server for security setup.",
         });
@@ -303,14 +303,7 @@ export default function RegisterForm() {
         });
         console.log("[send-otp error]", response.status, errorData);
       }
-    } catch (error: any) {
-      toast.error("Connection Error", {
-        description:
-          error?.name === "AbortError"
-            ? "Request timed out."
-            : "Unable to connect to the server.",
-      });
-    }
+    } catch {}
   }
 
   // ยืนยัน OTP
@@ -353,14 +346,7 @@ export default function RegisterForm() {
             errorData.message || "Invalid OTP code. Please try again.",
         });
       }
-    } catch (error: any) {
-      toast.error("Connection Error", {
-        description:
-          error?.name === "AbortError"
-            ? "Request timed out."
-            : "Unable to connect to the server.",
-      });
-    }
+    } catch {}
   }
 
   // ส่ง OTP ใหม่ (ต้องส่งครบ 3 ฟิลด์ตามฝั่งแบ็กเอนด์)
@@ -403,13 +389,7 @@ export default function RegisterForm() {
           description: errorData.message || `HTTP ${response.status}`,
         });
       }
-    } catch (error: any) {
-      toast.error("Connection Error", {
-        description:
-          error?.name === "AbortError"
-            ? "Request timed out."
-            : "Unable to connect to the server.",
-      });
+    } catch {
     } finally {
       setIsResending(false);
     }
@@ -474,164 +454,160 @@ export default function RegisterForm() {
     </div>
   );
 
-  const RegisterMainForm = () => (
-    <div className="flex flex-col">
-      <div className="flex items-start justify-center">
-        <div className="w-full max-w-sm space-y-8">
-          <div className="text-center">
-            <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">
-              Create Account
-            </h1>
-          </div>
+  const RegisterMainForm = () => {
+    const [showPassword, setShowPassword] = useState(false);
+    const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-          <Form {...registerForm}>
-            <form
-              onSubmit={registerForm.handleSubmit(onRegisterSubmit)}
-              className="space-y-4"
-            >
-              <FormField
-                control={registerForm.control}
-                name="username"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="font-medium text-gray-700">
-                      Username
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder="Choose a username"
-                        {...field}
-                        className="focus:border-primary focus:ring-primary h-11 rounded-md border-gray-300 text-base sm:h-12"
-                        onKeyDown={(e) => {
-                          if (e.key === " ") e.preventDefault();
-                        }}
-                        // ❌ ลบ sanitize ให้พิมพ์ @#!$><?/ ได้
-                        inputMode="text"
-                        autoComplete="username"
-                      />
-                    </FormControl>
-                    <FormMessage className="text-sm text-red-500" />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={registerForm.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="font-medium text-gray-700">
-                      Email
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        type="email"
-                        placeholder="Enter your email"
-                        {...field}
-                        className="focus:border-primary focus:ring-primary h-11 rounded-md border-gray-300 text-base sm:h-12"
-                        autoComplete="email"
-                      />
-                    </FormControl>
-                    <FormMessage className="text-sm text-red-500" />
-                  </FormItem>
-                )}
-              />
+    return (
+      <div className="flex flex-col">
+        <div className="flex items-start justify-center">
+          <div className="w-full max-w-sm space-y-8">
+            <div className="text-center">
+              <h1 className="text-3xl font-bold text-gray-900 sm:text-4xl">
+                Create Account
+              </h1>
+            </div>
 
-              <FormField
-                control={registerForm.control}
-                name="password"
-                render={({ field }) => {
-                  const val = field.value || "";
-
-                  const checks = {
-                    minLength: val.length >= 8,
-                    hasLower: /[a-z]/.test(val),
-                    hasUpper: /[A-Z]/.test(val),
-                    hasNumber: /\d/.test(val),
-                    hasSpecial: /[@$!%*?&]/.test(val),
-                  };
-
-                  const [showPassword, setShowPassword] = useState(false);
-
-                  return (
+            <Form {...registerForm}>
+              <form
+                onSubmit={registerForm.handleSubmit(onRegisterSubmit)}
+                className="space-y-4"
+              >
+                {/* Username */}
+                <FormField
+                  control={registerForm.control}
+                  name="username"
+                  render={({ field }) => (
                     <FormItem>
                       <FormLabel className="font-medium text-gray-700">
-                        Password
+                        Username
                       </FormLabel>
                       <FormControl>
-                        <div className="relative">
-                          <Input
-                            type={showPassword ? "text" : "password"}
-                            placeholder="Create a password"
-                            {...field}
-                            className="focus:border-primary focus:ring-primary h-11 rounded-md border-gray-300 pr-10 text-base sm:h-12"
-                            autoComplete="new-password"
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowPassword((prev) => !prev)}
-                            className="absolute top-1/2 right-2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-                          >
-                            {showPassword ? (
-                              <EyeOff className="h-5 w-5" />
-                            ) : (
-                              <Eye className="h-5 w-5" />
-                            )}
-                          </button>
-                        </div>
+                        <Input
+                          placeholder="Choose a username"
+                          {...field}
+                          className="focus:border-primary focus:ring-primary h-11 rounded-md border-gray-300 text-base sm:h-12"
+                          onKeyDown={(e) => {
+                            if (e.key === " ") e.preventDefault();
+                          }}
+                          inputMode="text"
+                          autoComplete="username"
+                        />
                       </FormControl>
                       <FormMessage className="text-sm text-red-500" />
-
-                      {val && (
-                        <div className="mt-2 grid grid-cols-1 gap-1 text-sm">
-                          {[
-                            {
-                              check: checks.minLength,
-                              label: "At least 8 characters",
-                            },
-                            {
-                              check: checks.hasLower,
-                              label: "Lowercase letter",
-                            },
-                            {
-                              check: checks.hasUpper,
-                              label: "Uppercase letter",
-                            },
-                            { check: checks.hasNumber, label: "Number" },
-                            {
-                              check: checks.hasSpecial,
-                              label: "Special character (!@#$...)",
-                            },
-                          ].map((item, idx) => (
-                            <div key={idx} className="flex items-center gap-2">
-                              <span
-                                className={`inline-block h-3 w-3 rounded-full ${
-                                  item.check ? "bg-green-500" : "bg-gray-300"
-                                }`}
-                              />
-                              <span className="text-xs text-gray-600">
-                                {item.label}
-                              </span>
-                            </div>
-                          ))}
-                        </div>
-                      )}
                     </FormItem>
-                  );
-                }}
-              />
+                  )}
+                />
 
-              <FormField
-                control={registerForm.control}
-                name="confirmPassword"
-                render={({ field }) => {
-                  const [showConfirmPassword, setShowConfirmPassword] =
-                    useState(false);
-
-                  return (
+                {/* Email */}
+                <FormField
+                  control={registerForm.control}
+                  name="email"
+                  render={({ field }) => (
                     <FormItem>
                       <FormLabel className="font-medium text-gray-700">
-                        Confirm Password
+                        Email
                       </FormLabel>
+                      <FormControl>
+                        <Input
+                          type="email"
+                          placeholder="Enter your email"
+                          {...field}
+                          className="focus:border-primary focus:ring-primary h-11 rounded-md border-gray-300 text-base sm:h-12"
+                          autoComplete="email"
+                        />
+                      </FormControl>
+                      <FormMessage className="text-sm text-red-500" />
+                    </FormItem>
+                  )}
+                />
+
+                {/* Password */}
+                <FormField
+                  control={registerForm.control}
+                  name="password"
+                  render={({ field }) => {
+                    const val = field.value || "";
+                    const checks = {
+                      minLength: val.length >= 8,
+                      hasLower: /[a-z]/.test(val),
+                      hasUpper: /[A-Z]/.test(val),
+                      hasNumber: /\d/.test(val),
+                      hasSpecial: /[@$!%*?&]/.test(val),
+                    };
+                    return (
+                      <FormItem>
+                        <FormLabel>Password</FormLabel>
+                        <FormControl>
+                          <div className="relative">
+                            <Input
+                              type={showPassword ? "text" : "password"}
+                              placeholder="Create a password"
+                              {...field}
+                              className="focus:border-primary focus:ring-primary h-11 rounded-md border-gray-300 pr-10 text-base sm:h-12"
+                              autoComplete="new-password"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowPassword((prev) => !prev)}
+                              className="absolute top-1/2 right-2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                            >
+                              {showPassword ? <EyeOff /> : <Eye />}
+                            </button>
+                          </div>
+                        </FormControl>
+                        <FormMessage className="text-sm text-red-500" />
+
+                        {/* Password validation */}
+                        {val && (
+                          <div className="mt-2 grid grid-cols-1 gap-1 text-sm">
+                            {[
+                              {
+                                check: checks.minLength,
+                                label: "At least 8 characters",
+                              },
+                              {
+                                check: checks.hasLower,
+                                label: "Lowercase letter",
+                              },
+                              {
+                                check: checks.hasUpper,
+                                label: "Uppercase letter",
+                              },
+                              { check: checks.hasNumber, label: "Number" },
+                              {
+                                check: checks.hasSpecial,
+                                label: "Special character (!@#$...)",
+                              },
+                            ].map((item, idx) => (
+                              <div
+                                key={idx}
+                                className="flex items-center gap-2"
+                              >
+                                <span
+                                  className={`inline-block h-3 w-3 rounded-full ${
+                                    item.check ? "bg-green-500" : "bg-gray-300"
+                                  }`}
+                                />
+                                <span className="text-xs text-gray-600">
+                                  {item.label}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </FormItem>
+                    );
+                  }}
+                />
+
+                {/* Confirm Password */}
+                <FormField
+                  control={registerForm.control}
+                  name="confirmPassword"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Confirm Password</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <Input
@@ -648,97 +624,95 @@ export default function RegisterForm() {
                             }
                             className="absolute top-1/2 right-2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
                           >
-                            {showConfirmPassword ? (
-                              <EyeOff className="h-5 w-5" />
-                            ) : (
-                              <Eye className="h-5 w-5" />
-                            )}
+                            {showConfirmPassword ? <EyeOff /> : <Eye />}
                           </button>
                         </div>
                       </FormControl>
                       <FormMessage className="text-sm text-red-500" />
                     </FormItem>
-                  );
-                }}
-              />
-              <FormField
-                control={registerForm.control}
-                name="terms"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-y-0 space-x-3 rounded-md py-4">
-                    <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                    </FormControl>
-                    <div className="space-y-1 leading-none">
-                      <FormLabel className="text-primary text-sm font-normal whitespace-nowrap">
-                        I agree to the{" "}
-                        <a
-                          href="/terms"
-                          className="hover:text-primary underline"
-                        >
-                          Terms of Service
-                        </a>{" "}
-                        and{" "}
-                        <a
-                          href="/privacy"
-                          className="hover:text-primary underline"
-                        >
-                          Privacy Policy
-                        </a>
-                        .
-                      </FormLabel>
-                      <FormMessage className="text-sm text-red-500" />
-                    </div>
-                  </FormItem>
-                )}
-              />
-              <Button
-                type="submit"
-                disabled={
-                  !registerForm.formState.isValid ||
-                  !csrfToken /* กันตอน token ยังไม่พร้อม */
-                }
-                className="bg-primary hover:bg-primary h-12 w-full rounded-md text-lg font-semibold text-white shadow-md transition-colors duration-200 disabled:cursor-not-allowed disabled:bg-gray-400 sm:h-14"
-              >
-                Register
-              </Button>
-            </form>
-          </Form>
+                  )}
+                />
 
-          <div className="mt-6 flex items-center space-x-3">
-            <hr className="flex-grow border-gray-300" />
-            <span className="text-sm text-gray-500">or</span>
-            <hr className="flex-grow border-gray-300" />
-          </div>
+                {/* Terms */}
+                <FormField
+                  control={registerForm.control}
+                  name="terms"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-y-0 space-x-3 rounded-md py-4">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel className="text-primary text-sm font-normal whitespace-nowrap">
+                          I agree to the{" "}
+                          <a
+                            href="/terms"
+                            className="hover:text-primary underline"
+                          >
+                            Terms of Service
+                          </a>{" "}
+                          and{" "}
+                          <a
+                            href="/privacy"
+                            className="hover:text-primary underline"
+                          >
+                            Privacy Policy
+                          </a>
+                          .
+                        </FormLabel>
+                        <FormMessage className="text-sm text-red-500" />
+                      </div>
+                    </FormItem>
+                  )}
+                />
 
-          <Button
-            variant="outline"
-            className="h-11 w-full rounded-md border-gray-300 text-base font-medium transition-colors duration-200 hover:bg-gray-50 sm:h-12 sm:text-lg"
-            onClick={handleGoogleLogin}
-            disabled={!backendURL}
-          >
-            <GoogleIcon />
-            Register with Google
-          </Button>
+                {/* Submit Button */}
+                <Button
+                  type="submit"
+                  disabled={!registerForm.formState.isValid || !csrfToken}
+                  className="bg-primary hover:bg-primary h-12 w-full rounded-md text-lg font-semibold text-white shadow-md transition-colors duration-200 disabled:cursor-not-allowed disabled:bg-gray-400 sm:h-14"
+                >
+                  Register
+                </Button>
+              </form>
+            </Form>
 
-          <div className="mt-4 text-center text-sm">
-            <p className="text-gray-600">
-              Already have an account?{" "}
-              <a
-                href="/login"
-                className="text-primary font-semibold hover:underline"
-              >
-                Login
-              </a>
-            </p>
+            {/* Google Login */}
+            <div className="mt-6 flex items-center space-x-3">
+              <hr className="flex-grow border-gray-300" />
+              <span className="text-sm text-gray-500">or</span>
+              <hr className="flex-grow border-gray-300" />
+            </div>
+            <Button
+              variant="outline"
+              className="h-11 w-full rounded-md border-gray-300 text-base font-medium transition-colors duration-200 hover:bg-gray-50 sm:h-12 sm:text-lg"
+              onClick={handleGoogleLogin}
+              disabled={!backendURL}
+            >
+              <GoogleIcon />
+              Register with Google
+            </Button>
+
+            {/* Login Link */}
+            <div className="mt-4 text-center text-sm">
+              <p className="text-gray-600">
+                Already have an account?{" "}
+                <a
+                  href="/login"
+                  className="text-primary font-semibold hover:underline"
+                >
+                  Login
+                </a>
+              </p>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   /* ---------------- Render ---------------- */
   return (
