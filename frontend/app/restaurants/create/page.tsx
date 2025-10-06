@@ -1,7 +1,13 @@
-import RestaurantcreateForm from "@/components/restaurants/RestaurantcreateForm";
+// page.tsx
+"use client";
 
-const Restaurantcreatepage = () => {
-  return <RestaurantcreateForm />;
-};
+import CreateRestaurantFormClient from "@/components/restaurants/CreateRestaurantFormClient";
+import { Suspense } from "react";
 
-export default Restaurantcreatepage;
+export default function RestaurantCreatePage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <CreateRestaurantFormClient />
+    </Suspense>
+  );
+}

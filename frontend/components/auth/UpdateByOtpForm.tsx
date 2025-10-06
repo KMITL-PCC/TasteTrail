@@ -29,8 +29,12 @@ export default function UpdateByOtpForm() {
         if (!res.ok) throw new Error("Failed to fetch CSRF token");
         const data = await res.json();
         setCsrfToken(data?.csrfToken || null);
-      } catch (err) {
-        toast.error("Error fetching CSRF token.");
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          toast.error(err.message);
+        } else {
+          toast.error("Error fetching CSRF token.");
+        }
       }
     };
     fetchCsrfToken();
@@ -53,8 +57,12 @@ export default function UpdateByOtpForm() {
 
         if (!res.ok) throw new Error("Failed to send OTP.");
         toast.success("OTP has been sent to your email.");
-      } catch (err) {
-        toast.error("Error sending OTP request.");
+      } catch (err: unknown) {
+        if (err instanceof Error) {
+          toast.error(err.message);
+        } else {
+          toast.error("Error sending OTP request.");
+        }
       }
     };
 
@@ -68,7 +76,7 @@ export default function UpdateByOtpForm() {
         <button
           type="button"
           onClick={() => setFormStep("otp")}
-          className="inline-block mt-4 text-sm font-medium text-gray-600 hover:text-gray-900 hover:underline"
+          className="mt-4 inline-block text-sm font-medium text-gray-600 hover:text-gray-900 hover:underline"
         >
           ← Back to OTP
         </button>
@@ -80,7 +88,7 @@ export default function UpdateByOtpForm() {
   if (!user) return <div>Loading user data...</div>;
 
   return (
-    <div className="relative flex flex-col items-center justify-center min-h-screen p-10 pb-64 font-sans bg-gray-50">
+    <div className="relative flex min-h-screen flex-col items-center justify-center bg-gray-50 p-10 pb-64 font-sans">
       {csrfToken ? (
         <>
           {formStep === "otp" && user.email && (

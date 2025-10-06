@@ -172,7 +172,14 @@ export default function EditRestaurantPage({
         );
 
         // --- opening hours ---
-        const timeFromAPI: any[] = data.openingHour ?? [];
+        interface OpeningHour {
+          weekday: number; // 0 = Sunday, 1 = Monday, ...
+          openTime: string;
+          closeTime: string;
+        }
+
+        const timeFromAPI: OpeningHour[] = data.openingHour ?? [];
+
         setOpeningTimes(
           Array.from({ length: 7 }, (_, i) => {
             const t = timeFromAPI.find((x) => x.weekday === i);
@@ -185,13 +192,19 @@ export default function EditRestaurantPage({
         );
 
         // --- images ---
-        if (data.image?.restaurantImages)
+        interface RestaurantImage {
+          id: string;
+          url: string;
+        }
+
+        if (data.image?.restaurantImages) {
           setPreviewImages(
-            data.image.restaurantImages.map((img: any) => ({
+            data.image.restaurantImages.map((img: RestaurantImage) => ({
               id: img.id,
               url: img.url,
             })),
           );
+        }
 
         if (data.image?.profileImage)
           setPreviewProfileImages([data.image.profileImage.url]);

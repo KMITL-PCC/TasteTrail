@@ -63,7 +63,7 @@ export default function OtpForm({
 
       setMessage("OTP verified. Please set your new password.");
       setFormStep("resetPassword");
-    } catch (err) {
+    } catch {
       setMessage("Unable to connect to server.");
     } finally {
       setIsLoading(false);
@@ -94,7 +94,7 @@ export default function OtpForm({
 
       setMessage("A new OTP has been sent to your email.");
       setCountdown(30);
-    } catch (err) {
+    } catch {
       setMessage("Unable to resend code.");
     } finally {
       setIsLoading(false);
@@ -135,7 +135,7 @@ export default function OtpForm({
       </form>
 
       <div className="mt-4 text-center text-sm text-gray-600">
-        Didn't receive the code?{" "}
+        Didn&apos;t receive the code?{" "}
         {countdown > 0 ? (
           <span className="font-medium text-gray-400">
             You can resend in {countdown}s
