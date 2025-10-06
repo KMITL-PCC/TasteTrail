@@ -14,7 +14,7 @@ import {
   PaginationData,
 } from "@/types/restaurant";
 import { Button } from "@/components/ui/button";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 
 import FilterRestaurant from "@/components/restaurants/FilterRestaurant";
@@ -69,7 +69,7 @@ const getPopularRestaurants = async () => {
   }
 };
 
-const RestaurantsPage = () => {
+const RestaurantsPageContent = () => {
   const searchParams = useSearchParams();
 
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
@@ -143,8 +143,8 @@ const RestaurantsPage = () => {
         <FilterRestaurant />
       </div>
 
-      <div className="flex flex-col flex-1 gap-4 md:mt-7">
-        <div className="flex flex-col flex-1 gap-4">
+      <div className="flex flex-1 flex-col gap-4 md:mt-7">
+        <div className="flex flex-1 flex-col gap-4">
           {/* Recommended Restaurants */}
           <Card>
             <CardHeader>
@@ -175,7 +175,7 @@ const RestaurantsPage = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="text-lg font-medium">
-                  <Button className="cursor-default hover:bg-primary">
+                  <Button className="hover:bg-primary cursor-default">
                     Restaurants
                   </Button>
                 </CardTitle>
@@ -211,4 +211,27 @@ const RestaurantsPage = () => {
     </div>
   );
 };
+
+const RestaurantsPage = () => {
+  return (
+    <Suspense
+      fallback={
+        <div className="mx-auto flex w-full max-w-[1150px] flex-col gap-2 p-4 pt-0 md:flex-row md:p-8 md:pt-2 xl:px-16">
+          <div className="flex flex-1 flex-col gap-4 md:mt-7">
+            <Card>
+              <CardContent className="grid gap-4 p-4">
+                {Array.from({ length: 5 }).map((_, index) => (
+                  <PrimaryRestaurantCardSkeleton key={index} />
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      }
+    >
+      <RestaurantsPageContent />
+    </Suspense>
+  );
+};
+
 export default RestaurantsPage;

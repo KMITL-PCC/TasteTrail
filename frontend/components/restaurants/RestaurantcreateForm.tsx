@@ -231,13 +231,13 @@ export default function SellerInfoWeb({
 
   return (
     <div className="min-h-screen bg-white">
-      <div className="mx-auto max-w-3xl p-4 md:p-8 xl:px-16">
+      <div className="max-w-3xl p-4 mx-auto md:p-8 xl:px-16">
         <Card>
           <CardContent className="p-6">
             <div className="grid grid-cols-1 gap-6">
               <div className="mb-6">
                 <h2 className="text-base font-medium">รายละเอียดร้านค้า</h2>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-sm text-muted-foreground">
                   กรอกข้อมูลพื้นฐานของร้านคุณให้ครบถ้วน
                 </p>
               </div>
@@ -306,7 +306,7 @@ export default function SellerInfoWeb({
                       />
                     </FieldBlock>
 
-                    <div className="relative z-0 h-64 w-full overflow-hidden rounded-lg">
+                    <div className="relative z-0 w-full h-64 overflow-hidden rounded-lg">
                       <Mainmap
                         onLocationChange={([lat, lng]) => {
                           setLatitude(lat);
@@ -325,11 +325,11 @@ export default function SellerInfoWeb({
                   </Label>
 
                   {/* แถวบน 4 วัน */}
-                  <div className="mt-2 grid grid-cols-1 gap-4 md:grid-cols-4">
+                  <div className="grid grid-cols-1 gap-4 mt-2 md:grid-cols-4">
                     {daysOfWeek.slice(0, 4).map((day, index) => (
                       <div
                         key={index}
-                        className="flex flex-col rounded-lg border border-gray-200 p-3 shadow-sm transition-shadow hover:shadow-md"
+                        className="flex flex-col p-3 transition-shadow border border-gray-200 rounded-lg shadow-sm hover:shadow-md"
                       >
                         <p className="mb-2 text-sm font-semibold text-gray-700">
                           {day}
@@ -347,7 +347,7 @@ export default function SellerInfoWeb({
                                   e.target.value,
                                 )
                               }
-                              className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm"
+                              className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md"
                               step={60}
                             />
                           </div>
@@ -363,7 +363,7 @@ export default function SellerInfoWeb({
                                   e.target.value,
                                 )
                               }
-                              className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm"
+                              className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md"
                               step={60}
                             />
                           </div>
@@ -373,13 +373,13 @@ export default function SellerInfoWeb({
                   </div>
 
                   {/* แถวล่าง 3 วันตรงกลาง */}
-                  <div className="mt-2 flex flex-col items-center gap-2 md:flex-row md:justify-center md:gap-4">
+                  <div className="flex flex-col items-center gap-2 mt-2 md:flex-row md:justify-center md:gap-4">
                     {daysOfWeek.slice(4).map((day, i) => {
                       const index = i + 4;
                       return (
                         <div
                           key={index}
-                          className="flex w-full flex-col rounded-lg border border-gray-200 p-3 shadow-sm transition-shadow hover:shadow-md md:w-40"
+                          className="flex flex-col w-full p-3 transition-shadow border border-gray-200 rounded-lg shadow-sm hover:shadow-md md:w-40"
                         >
                           <p className="mb-2 text-sm font-semibold text-gray-700">
                             {day}
@@ -399,7 +399,7 @@ export default function SellerInfoWeb({
                                     e.target.value,
                                   )
                                 }
-                                className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm"
+                                className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md"
                                 step={60}
                               />
                             </div>
@@ -415,7 +415,7 @@ export default function SellerInfoWeb({
                                     e.target.value,
                                   )
                                 }
-                                className="flex-1 rounded-md border border-gray-300 px-2 py-1 text-sm"
+                                className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded-md"
                                 step={60}
                               />
                             </div>
@@ -473,7 +473,7 @@ export default function SellerInfoWeb({
                     <Button asChild>
                       <label
                         htmlFor="restaurantImages"
-                        className="cursor-pointer rounded-md px-4 py-2 text-white"
+                        className="px-4 py-2 text-white rounded-md cursor-pointer"
                       >
                         เลือกรูปภาพ
                       </label>
@@ -491,14 +491,14 @@ export default function SellerInfoWeb({
                     className="hidden"
                   />
 
-                  <div className="mt-4 flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 mt-4">
                     {previewImages.map((img, index) => (
-                      <div key={index} className="relative h-32 w-32">
+                      <div key={index} className="relative w-32 h-32">
                         {/* ใช้ <img> แทน <Image> สำหรับ blob URL */}
                         <Image
                           src={img}
                           alt={`uploaded-img-${index}`}
-                          className="h-32 w-32 rounded-md object-cover"
+                          className="object-cover w-32 h-32 rounded-md"
                           width={128}
                           height={128}
                         />
@@ -515,9 +515,9 @@ export default function SellerInfoWeb({
                             setUploadedImages(newFiles);
                             setPreviewImages(newPreviews);
                           }}
-                          className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs text-white"
+                          className="absolute flex items-center justify-center w-6 h-6 text-xs text-white bg-red-600 rounded-full -top-2 -right-2"
                         >
-                          <X className="h-4 w-4" />
+                          <X className="w-4 h-4" />
                         </button>
                       </div>
                     ))}
@@ -530,7 +530,7 @@ export default function SellerInfoWeb({
                     <Button asChild>
                       <label
                         htmlFor="profileImage"
-                        className="cursor-pointer rounded-md bg-green-600 px-4 py-2 text-white hover:bg-green-500"
+                        className="px-4 py-2 text-white bg-green-600 rounded-md cursor-pointer hover:bg-green-500"
                       >
                         เลือกรูปภาพ
                       </label>
@@ -548,12 +548,12 @@ export default function SellerInfoWeb({
                   />
 
                   {previewProfileImages[0] && (
-                    <div className="relative mt-4 h-32 w-32">
+                    <div className="relative w-32 h-32 mt-4">
                       <>
                         <Image
                           src={previewProfileImages[0]}
                           alt="owner-profile"
-                          className="h-32 w-32 rounded-full object-cover"
+                          className="object-cover w-32 h-32 rounded-full"
                           width={128}
                           height={128}
                         />
@@ -563,9 +563,9 @@ export default function SellerInfoWeb({
                             setProfileUploadImages([]);
                             setPreviewProfileUploadImages([]);
                           }}
-                          className="absolute top-1 right-1 flex h-6 w-6 items-center justify-center rounded-full bg-red-600 text-xs text-white"
+                          className="absolute flex items-center justify-center w-6 h-6 text-xs text-white bg-red-600 rounded-full top-1 right-1"
                         >
-                          <X className="h-4 w-4" />
+                          <X className="w-4 h-4" />
                         </button>
                       </>
                     </div>
@@ -613,17 +613,17 @@ export default function SellerInfoWeb({
             </div>
           </CardContent>
 
-          <CardFooter className="flex justify-end space-x-2 border-t bg-gray-50 p-4">
+          <CardFooter className="flex justify-end p-4 space-x-2 border-t bg-gray-50">
             <Button
               variant="outline"
               onClick={() => router.back()}
-              className="bg-gray-200 text-gray-700 hover:bg-gray-300"
+              className="text-gray-700 bg-gray-200 hover:bg-gray-300"
             >
               ยกเลิก
             </Button>
 
             <Button onClick={handleSave}>
-              <SaveIcon className="mr-2 h-4 w-4" />
+              <SaveIcon className="w-4 h-4 mr-2" />
               บันทึกข้อมูล
             </Button>
           </CardFooter>
