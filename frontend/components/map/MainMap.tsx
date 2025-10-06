@@ -8,16 +8,21 @@ import {
   Marker,
   Popup,
 } from "react-leaflet";
-import L from "leaflet";
 import "leaflet/dist/leaflet.css";
+import "leaflet";
+
+// Import dynamic to handle leaflet icon issue
+import L from "leaflet";
 
 type MainMapProps = {
-  initialPosition?: [number, number]; // fix type
+  initialPosition?: [number, number];
   onLocationChange?: (position: [number, number]) => void;
 };
 
-// กำหนด icon สำหรับ Marker
+// Fix leaflet icon issue
 if (typeof window !== "undefined") {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  delete (L.Icon.Default.prototype as any)._getIconUrl;
   L.Icon.Default.mergeOptions({
     iconRetinaUrl: "/leaflet/marker-icon-2x.jpg",
     iconUrl: "/leaflet/marker-icon.jpg",
@@ -42,10 +47,9 @@ function LocationMarker({
   }, [initialPosition]);
 
   const map = useMapEvents({
-    click(e: unknown) {
-      // cast ให้ TS รู้ว่ามี latlng และ lat/lng เป็น number
-      const event = e as { latlng: { lat: number; lng: number } };
-      const pos: [number, number] = [event.latlng.lat, event.latlng.lng];
+    click(e: { latlng: { lat: number; lng: number } }) {
+      const { lat, lng } = e.latlng;
+      const pos: [number, number] = [lat, lng];
       setPosition(pos);
       map.flyTo(pos, map.getZoom());
       onLocationChange?.(pos);
@@ -82,17 +86,19 @@ export default function MainMap({
     );
   }
 
+  const position = initialPosition || DEFAULT_LOCATION;
+
   return (
     <div className="z-0 h-[50vh] rounded-md">
       <MapContainer
-        center={initialPosition || DEFAULT_LOCATION}
+        center={position}
         zoom={13}
-        scrollWheelZoom
+        scrollWheelZoom={false}
         style={{ height: "100%", width: "100%" }}
-        attributionControl={true} // เปิด/ปิดปุ่ม attribution ได้ตรงน
+        attributionControl={true}
       >
         <TileLayer
-          // attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
         <LocationMarker
