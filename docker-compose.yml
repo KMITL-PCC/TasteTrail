@@ -16,22 +16,34 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       GOOGLE_CALLBACK_URL: http://localhost:3001/auth/google/callback
+      # DATABASE_URL: ${DATABASE_URL}
       DATABASE_URL: postgres://admin:12345@db:5432/review_restaurant?schema=public
       REDIS_URL: redis://redis:6379
       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
       CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
       PORT: 3001
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_started
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--quiet",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3001/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     command: >
-      sh -c "npx prisma migrate dev --name init && npm run seed && npm run dev"
+      sh -c "npx prisma migrate deploy && node dist/index.js"
 
   # frontend:
   #   build: ./frontend
@@ -85,7 +97,7 @@ services:
       timeout: 5s # Timeout 5 วินาที
       retries: 5 # ลอง 5 ครั้งก่อนประกาศว่าไม่ healthy
       start_period: 10s # รอ 10 วินาทีแรกก่อนเริ่ม Health Check
-  
+
   n8n:
     image: n8nio/n8n:latest
     container_name: n8n

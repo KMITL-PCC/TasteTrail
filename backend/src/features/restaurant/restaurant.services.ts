@@ -218,8 +218,6 @@ export default {
       .filter((c) => categories.includes(c.name))
       .map((c) => c.id);
 
-    console.log("Category IDs:", categoryIds);
-
     const uploadPromises = pictures.map((pic) => {
       return new Promise<{ url: string; public_id: string }>(
         (resolve, reject) => {
