@@ -272,6 +272,18 @@ export default function SellerInfoWeb({
                   />
                 </FieldBlock>
 
+                {/* คำอธิบายร้าน */}
+                <FieldBlock label="คำอธิบายร้านค้า (Description)">
+                  <Textarea
+                    rows={3}
+                    value={description}
+                    onChange={(e) => {
+                      setDescription(e.target.value);
+                    }}
+                    placeholder="ใส่คำอธิบายสั้น ๆ ของร้านคุณ"
+                  />
+                </FieldBlock>
+
                 <Separator />
 
                 <FieldBlock label="ประเภทร้าน" required>
@@ -570,7 +582,7 @@ export default function SellerInfoWeb({
                 </FieldBlock>
 
                 {/* รูปเจ้าของร้าน */}
-                <FieldBlock label="อัปโหลดรูปเจ้าของร้าน">
+                <FieldBlock label="อัปโหลดรูปเจ้าของร้าน" required>
                   <div className="flex items-center gap-4">
                     <Button asChild>
                       <label
