@@ -57,6 +57,7 @@ export const RestaurantDetailPage = async ({
   const { id } = await params;
 
   const { restaurantInfo } = await getRestaurantById(id);
+  console.log(restaurantInfo);
 
   return (
     <div className="relative mx-auto flex max-w-[1150px] flex-col gap-4 pt-2 pb-4 md:pb-8 xl:px-16">
@@ -156,10 +157,25 @@ export const RestaurantDetailPage = async ({
                 <h1 className="w-full text-base font-medium text-left">
                   เวลาเปิดร้าน
                 </h1>
-                <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
-                  <p>{restaurantInfo.openingHour.day}</p>
-                  <p>{restaurantInfo.openingHour.time}</p>
-                </div>
+                {restaurantInfo.openingHour &&
+                  (Array.isArray(restaurantInfo.openingHour) ? (
+                    restaurantInfo.openingHour.map(
+                      (hour: { day: string; time: string }, index: number) => (
+                        <div
+                          key={index}
+                          className="flex items-center justify-between gap-2 text-sm text-muted-foreground"
+                        >
+                          <p>{hour.day}</p>
+                          <p>{hour.time}</p>
+                        </div>
+                      ),
+                    )
+                  ) : (
+                    <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
+                      <p>{restaurantInfo.openingHour.day}</p>
+                      <p>{restaurantInfo.openingHour.time}</p>
+                    </div>
+                  ))}
               </div>
               <div className="flex flex-col items-start gap-2">
                 <h1 className="w-full text-base font-medium text-left">
@@ -215,10 +231,28 @@ export const RestaurantDetailPage = async ({
                     <h1 className="w-full text-base font-medium text-left">
                       เวลาเปิดร้าน
                     </h1>
-                    <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
-                      <p>{restaurantInfo.openingHour.day}</p>
-                      <p>{restaurantInfo.openingHour.time}</p>
-                    </div>
+                    {restaurantInfo.openingHour &&
+                      (Array.isArray(restaurantInfo.openingHour) ? (
+                        restaurantInfo.openingHour.map(
+                          (
+                            hour: { day: string; time: string },
+                            index: number,
+                          ) => (
+                            <div
+                              key={index}
+                              className="flex items-center justify-between gap-2 text-sm text-muted-foreground"
+                            >
+                              <p>{hour.day}</p>
+                              <p>{hour.time}</p>
+                            </div>
+                          ),
+                        )
+                      ) : (
+                        <div className="flex items-center justify-between gap-2 text-sm text-muted-foreground">
+                          <p>{restaurantInfo.openingHour.day}</p>
+                          <p>{restaurantInfo.openingHour.time}</p>
+                        </div>
+                      ))}
                   </div>
                   <div className="flex flex-col items-start gap-2">
                     <h1 className="w-full text-base font-medium text-left">

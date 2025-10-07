@@ -16,43 +16,61 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       GOOGLE_CALLBACK_URL: http://localhost:3001/auth/google/callback
+      # DATABASE_URL: ${DATABASE_URL}
       DATABASE_URL: postgres://admin:12345@db:5432/review_restaurant?schema=public
       REDIS_URL: redis://redis:6379
       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME}
       CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY}
       CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET}
       PORT: 3001
-    volumes:
-      - ./backend:/app
-      - /app/node_modules
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_started
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--quiet",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3001/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
     command: >
-      sh -c "npx prisma migrate dev --name init && npm run seed && npm run dev"
+      sh -c "npx prisma migrate deploy && node dist/index.js"
 
   # frontend:
-  #   build: ./frontend
+  #   build:
+  #     context: ./frontend
+  #     args:
+  #       NEXT_PUBLIC_BACKEND_URL: "http://localhost:3001"
   #   container_name: frontend
   #   ports:
   #     - "3000:3000"
   #   networks:
   #     - mern_network
-  # environment:
-  #   REACT_APP_API_URL: http://backend:3000
+  #   environment:
+  #     NODE_ENV: development
+  #     NEXT_PUBLIC_BACKEND_URL: "http://localhost:3001"
+  #   depends_on:
+  #     - backend
+  #   restart: unless-stopped
 
   # frontend:
   #   build: ./frontend
-  #   container_name: frontend
   #   ports:
   #     - "3000:3000"
   #   environment:
-  #     NEXT_PUBLIC_BACKEND_URL: http://localhost:3001
-  #   networks:
-  #     - mern_network
-  #   restart: always
+  #     - NEXT_PUBLIC_BACKEND_URL=http://backend:3001
+  #   depends_on:
+  #     - backend
+  #   restart: unless-stopped
 
   redis:
     image: redis:7.0-alpine
@@ -85,7 +103,7 @@ services:
       timeout: 5s # Timeout 5 วินาที
       retries: 5 # ลอง 5 ครั้งก่อนประกาศว่าไม่ healthy
       start_period: 10s # รอ 10 วินาทีแรกก่อนเริ่ม Health Check
-  
+
   n8n:
     image: n8nio/n8n:latest
     container_name: n8n

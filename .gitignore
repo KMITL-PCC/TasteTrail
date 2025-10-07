@@ -27,3 +27,5 @@ database.sqlite
 
 
 .env
+
+n8n/workflows/database.sqlite

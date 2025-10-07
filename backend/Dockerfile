@@ -1,19 +1,58 @@
-# --- Dev Stage ---
+# --- Build Stage ---
+FROM node:20-alpine AS builder
+WORKDIR /app
+
+# Copy package files
+COPY package*.json ./
+
+# Install ALL dependencies (including devDependencies for build)
+RUN npm ci
+
+# Copy source code and Prisma schema
+COPY . .
+
+# Generate Prisma Client
+RUN npx prisma generate
+
+# Build TypeScript to JavaScript
+RUN npm run build
+
+# Build seed script separately
+# RUN npx tsc prisma/seed.ts --outDir dist/prisma --esModuleInterop --resolveJsonModule
+
+# --- Production Stage ---
 FROM node:20-alpine
 WORKDIR /app
 
-# ติดตั้ง package.json ก่อน (เพื่อ cache)
+# Install dumb-init for proper signal handling
+RUN apk add --no-cache dumb-init
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001
+
+# Copy package files
 COPY package*.json ./
-RUN npm install
 
-# คัดลอกโค้ดทั้งหมด
-COPY . .
+# Install only production dependencies
+RUN npm ci --only=production && \
+    npm cache clean --force
 
-# Prisma generate ให้มี client ใช้งาน
-RUN npx prisma generate
+# Copy built application and Prisma files from builder stage
+COPY --chown=nodejs:nodejs --from=builder /app/dist ./dist
+COPY --chown=nodejs:nodejs --from=builder /app/prisma ./prisma
 
-# expose port backend
+# Copy Prisma generated client from builder
+COPY --chown=nodejs:nodejs --from=builder /app/node_modules/.prisma ./node_modules/.prisma
+
+# Switch to non-root user
+USER nodejs
+
+# Expose port
 EXPOSE 3001
 
-# ใช้ ts-node-dev สำหรับ hot reload
-CMD ["npm", "run", "dev"]
+# Use dumb-init to handle signals properly
+ENTRYPOINT ["dumb-init", "--"]
+
+# Start the application
+CMD ["node", "dist/index.js"]

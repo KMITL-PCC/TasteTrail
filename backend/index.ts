@@ -3,12 +3,9 @@ import dotenv from "dotenv";
 import session from "express-session";
 import passport from "./src/config/passport";
 import cors from "cors";
-import morgan from "morgan";
 import helmet from "helmet";
-import rateLimit from "express-rate-limit";
 import cookieParser from "cookie-parser";
 import csurf from "csurf";
-import otpGenerator from "otp-generator";
 
 import redisConfig from "./src/config/redis.config";
 import authen from "./src/features/auth/auth.routes";
@@ -26,7 +23,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(helmet());
 // app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 100 }));
-app.use(morgan("dev"));
+// app.use(morgan("dev"));
 
 console.log("Frontend :", process.env.FRONTEND_URL);
 app.use(

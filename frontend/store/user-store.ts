@@ -6,6 +6,7 @@ export type UserInfo = {
   role: string;
   profilePictureUrl: string;
   restaurantId: string;
+  thirdPartyOnly: boolean;
 };
 
 type State = {
