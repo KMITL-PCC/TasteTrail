@@ -288,6 +288,8 @@ export default {
             address: information.address,
             minPrice: price.minPrice,
             maxPrice: price.maxPrice,
+            latitude: information.latitude,
+            longitude: information.longitude,
             contact: {
               create: {
                 contactType: "phone",
