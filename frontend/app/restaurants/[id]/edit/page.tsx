@@ -1,5 +1,7 @@
 "use client";
 
+"use client";
+
 import RestaurantEditForm from "@/components/restaurants/RestaurantEditForm";
 import BreadcrumbComponent from "@/components/BreadcrumbComponent";
 import { getRestaurantById } from "@/lib/api/restaurant";
