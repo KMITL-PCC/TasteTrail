@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { Loader2, Save as SaveIcon } from "lucide-react";
-import { Loader2, Save as SaveIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,11 +9,11 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
+import { Separator } from "@radix-ui/react-dropdown-menu";
+import { useRouter } from "next/navigation";
 
 import dynamic from "next/dynamic";
 import Image from "next/image";
-import { Separator } from "@radix-ui/react-dropdown-menu";
-import { useRouter } from "next/navigation";
 
 const MainMap = dynamic(() => import("../map/MainMap"), { ssr: false });
 
@@ -504,7 +503,6 @@ export default function EditRestaurantPage({
                         {daysOfWeek.slice(0, 4).map((day, index) => (
                           <div
                             key={index}
-                            className="flex flex-col p-3 transition-shadow border border-gray-200 rounded-lg shadow-sm hover:shadow-md"
                             className="relative flex flex-col p-3 transition-shadow border border-gray-200 rounded-lg shadow-sm hover:shadow-md"
                           >
                             <p className="mb-2 text-sm font-semibold text-gray-700">
@@ -569,7 +567,6 @@ export default function EditRestaurantPage({
                           return (
                             <div
                               key={index}
-                              className="flex flex-col w-full p-3 transition-shadow border border-gray-200 rounded-lg shadow-sm hover:shadow-md md:w-40"
                               className="relative flex flex-col w-full p-3 transition-shadow border border-gray-200 rounded-lg shadow-sm hover:shadow-md md:w-40"
                             >
                               <p className="mb-2 text-sm font-semibold text-gray-700">
