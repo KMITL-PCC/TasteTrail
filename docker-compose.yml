@@ -45,22 +45,22 @@ services:
     command: >
       sh -c "npx prisma migrate deploy && node dist/index.js"
 
-  # frontend:
-  #   build:
-  #     context: ./frontend
-  #     args:
-  #       NEXT_PUBLIC_BACKEND_URL: "http://localhost:3001"
-  #   container_name: frontend
-  #   ports:
-  #     - "3000:3000"
-  #   networks:
-  #     - mern_network
-  #   environment:
-  #     NODE_ENV: development
-  #     NEXT_PUBLIC_BACKEND_URL: "http://localhost:3001"
-  #   depends_on:
-  #     - backend
-  #   restart: unless-stopped
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        NEXT_PUBLIC_BACKEND_URL: "http://localhost:3001"
+    container_name: frontend
+    ports:
+      - "3000:3000"
+    networks:
+      - mern_network
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_BACKEND_URL: "http://localhost:3001"
+    depends_on:
+      - backend
+    restart: unless-stopped
 
   # frontend:
   #   build: ./frontend

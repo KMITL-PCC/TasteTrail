@@ -1,3 +1,5 @@
+"use client";
+
 import {
   Card,
   CardAction,
@@ -24,6 +26,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ReviewSection } from "@/components/restaurant-detail/ReviewSection";
+import { useEffect, useState, use } from "react";
+import { RestaurantInfo } from "@/types/restaurant";
 
 import Image from "next/image";
 import RestaurantImagesCarousel from "@/components/restaurant-detail/RestaurantImagesCarousel";
@@ -31,33 +35,50 @@ import Link from "next/link";
 import RestaurantStatus from "../../../components/restaurant-detail/RestaurantStatus";
 import BreadcrumbComponent from "@/components/BreadcrumbComponent";
 import EditRestaurantButton from "@/components/restaurant-detail/EditRestaurantButton";
+import { getRestaurantById } from "@/lib/api/restaurant";
 
-export const getRestaurantById = async (id: string) => {
-  try {
-    const res = await fetch(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/restaurant/get/${id}`,
-      {
-        credentials: "include",
-      },
-    );
-    if (!res.ok) {
-      throw new Error("Failed to fetch restaurant" + res.status);
-    }
-    return res.json();
-  } catch (error) {
-    throw new Error("Failed to fetch restaurant" + error);
-  }
-};
-
-export const RestaurantDetailPage = async ({
+const RestaurantDetailPage = ({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) => {
-  const { id } = await params;
+  const [restaurantInfo, setRestaurantInfo] = useState<RestaurantInfo | null>(
+    null,
+  );
+  const [loading, setLoading] = useState(true);
+  const { id } = use(params);
 
-  const { restaurantInfo } = await getRestaurantById(id);
-  console.log(restaurantInfo);
+  useEffect(() => {
+    const fetchRestaurant = async () => {
+      try {
+        const data = await getRestaurantById(id);
+        setRestaurantInfo(data.restaurantInfo);
+        console.log(data.restaurantInfo);
+      } catch (error) {
+        console.error("Error fetching restaurant:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRestaurant();
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        Loading...
+      </div>
+    );
+  }
+
+  if (!restaurantInfo) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        Restaurant not found
+      </div>
+    );
+  }
 
   return (
     <div className="relative mx-auto flex max-w-[1150px] flex-col gap-4 pt-2 pb-4 md:pb-8 xl:px-16">
