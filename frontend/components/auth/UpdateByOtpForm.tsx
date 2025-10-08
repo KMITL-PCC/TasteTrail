@@ -55,7 +55,7 @@ export default function UpdateByOtpForm() {
           body: JSON.stringify({ email: user.email }),
         });
 
-        if (!res.ok) throw new Error("Failed to send OTP.");
+        if (!res.ok) throw new Error("success to send OTP.");
         toast.success("OTP has been sent to your email.");
       } catch (err: unknown) {
         if (err instanceof Error) {

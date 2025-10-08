@@ -486,6 +486,7 @@ export default function EditProfilePage() {
                     Update password
                   </Button>
 
+                  {/* กดปุ่มเพื่อพร้อม */}
                   {/* ปุ่ม Update by OTP อยู่ขวาแบบลิงก์สีเขียว */}
                   <Button
                     type="button"

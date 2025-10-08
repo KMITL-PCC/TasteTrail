@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { Outfit, Kanit } from "next/font/google";
 
@@ -35,8 +36,14 @@ export default function RootLayout({
       <body
         className={`flex min-h-svh w-full flex-col ${outfit.variable} ${kanit.variable}`}
       >
-        <Header />
-        <main className="flex flex-col flex-1">{children}</main>
+        <Suspense
+          fallback={
+            <div className="bg-background sticky top-0 z-50 h-20 w-full border" />
+          }
+        >
+          <Header />
+        </Suspense>
+        <main className="flex flex-1 flex-col">{children}</main>
         <Footer />
         <FeedbackButton />
 

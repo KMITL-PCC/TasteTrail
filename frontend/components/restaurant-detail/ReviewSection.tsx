@@ -561,15 +561,11 @@ function MyReview({
   restaurantId,
   csrfToken,
   reviews,
-  setReviews,
-  setMyReview,
 }: {
   review: Review;
   restaurantId: string;
   csrfToken: string;
   reviews: Review[];
-  setReviews: (reviews: Review[]) => void;
-  setMyReview: (myReview: Review | null) => void;
 }) {
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -577,9 +573,8 @@ function MyReview({
     try {
       setIsDeleting(true);
       await deleteReview(restaurantId, csrfToken);
-      setReviews(reviews.filter((r) => r.id !== review.id));
-      setMyReview(null);
       toast.success("รีวิวของคุณถูกลบเรียบร้อยแล้ว!");
+      window.location.reload();
     } catch (error) {
       console.error("Error deleting review:", error);
     } finally {
@@ -683,8 +678,6 @@ export function ReviewSection({ restaurantId }: { restaurantId: string }) {
             csrfToken={csrfToken}
             review={myReview}
             reviews={reviews}
-            setReviews={setReviews}
-            setMyReview={setMyReview}
           />
         ) : (
           <RateThisPlace restaurantId={restaurantId} csrfToken={csrfToken} />
