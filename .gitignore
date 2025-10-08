@@ -23,7 +23,7 @@ dist-ssr
 *.sln
 *.sw?
 
-database.sqlite
+*.sqlite
 
 
 .env

@@ -7,3 +7,5 @@ pgadmin
 # prisma/migrations
 
 coverage/
+
+dbbackup/

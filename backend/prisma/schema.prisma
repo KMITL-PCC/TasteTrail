@@ -46,7 +46,7 @@ model Account {
   userId     String
   provider   String
   providerId String
-  user       User   @relation(fields: [userId], references: [id])
+  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerId])
 }
@@ -91,7 +91,7 @@ model OpeningHour {
   weekday      Int // 0=Sunday ... 6=Saturday and 7 = every day
   openTime     String
   closeTime    String
-  restaurant   Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurant   Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 }
 
 model Service {
@@ -105,7 +105,7 @@ model RestaurantService {
   restaurantId String @map("restaurant_id")
   serviceId    Int
 
-  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   service    Service    @relation(fields: [serviceId], references: [id])
 
   @@id([restaurantId, serviceId])
@@ -122,7 +122,7 @@ model RestaurantImage {
   profilePic   Boolean? @default(false) @map("is_profile_pic")
   uploadedAt   DateTime @default(now()) @map("uploaded_at") @db.Timestamptz(6)
 
-  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 }
 
 // --- Table: Categories ---
@@ -138,7 +138,7 @@ model RestaurantCategory {
   restaurantId String @map("restaurant_id") @db.VarChar(50)
   categoryId   Int    @map("category_id")
 
-  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
   category   Category   @relation(fields: [categoryId], references: [id])
 
   @@id([restaurantId, categoryId]) // Composite Primary Key
@@ -155,8 +155,8 @@ model Review {
   createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
   updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
 
-  restaurant Restaurant    @relation(fields: [restaurantId], references: [id])
-  user       User          @relation(fields: [userId], references: [id])
+  restaurant Restaurant    @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
+  user       User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   images     ReviewImage[]
 }
 
@@ -178,7 +178,7 @@ model Contact {
   contactType   String @map("contact_type") @db.VarChar(50)
   contactDetail String @map("contact_detail") @db.VarChar(50) // ควรเปลี่ยนชื่อเป็น contactValue หรือ contactDetail
 
-  restaurant Restaurant @relation(fields: [restaurantId], references: [id])
+  restaurant Restaurant @relation(fields: [restaurantId], references: [id], onDelete: Cascade)
 }
 
 // --- Table: ChatRooms ---
