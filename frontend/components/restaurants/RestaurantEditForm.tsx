@@ -232,12 +232,17 @@ export default function EditRestaurantPage({
 
   const handleTimeChange = (
     weekday: number,
-    type: "openTime" | "closeTime",
-    value: string,
+    type: "openTime" | "closeTime" | "both",
+    value?: string,
   ) => {
     setOpeningTimes((prev) => {
       const copy = [...prev];
-      copy[weekday] = { ...copy[weekday], [type]: value };
+      if (type === "both") {
+        // ล้างทั้ง openTime และ closeTime
+        copy[weekday] = { ...copy[weekday], openTime: "", closeTime: "" };
+      } else {
+        copy[weekday] = { ...copy[weekday], [type]: value || "" };
+      }
       return copy;
     });
   };
@@ -290,8 +295,14 @@ export default function EditRestaurantPage({
     }
   };
 
+  const [isSaving, setIsSaving] = useState(false);
+
   const handleSave = async () => {
+    if (isSaving) return; // ป้องกันกดซ้ำ
     if (!csrfToken) return toast.error("Session not ready");
+
+    setIsSaving(true); // ปุ่มถูก disable
+
     try {
       const form = new FormData();
 
@@ -313,24 +324,16 @@ export default function EditRestaurantPage({
         "price",
         JSON.stringify({ minPrice: minPrice || 0, maxPrice: maxPrice || 0 }),
       );
-
       form.append("category", JSON.stringify(categoriesSelected));
-
       form.append("time", JSON.stringify(openingTimes));
-      console.log(openingTimes);
 
       // รูปภาพ
-      // รูปใหม่ที่ผู้ใช้เปลี่ยนหรือเพิ่ม
       previewImages.forEach((img) => {
         if (img.file) form.append("restaurantImages", img.file);
       });
-
-      // ส่ง id ของรูปที่ถูกเปลี่ยน
       if (updateImages.length > 0) {
         form.append("updateImage", JSON.stringify(updateImages));
       }
-
-      // รูปโปรไฟล์
       profileImages.forEach((f) => form.append("profileImage", f));
 
       const res = await fetch(SAVE_RESTAURANT_ENDPOINT, {
@@ -342,20 +345,23 @@ export default function EditRestaurantPage({
 
       if (!res.ok) {
         const msg = await res.json();
-        return toast.error("บันทึกล้มเหลว", { description: msg?.message });
+        toast.error("บันทึกล้มเหลว", { description: msg?.message });
+        setIsSaving(false); // ให้กดอีกครั้งได้
+        return;
       }
 
       toast.success("บันทึกสำเร็จ");
       router.push(`/restaurants/${restaurantId}`);
     } catch {
       toast.error("ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้");
+      setIsSaving(false); // ให้กดอีกครั้งได้
     }
   };
 
   if (isLoading) return <p className="p-4">กำลังโหลดข้อมูลร้าน...</p>;
 
   return (
-    <div className="mx-auto mt-6 max-w-3xl px-4">
+    <div className="mx-auto mt-6 max-w-4xl px-4">
       <Card>
         <CardContent className="p-6">
           <div className="grid grid-cols-1 gap-6">
@@ -494,11 +500,21 @@ export default function EditRestaurantPage({
                       {daysOfWeek.slice(0, 4).map((day, index) => (
                         <div
                           key={index}
-                          className="flex flex-col rounded-lg border border-gray-200 p-3 shadow-sm transition-shadow hover:shadow-md"
+                          className="relative flex flex-col rounded-lg border border-gray-200 p-3 shadow-sm transition-shadow hover:shadow-md"
                         >
                           <p className="mb-2 text-sm font-semibold text-gray-700">
                             {day}
                           </p>
+
+                          {/* ปุ่มล้างเวลา */}
+                          <button
+                            type="button"
+                            className="absolute top-2 right-2 text-xs text-red-500 hover:underline"
+                            onClick={() => handleTimeChange(index, "both")}
+                          >
+                            ล้าง
+                          </button>
+
                           <div className="flex flex-col gap-1">
                             <div className="flex items-center gap-2">
                               <span className="text-xs text-gray-500">
@@ -546,11 +562,21 @@ export default function EditRestaurantPage({
                         return (
                           <div
                             key={index}
-                            className="flex w-full flex-col rounded-lg border border-gray-200 p-3 shadow-sm transition-shadow hover:shadow-md md:w-40"
+                            className="relative flex w-full flex-col rounded-lg border border-gray-200 p-3 shadow-sm transition-shadow hover:shadow-md md:w-40"
                           >
                             <p className="mb-2 text-sm font-semibold text-gray-700">
                               {day}
                             </p>
+
+                            {/* ปุ่มล้างเวลา */}
+                            <button
+                              type="button"
+                              className="absolute top-2 right-2 text-xs text-red-500 hover:underline"
+                              onClick={() => handleTimeChange(index, "both")}
+                            >
+                              ล้าง
+                            </button>
+
                             <div className="flex flex-col gap-1">
                               <div className="flex items-center gap-2">
                                 <span className="text-xs text-gray-500">
@@ -821,9 +847,9 @@ export default function EditRestaurantPage({
             ยกเลิก
           </Button>
 
-          <Button onClick={handleSave}>
+          <Button onClick={handleSave} disabled={isSaving}>
             <SaveIcon className="mr-2 h-4 w-4" />
-            บันทึกข้อมูล
+            {isSaving ? "กำลังบันทึก..." : "บันทึกข้อมูล"}
           </Button>
         </CardFooter>
       </Card>
