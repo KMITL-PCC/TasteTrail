@@ -26,6 +26,8 @@ WORKDIR /app
 
 # Install dumb-init for proper signal handling
 RUN apk add --no-cache dumb-init
+RUN apk add --no-cache tzdata
+ENV TZ=Asia/Bangkok
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nodejs && \

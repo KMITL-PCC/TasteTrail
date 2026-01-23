@@ -1,10 +1,9 @@
-import { equal, rejects } from "assert";
-
 import cloudinary from "../../config/cloudinary.config";
 import prisma from "../../config/db.config";
 import { Restaurant } from "../../types/restaurant";
 import { error } from "console";
 import { get } from "http";
+import s from "connect-redis";
 
 function formatBusinessHours(hours: Restaurant.time[]) {
   const days = [
@@ -103,7 +102,6 @@ export default {
       }));
     }
 
-    console.log(JSON.stringify(whereClause, null, 2));
     //3. sort field
     const orderBy: any = {};
     const sortField = sortBy || "avgRating";
@@ -186,7 +184,6 @@ export default {
       };
     });
 
-    console.log(restaurant);
     return {
       restaurant: restaurant,
       totalPages: Math.ceil(total / limit),
@@ -457,3 +454,25 @@ export default {
     return popularRestaurants;
   },
 };
+
+// const updateGoogleDriveURL = async () => {
+//   const images = await prisma.restaurantImage.findMany();
+
+//   console.log("start update");
+//   for (const img of images) {
+//     if (img.imageUrl.includes("drive.google.com/file/d/")) {
+//       const match = img.imageUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+//       if (match) {
+//         const newUrl = `https://drive.google.com/uc?export=view&id=${match[1]}`;
+//         await prisma.restaurantImage.update({
+//           where: { id: img.id },
+//           data: { imageUrl: newUrl },
+//         });
+//       }
+//     }
+//   }
+
+//   console.log("Update success");
+// };
+
+// updateGoogleDriveURL();

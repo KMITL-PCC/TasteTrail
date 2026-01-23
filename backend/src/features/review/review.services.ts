@@ -331,11 +331,34 @@ export class ReviewServices {
         review.images.map((img) => cloudinary.uploader.destroy(img.publicId))
       );
 
-      //3. delete review
-      await this.prisma.review.delete({
-        where: {
-          id: review.id,
-        },
+      await this.prisma.$transaction(async (tx) => {
+        //3. delete review
+        await tx.review.delete({
+          where: {
+            id: review.id,
+          },
+        });
+
+        await tx.restaurant.update({
+          where: { id: restaurantId },
+          data: {
+            totalReviews: {
+              decrement: 1,
+            },
+          },
+        });
+
+        const avgData = await tx.review.aggregate({
+          where: { restaurantId },
+          _avg: { rating: true },
+        });
+
+        await tx.restaurant.update({
+          where: { id: restaurantId },
+          data: {
+            avgRating: avgData._avg.rating || 0,
+          },
+        });
       });
     } catch (error) {
       if (error instanceof HttpError) {

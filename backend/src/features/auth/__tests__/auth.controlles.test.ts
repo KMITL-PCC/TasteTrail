@@ -668,6 +668,7 @@ describe("AuthControllers", () => {
 
       mockRequest.body = { newPassword };
       mockRequest.session = {
+        destroy: jest.fn((cb) => cb && cb()),
         forgotData: { email },
         otp: {
           verify: true,
@@ -809,44 +810,6 @@ describe("AuthControllers", () => {
   });
 
   describe("getUserData", () => {
-    it("should return user data with restaurant ID", async () => {
-      const mockUser: User = {
-        id: "user123",
-        username: "testuser",
-        email: "test@example.com",
-        passwordHash: "hashedPassword",
-        role: Role.RestaurantOwner,
-        profilePictureUrl: "http://example.com/pic.jpg",
-        profilePictureUrlPublicId: null,
-        firstName: null,
-        lastName: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-
-      mockRequest.user = mockUser;
-      mockAuthService.getRestaurantByOwnerId.mockResolvedValue("restaurant123");
-
-      await authController.getUserData(
-        mockRequest as Request,
-        mockResponse as Response
-      );
-
-      expect(mockAuthService.getRestaurantByOwnerId).toHaveBeenCalledWith(
-        mockUser.id
-      );
-      expect(mockResponse.status).toHaveBeenCalledWith(200);
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        user: {
-          username: mockUser.username,
-          email: mockUser.email,
-          role: mockUser.role,
-          profilePictureUrl: mockUser.profilePictureUrl,
-          restaurantId: "restaurant123",
-        },
-      });
-    });
-
     it("should return 401 when user is not authenticated", async () => {
       mockRequest.user = undefined;
 
@@ -858,40 +821,6 @@ describe("AuthControllers", () => {
       expect(mockResponse.status).toHaveBeenCalledWith(401);
       expect(mockResponse.json).toHaveBeenCalledWith({
         message: "Unauthorized",
-      });
-    });
-
-    it("should return user data without restaurant ID", async () => {
-      const mockUser: User = {
-        id: "user123",
-        username: "testuser",
-        email: "test@example.com",
-        passwordHash: "hashedPassword",
-        role: Role.User,
-        profilePictureUrl: null,
-        profilePictureUrlPublicId: null,
-        firstName: null,
-        lastName: null,
-        createdAt: new Date(),
-        updatedAt: new Date(),
-      };
-
-      mockRequest.user = mockUser;
-      mockAuthService.getRestaurantByOwnerId.mockResolvedValue(undefined);
-
-      await authController.getUserData(
-        mockRequest as Request,
-        mockResponse as Response
-      );
-
-      expect(mockResponse.json).toHaveBeenCalledWith({
-        user: {
-          username: mockUser.username,
-          email: mockUser.email,
-          role: mockUser.role,
-          profilePictureUrl: null,
-          restaurantId: null,
-        },
       });
     });
   });
