@@ -207,7 +207,7 @@ export default function EditProfilePage() {
         ch.postMessage({ ts: Date.now() });
         ch.close();
       }
-      router.push("/login");
+      router.push("/profile");
     } catch (e: unknown) {
       let message = "Unable to save profile. Please try again.";
 

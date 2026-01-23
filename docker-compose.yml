@@ -94,6 +94,7 @@ services:
     ports:
       - "5432:5432"
     volumes:
+      - ./backend/dbbackup/restaurant2.sql:/docker-entrypoint-initdb.d/restaurant.sql # นำไฟล์ SQL ไปไว้ในโฟลเดอร์ initdb
       - postgres_data:/var/lib/postgresql/data # เก็บข้อมูล DB แบบถาวร
     networks:
       - mern_network

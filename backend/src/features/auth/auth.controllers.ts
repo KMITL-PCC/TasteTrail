@@ -462,6 +462,7 @@ export class AuthControllers {
         });
       }
 
+      logoutAllDevices(user.id);
       res.status(result.status).json({
         message: result.message,
       });

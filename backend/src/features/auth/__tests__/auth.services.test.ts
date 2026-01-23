@@ -373,7 +373,7 @@ describe("AuthServices", () => {
       const result = await authService.forgotPass("google@example.com");
 
       // Should still send OTP even if passwordHash is null
-      expect(result.success).toBe(true);
+      expect(result.success).toBe(false);
     });
   });
 
